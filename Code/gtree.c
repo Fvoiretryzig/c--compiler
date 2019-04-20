@@ -1,20 +1,6 @@
 #include "gtree.h"
 
-/*
-struct node {
-	char name[20];
-	int lineno;
-	union {
-		char str[53];
-		int type_int;
-		float type_float;
-	};
-	//struct node* gparent;
-	struct child_cnt;
-	struct node gchild[10];
-};
-*/
-//extern int yylineno;
+
 extern YYLTYPE yylloc;
 
 struct node* CreateIntGNode(int int_num, int lineno)
@@ -23,6 +9,8 @@ struct node* CreateIntGNode(int int_num, int lineno)
 	strcpy(gnode->name, "INT");
 	gnode->lineno = lineno;
 	gnode->type_int = int_num;
+	gnode->type = INT_T;
+	gnode->rule = Terminal;	
 	gnode->child_cnt = 0;
 	//printf("in CreateIntGnode %s: %d\n", gnode->name, gnode->type_int);
 	return gnode;
@@ -34,6 +22,8 @@ struct node* CreateFloatGNode(float float_num, int lineno)
 	gnode->lineno = lineno;
 	gnode->type_float = float_num;
 	gnode->child_cnt = 0;
+	gnode->type = FLOAT_T;
+	gnode->rule = Terminal;
 	//printf("in CreateFloatGNode %s: %f\n", gnode->name, gnode->type_float);
 	return gnode;
 }
@@ -43,6 +33,8 @@ struct node* CreateIdGNode(char* id, int lineno)
 	strcpy(gnode->name, "ID");
 	gnode->lineno = lineno;
 	strcpy(gnode->str, id);
+	gnode->type = ID_T;
+	gnode->rule = Terminal;	
 	gnode->child_cnt = 0;
 	//printf("in CreateIdNode %s: %s\n", gnode->name, gnode->str);
 	return gnode;
@@ -53,11 +45,13 @@ struct node* CreateTypeGNode(char* type, int lineno)
 	strcpy(gnode->name, "TYPE");
 	gnode->lineno = lineno;
 	strcpy(gnode->str, type);
+	gnode->type = STRUCT_T;
+	gnode->rule = Terminal;	
 	gnode->child_cnt = 0;
 	//printf("in CreateTypeGNode %s: %s\n", gnode->name, gnode->str);
 	return gnode;
 }
-struct node* CreateGNode(char* name, int lineno, int child_cnt, ...)
+struct node* CreateGNode(char* name, int lineno, NodeType node_t, Rule rule_t, int child_cnt, ...)
 {
 	//printf("in CreateGNode: name:%s child_cnt:%d\n", name, child_cnt);
 	struct node* gnode = (struct node*)malloc(sizeof(struct node));
@@ -66,6 +60,8 @@ struct node* CreateGNode(char* name, int lineno, int child_cnt, ...)
 	strcpy(gnode->name, name);
 	gnode->lineno = lineno;
 	gnode->child_cnt = child_cnt;
+	gnode->type = node_t;
+	gnode->rule = rule_t;
 	
 	va_start(argp, child_cnt);
 	if(child_cnt > 0) {

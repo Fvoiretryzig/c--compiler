@@ -47,7 +47,7 @@ Program		:	ExtDefList {
 					#ifdef DEBUG_MSG
 					printf("\033[46;37mProgram: ExtDefList(%d)\033[0m\n", @$.first_line);
 					#endif
-					$$ = CreateGNode("Program", @$.first_line, 1, $1);
+					$$ = CreateGNode("Program", @$.first_line, Program_t, Program_Extdeflist, 1, $1);
 					if(!is_error)
 						tran($$, 0);
 
@@ -59,7 +59,7 @@ ExtDefList	:	ExtDef ExtDefList {
 					
 					printf("\033[46;37mExtDefList: ExtDef ExtDefList(%d)\033[0m\n", @$.first_line);
 					#endif
-					$$ = CreateGNode("ExtDefList", @$.first_line, 2, $1, $2);
+					$$ = CreateGNode("ExtDefList", @$.first_line, ExtDefList_T, Extdeflist_ExtdefExtdeflist, 2, $1, $2);
 					
 				}
 			|	{
@@ -218,6 +218,7 @@ CompSt	:	error RC {
 				#endif
 				is_error = 1;
 			}
+		;
 StmtList:	Stmt StmtList {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mStmtList: Stmt StmtList(%d)\033[0m\n", @$.first_line);
