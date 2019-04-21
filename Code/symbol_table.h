@@ -7,16 +7,14 @@
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
 typedef enum idkind {_VAR, _STRUCT} IDKind;
+
 struct Type_ {
-	enum { BASIC, ARRAY, STRUCTURE } kind;
+	enum { BASIC, ARRAY, STRUCTURE, ID } kind;
 	union {
-		// 基本类型
 		int basic;	//int = 1; float = 0
-		// 数组类型信息包括元素类型与数组大小构成
 		struct { 
 			Type elem; int size; 
 		} array;
-		// 结构体类型信息是一个链表
 		FieldList structure;
 	} u;
 };
@@ -29,16 +27,21 @@ struct FieldList_ {
 typedef struct SymbolEntity_ {
 	IDkind idkind;
 	char name[55];
-	
 	Type type;	
+	
+	Symbol* next;
 } Symbol;
 typedef struct SymbolEntityFunc_ {
 	char name[55];
 	Type retType;
 	int argc;
 	Type* argv;
+	
+	SymbolF* next;
 } SymbolF;
+
 void init_table();
-int add_symbol(struct node n);
+int add_symbol(struct node* n, char* name);
+int add_symbolF(struct node* n, char* name);
 Symbol* find_symbol(char* name);
 

@@ -60,7 +60,7 @@ struct node* CreateGNode(char* name, int lineno, NodeType node_t, Rule rule_t, i
 	strcpy(gnode->name, name);
 	gnode->lineno = lineno;
 	gnode->child_cnt = child_cnt;
-	gnode->type = node_t;
+	gnode->n_type = node_t;
 	gnode->rule = rule_t;
 	
 	va_start(argp, child_cnt);
