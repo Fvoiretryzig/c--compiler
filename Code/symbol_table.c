@@ -88,3 +88,20 @@ Symbol* find_symbol(char* name) {
 	printf("%s find in symbol table!!\n", name);
 	return curr;
 }
+SymbolF* find_symbolF(char* name) {
+	Symbol* curr = headF;
+	int if_find = 0;
+	while(curr) {
+		if(!strcmp(curr->name, name)) {
+			if_find = 1;
+			break;
+		}
+		curr = curr->next;
+	}
+	if(!if_find) {
+		print("%s not in symbolF table!!\n", name);
+		return NULL;
+	}
+	printf("%s find in symbolF table!!\n", name);
+	return curr;
+}

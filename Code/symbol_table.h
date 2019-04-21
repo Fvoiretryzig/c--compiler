@@ -44,4 +44,5 @@ void init_table();
 int add_symbol(struct node* n, char* name);
 int add_symbolF(struct node* n, char* name);
 Symbol* find_symbol(char* name);
+SymbolF* find_symbolF(char* name)
 
