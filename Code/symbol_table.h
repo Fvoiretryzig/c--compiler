@@ -4,6 +4,8 @@
 #include "syntax.tab.h"
 #include "gtree.h"
 
+#define SYMBOL_TABLE_H
+#ifdef SYMBOL_TABLE_H
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
 typedef enum idkind {_VAR, _STRUCT} IDKind;
@@ -45,4 +47,4 @@ int add_symbol(struct node* n, char* name);
 int add_symbolF(struct node* n, char* name);
 Symbol* find_symbol(char* name);
 SymbolF* find_symbolF(char* name)
-
+#endif

@@ -193,7 +193,75 @@ helper(Exp_ExpOrExp) {
 	return;
 }
 helper(Exp_ExpRelopExp) {
+	struct node* E1 = n->gchild[0];
+	struct node* Relop = n->gchild[1];
+	struct node* E2 = n->gchild[2];
+	int is_float = 0;
+	
+	semantic_analysis(E1);
+	semantic_analysis(E2);
 
+	if(E1->u.type->kind != BASIC || E2->u.type->kind != BASIC) {
+		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		return;
+	}
+	if(E1->u.type->u.basic != E2->u.type->u.basic) {
+		if(E1->u.type->u.basic == 1) {
+			E1->u.type->u.basic = 0;
+			E1->type_float = E1->type_int;
+		}
+		else {
+			E2->u.type->u.basic = 0;
+			E2->type_float = E1->type_int;
+		}
+		is_float = 1;
+	}
+	if(E1->u.type->u.basic == 0) {
+		is_float = 1;
+	}
+	n->u.type->kind = BASIC;
+	n->u.type->u.basic = 1;
+	n->n_type = _BASIC_;
+	char* op = Relop->relop;
+	switch(op) {
+		case ">":
+			if(is_float)
+				n->type_int = (E1->type_float > E2->type_float);
+			else
+				n->type_int = (E1->type_int > E2->type_int);
+			break;
+		case "<":
+			if(is_float)
+				n->type_int = (E1->type_flaot < E2->type_float);
+			else
+				n->type_int = (E1->type_int < E2->type_int);
+			break;
+		case ">=":
+			if(is_float)
+				n->type_int = (E1->type_flaot >= E2->type_float);
+			else
+				n->type_int = (E1->type_int >= E2->type_int);
+			break;
+		case "<=":
+			if(is_float)
+				n->type_int = (E1->type_flaot <= E2->type_float);
+			else
+				n->type_int = (E1->type_int <= E2->type_int);
+			break;
+		case "==":
+			if(is_float)
+				n->type_int = (E1->type_flaot == E2->type_float);
+			else
+				n->type_int = (E1->type_int == E2->type_int);
+			break;
+		case "!=":
+			if(is_float)
+				n->type_int = (E1->type_flaot != E2->type_float);
+			else
+				n->type_int = (E1->type_int != E2->type_int);
+			break;
+	}
+	return;
 }
 helper(Exp_ExpPlusExp) {
 	struct node* E1 = n->gchild[0];
@@ -460,8 +528,4 @@ helper(Args_Exp) {
 
 }
 
-
-helper(Terminal) {
-
-}
 

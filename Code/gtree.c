@@ -9,7 +9,7 @@ struct node* CreateIntGNode(int int_num, int lineno)
 	strcpy(gnode->name, "INT");
 	gnode->lineno = lineno;
 	gnode->type_int = int_num;
-	gnode->type = INT_T;
+	gnode->n_type = _INIT_;
 	gnode->rule = Terminal;	
 	gnode->child_cnt = 0;
 	//printf("in CreateIntGnode %s: %d\n", gnode->name, gnode->type_int);
@@ -22,7 +22,7 @@ struct node* CreateFloatGNode(float float_num, int lineno)
 	gnode->lineno = lineno;
 	gnode->type_float = float_num;
 	gnode->child_cnt = 0;
-	gnode->type = FLOAT_T;
+	gnode->n_type = _INIT_;
 	gnode->rule = Terminal;
 	//printf("in CreateFloatGNode %s: %f\n", gnode->name, gnode->type_float);
 	return gnode;
@@ -33,7 +33,7 @@ struct node* CreateIdGNode(char* id, int lineno)
 	strcpy(gnode->name, "ID");
 	gnode->lineno = lineno;
 	strcpy(gnode->str, id);
-	gnode->type = ID_T;
+	gnode->n_type = _INIT_;
 	gnode->rule = Terminal;	
 	gnode->child_cnt = 0;
 	//printf("in CreateIdNode %s: %s\n", gnode->name, gnode->str);
@@ -45,10 +45,21 @@ struct node* CreateTypeGNode(char* type, int lineno)
 	strcpy(gnode->name, "TYPE");
 	gnode->lineno = lineno;
 	strcpy(gnode->str, type);
-	gnode->type = STRUCT_T;
+	gnode->n_type = _INIT_;
 	gnode->rule = Terminal;	
 	gnode->child_cnt = 0;
 	//printf("in CreateTypeGNode %s: %s\n", gnode->name, gnode->str);
+	return gnode;
+}
+struct node* CreateRelopGNode(int lineno, char* op) {
+	struct node* gnode = (struct node*)malloc(sizeof(struct node));
+	strcpy(gnode->name, "RELOP");
+	gnode->lineno = lineno;
+	strcpy(gnode->relop, op);
+	gnode->n_type = _INIT_;
+	gnode->rule = Terminal;
+	gnode->child_cnt = 0;
+	
 	return gnode;
 }
 struct node* CreateGNode(char* name, int lineno, NodeType node_t, Rule rule_t, int child_cnt, ...)

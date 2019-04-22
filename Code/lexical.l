@@ -88,7 +88,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30mkeyword\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("STRUCT", yylineno, 0);
+	yylval.gnode = CreateGNode("STRUCT", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return STRUCT;
 	#endif
@@ -98,7 +98,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30mkeyword\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("RETURN", yylineno, 0);
+	yylval.gnode = CreateGNode("RETURN", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return RETURN;
 	#endif
@@ -107,7 +107,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30mkeyword\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("IF", yylineno, 0);
+	yylval.gnode = CreateGNode("IF", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return IF;
 	#endif
@@ -117,7 +117,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30mkeyword\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("ELSE", yylineno, 0);
+	yylval.gnode = CreateGNode("ELSE", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return ELSE;
 	#endif	
@@ -127,7 +127,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30mkeyword\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("WHILE", yylineno, 0);
+	yylval.gnode = CreateGNode("WHILE", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return WHILE;
 	#endif
@@ -179,7 +179,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("SEMI", yylineno, 0);
+	yylval.gnode = CreateGNode("SEMI", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return SEMI;
 	#endif		
@@ -188,7 +188,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("COMMA", yylineno, 0);
+	yylval.gnode = CreateGNode("COMMA", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return COMMA;
 	#endif
@@ -197,7 +197,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("ASSIGNOP", yylineno, 0);
+	yylval.gnode = CreateGNode("ASSIGNOP", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return ASSIGNOP;
 	#endif	
@@ -206,7 +206,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("RELOP", yylineno, 0);
+	yylval.gnode = CreateRelopGNode(yylineno, yytext);
 	#ifdef SYNTAX	
 		return RELOP;
 	#endif
@@ -215,7 +215,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("PLUS", yylineno, 0);
+	yylval.gnode = CreateGNode("PLUS", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return PLUS;
 	#endif		
@@ -224,7 +224,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("MINUS", yylineno, 0);
+	yylval.gnode = CreateGNode("MINUS", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return MINUS;
 	#endif
@@ -233,7 +233,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("STAR", yylineno, 0);
+	yylval.gnode = CreateGNode("STAR", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return STAR;
 	#endif
@@ -242,7 +242,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("DIV", yylineno, 0);
+	yylval.gnode = CreateGNode("DIV", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return DIV;
 	#endif
@@ -251,7 +251,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("AND", yylineno, 0);
+	yylval.gnode = CreateGNode("AND", yylineno, Terminal, 0);
 	#ifdef SYNTAX	
 		return AND;
 	#endif	
@@ -260,7 +260,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("OR", yylineno, 0);
+	yylval.gnode = CreateGNode("OR", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return OR;
 	#endif
@@ -269,7 +269,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("DOT", yylineno, 0);
+	yylval.gnode = CreateGNode("DOT", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return DOT;
 	#endif	
@@ -278,7 +278,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("NOT", yylineno, 0);
+	yylval.gnode = CreateGNode("NOT", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return NOT;
 	#endif
@@ -287,7 +287,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("LP", yylineno, 0);
+	yylval.gnode = CreateGNode("LP", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return LP;
 	#endif
@@ -296,7 +296,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("RP", yylineno, 0);
+	yylval.gnode = CreateGNode("RP", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return RP;
 	#endif
@@ -305,7 +305,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("LB", yylineno, 0);
+	yylval.gnode = CreateGNode("LB", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return LB;
 	#endif	
@@ -314,7 +314,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("RB", yylineno, 0);
+	yylval.gnode = CreateGNode("RB", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return RB;
 	#endif
@@ -323,7 +323,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("LC", yylineno, 0);
+	yylval.gnode = CreateGNode("LC", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return LC;
 	#endif	
@@ -332,7 +332,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("RC", yylineno, 0);
+	yylval.gnode = CreateGNode("RC", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return RC;
 	#endif
@@ -398,16 +398,3 @@ WHILE	while
 
 %%
 
-/*int main(int argc, char** argv) {
-	if(argc > 1) {
-		if(!(yyin = fopen(argv[1], "r"))) {
-			perror(argv[1]);
-			return 1;	
-		}	
-	}
-	yyrestart(yyin);
-	yyparse();
-	//yylex();
-	printf("this is the end\n");
-	return 0;
-}*/

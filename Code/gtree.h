@@ -51,6 +51,7 @@ struct node {
 		char str[53];
 		int type_int;
 		float type_float;
+		char relop[4];
 	};
 	//struct node* gparent;
 	int child_cnt;
