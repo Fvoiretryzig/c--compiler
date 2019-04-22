@@ -5,7 +5,7 @@
 #include "syntax.tab.h"
 
 typedef enum {
-	_INIT_, _BASIC_, _ARRAY_, _STRUCTURE_, _ID_ 
+	_INIT_, _BASIC_, _ARRAY_, _STRUCTURE_, _VAR_, _FUNC_
 } NodeType;
 
 typedef enum {

@@ -30,17 +30,17 @@ int add_symbol(struct node* n, char* name) {
 		return 1;
 	}
 	switch(node->n_type) {
-		case _BASIC_ :
-			new_sym->idkind = BASIC;
-			new_sym->u.type = n->u.type;
-			break;
-		case _ARRAY_ :
-			new_sym->idkind = ARRAY;
+		case _VAR_ :
+			new_sym->idkind = _VAR;
 			new_sym->u.type = n->u.type;
 			break;
 		case _STRUCTURE_ :
-			new_sym->idkind = STRUCTURE;
+			new_sym->idkind = _STRUCT;
 			new_sym->u.type = n->u.type;
+			break;
+		case _FUNC_:
+			free(new_sym);
+			return;
 			break;
 	}
 	strcpy(new_sym->name, name);

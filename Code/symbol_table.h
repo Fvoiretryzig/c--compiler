@@ -11,7 +11,7 @@ typedef struct FieldList_* FieldList;
 typedef enum idkind {_VAR, _STRUCT} IDKind;
 
 struct Type_ {
-	enum { BASIC, ARRAY, STRUCTURE, ID } kind;
+	enum { BASIC, ARRAY, STRUCTURE } kind;
 	union {
 		int basic;	//int = 1; float = 0
 		struct { 
@@ -30,6 +30,8 @@ typedef struct SymbolEntity_ {
 	IDkind idkind;
 	char name[55];
 	Type type;	
+	
+	int is_left;
 	
 	Symbol* next;
 } Symbol;

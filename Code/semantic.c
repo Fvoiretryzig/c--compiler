@@ -1,5 +1,6 @@
 #include "semantic.h"
 
+int top = -1;
 void semantic_analysis(struct node* n) {
 	if(n == NULL)
 		return;
@@ -34,61 +35,282 @@ helper(Extdeflist_Null) {
 
 }
 helper(Extdef_SpecifierExtdeclistSemi) {
-
+	struct node* Specifier = n->gchild[0];
+	struct node* Extdeclist = n->gchild[1];
+	
+	semantic_analysis(Specifier);
+	Extdeclist->u.type = Specifier->u.type;
+	semantic_analysis(Extdeclist);
+	
+	//TODO()?????
+	return;
 }
 helper(Extdef_SpecifierSemi) {
-
+	struct node* Specifier = n->gchild[0];
+	
+	semantic_analysis(Specifier);
+	
+	//TODO()
 }
 helper(Extdef_SpcifierFundecCompst) {
-
+	struct node* Specifier = n->child[0];
+	struct node* Fundec = n->child[1];
+	struct node* Compst = n->child[2];
+	
+	semantic_analysis(Specifier);
+	Fundec->u.func.retType = Specifier->u.type;
+	semantic_analysis(Fundec);
+	semantic_analysis(Compst);
+	
+	//TODO()
 }
 helper(Extdeclist_Vardec) {
-
+	struct node* Vardec = n->child[0];
+	
+	semantic_analysis(Vardec);
+	//TODO();
 }
 helper(Extdeclist_VardecCommaExtdeclist) {
-
+	struct node* Vardec = n->child[0];
+	struct node* Extdeclist = n->child[2];
+	
+	semantic_analysis(Vardec);
+	semantic_analysis(Extdeclist);
+	
+	//TODO();
 }
 helper(Specifier_Type) {
-
+	struct node* ttype = n->child[0];
+	char* basic_type = ttype->str;
+	
+	if(!strcmp(basic_type, "int")) {
+		n->u.type = (Type)malloc(sizeof(Type_));
+		n->u.type->kind = BASIC;
+		n->u.type->u.basic = 1;
+	}
+	else if(!strcmp(basic_type, "float")) {
+		n->u.type = (Type)malloc(sizeof(Type_));
+		n->u.type->kind = BASIC;
+		n->u.type->u.basic = 0;
+	}
+	
+	return;
 }
 helper(Specifier_Structspecifier) {
-
+	struct node* Structspecifier = n->child[0];
+	
+	semantic_analysis(Structspecifier);
+	n->u.type = Structspecifier->u.type;
+	
+	return;
 }
 helper(StructSpecifier_StructOpttagLcDeflistRc) {
-
+	//两种情况判断
+	struct node* Opttag = n->child[1];
+	//还没处理没有名字的情况 //TODO()
+	struct node* Deflist = n->child[3];
+	
+	semantic_analysis(Opttag);
+	char* name = Opttag->str;
+	
+	strcpy(n->str, name);
+	n->u.type = (Type)malloc(sizeof(Type_));
+	n->u.type->kind = STRUCTURE;
+	n->n_type = _STRUCTURE_;
+	n->u.type->u.structure = tmp_table[++top];
+	tmp_table[top] = NULL;
+	
+	symbol* sym = find_symbol(name);
+	if(sym != NULL) {	//类型和变量重名?
+		printf("Error type 16 at Line %d: Duplicated name \"%s\".\n", n->lineno, name);
+		return;
+	}
+	semantic_analysis(Deflist);
+	
+	//不知道内存分配这些问题对不对//TODO();
+	n->u.type->u.structure = (FieldList)malloc(sizeof(FieldList_));
+	memcpy(n->u.type->u.structure, tmp_table[top]);
+	free(tmp_table[top]);
+	add_symbol(n, name);
+	
+	top--;
+	return;
 }
 helper(StructSpecifier_StructTag) {
-
+	struct node* tag = n->child[1];
+	
+	semantic_analysis(tag);
+	char* name = tag->str;
+	
+	Symbol* sym = find_symbol(name);
+	if((sym == NULL) || sym->idkind != _STRUCT) {
+		printf("Error type 17 at Line %d: Undefined structure \"%s\".\n", n->lineno, name);
+	}
+	
+	n->u.type = tag->u.type;
+	//TODO();
 }
 helper(Opttag_Id) {
-
+	struct node* id = n->child[0];
+	char* name = id->str;
+	
+	strcpy(n->str, name);
+	
+	return;
 }
 helper(Opttag_Null) {
-
+	//no name
 }
 helper(Tag_Id) {
-
+	struct node* id = n->child[0];
+	char* name = id->str;
+	
+	strcpy(n->str, name);
+	
+	return;
 }
 helper(Vardec_Id) {
-
+	struct node* id = n->child[0];
+	char* name = id->str;
+	
+	id->u.type = n->u.type;
+	id->n_type = _VAR_;
+	
+	if(top == -1) {
+		Symbol* sym = find_symbol(name);
+		if(sym != NULL && sym->idkind == _VAR) {
+			printf("Error type 3 at Line %d: Redefined variable \"%s\".\n", n->lineno, name);
+			return;
+		}
+		else {
+			int ret = add_symbol(id, name);
+			if(ret) {
+				printf("add to symbol table error!\n");
+				return;
+			}
+		}	
+	}
+	else {
+		if(tmp_table[top] == NULL) {
+			FieldList new_field = (FieldList)malloc(sizeof(FieldList_));
+			strcpy(new_field->name, name);
+			new_field->type = id->u.type;
+			new_field->tail = NULL;
+			tmp_table[top] = new_field;
+		}
+		else {
+			FieldList field = tpm_table[top];
+			while(field->tail != NULL) {
+				if(!strcmp(name, field->name)) {
+					printf("Error type 15 at Line %d: Redefined field \"%s\".", n->lineno, name);
+					return;
+				}
+			}
+			FieldList new_field = (FieldList)malloc(sizeof(FieldList_));
+			strcpy(new_field->name, name);
+			new_field->type = id->u.type;
+			new_field->tail = NULL;
+			field->tail = new_field;
+		}
+	}
+	return;
 }
 helper(Vardec_VardecLbIntRb) {
-
+	struct node* Vardec = n->child[0];
+	struct node* Int = n->child[1];
+	int size = Int->type_int;
+	
+	Vardec->type = n->type;
+		
 }
 helper(Fundec_IdLpVarlistRp) {
-
+	struct node* id = n->gchild[0];
+	struct node* Varlist = n->gchild[2];
+	char* name = id->str;
+	
+	id->n_type = _FUNC_;
+	id->u.func.retType = n->u.func.retType;
+	
+	Varlist->u.func.argc = 0;
+	Varlist->u.func.argv = (Type*)malloc(sizeof(Type)*MAX_ARGC);
+	semantic_analysis(Varlist);
+	
+	id->u.func.argc = Varlist->u.func.argc;
+	id->u.func.argv = Varlist->u.func.argv;
+	
+	SymbolF* symF = find_symbolF(name);
+	if(symF != NULL) {
+		printf("Error type 4 at Line %d: Redefined function \"%s\".\n", n->lineno, name);
+		return;
+	}
+	int ret = add_symbolF(n, name);
+	if(ret) {
+		printf("error when add func %s\n", name);
+		return;
+	}
+	return;
 }
 helper(Fundec_IdLpRp) {
-
+	struct node* id = n->gchild[0];
+	char* name = id->str;
+	
+	id->u.n_type = _FUNC_;
+	id->u.func.retType = n->u.func.retType;
+	id->u.func.argc = 0;
+	
+	SymbolF* symF = find_symbolF(name);
+	if(symF != NULL) {
+		printf("Error type 4 at Line %d: Redefined function \"%s\".\n", n->lineno, name);
+		return;
+	}
+	int ret = add_symbolF(n, name);
+	if(ret) {
+		printf("error when add func %s\n", name);
+		return;
+	}
+	return;
 }
 helper(Varlist_ParamdecCommaVarlist) {
-
+	struct node* Paramdec = n->gchild[0];
+	struct node* Varlist = n->gchild[2];
+	
+	Paramdec->u.func.argc = n->u.func.argc;
+	Paramdec->u.func.argv = n->u.func->argv;
+	semantic_analysis(Paramdec);
+	
+	n->u.func.argc = Paramdec->u.func.argc;
+	
+	Varlist->u.func.argc = n->u.func.argc;
+	varlist->u.func.argv = n->u.func->argv;
+	semantic_analysis(Varlist);
+	
+	n->u.func.argc = Varlist->u.func.argc;
+	
+	return;
 }
 helper(Varlist_Paramdec) {
-
+	struct node* Paramdec = n->gchild[0];
+	
+	Paramdec->u.func.argc = n->u.func.argc;
+	Paramdec->u.func.argv = n->u.func->argv;
+	semantic_analysis(Paramdec);
+	
+	n->u.func.argc = Paramdec->u.func.argc;
+	
+	return;
 }
 helper(Paramdec_SpecifierVardec) {
-
+	struct node* Specifier = n->gchild[0];
+	struct node* Vardec = n->gchild[1];
+	
+	semantic_analysis(Specifier);
+	Vardec->u.type = Specifier->u.type;
+	
+	semantic_analysis(Vardec);	//是否要特判加入符号表?
+	
+	n->u.func.argv[n->u.func.argc++] = Vardec->u.type;
+	
+	return;
 }
 helper(Compst_LcDeflistStmtlistRc) {
 
@@ -118,25 +340,53 @@ helper(Stmt_WhileLpExpRpStmt) {
 
 }
 helper(Deflist_DefDeflist) {
-
+	struct node* Def = n->gchild[0];
+	struct node* Deflist = n->gchild[1];
+	
+	semantic_analysis(Def);
+	if(Deflist != NULL)
+		semantic_analysis(Deflist);
+	return;
 }
 helper(Deflist_Null) {
 
 }
 helper(Def_SpecifierDeclistSemi) {
-
+	struct node* Specifier = n->gchild[0];
+	struct node* Declist = n->gchild[1];
+	
+	semantic_analysis(Specifier);
+	Declist->u.type = Specifier->u.type;
+	semantic_analysis(Declist);
 }
 helper(Declist_Dec) {
-
+	struct node* Dec = n->gchild[0];
+	
+	Dec->u.type = n->u.type;
+	semantic_analysis(Dec);
 }
 helper(Declist_DecCommaDeclist) {
-
+	struct node* Dec = n->gchild[0];
+	struct node* Declist = n->gchild[2];
+	
+	Dec->u.type = n->u.type;
+	semantic_analysis(Dec);
+	
+	semantic_analysis(Declist);
 }
 helper(Dec_Vardec) {
-
+	struct node* Vardec = n->gchild[0];
+	
+	Vardec->u.type = n->u.type;
+	semantic_analysis(Vardec);
 }
 helper(Dec_VardecAssignopExp) {
-
+	struct node* Vardec = n->gchild[0];
+	struct node* Exp = n->gchild[2];
+	
+	Vardec->u.type = n->u.type;
+	semantic_analysis(Vardec);
+	semantic_analysis(Exp);
 }
 helper(Exp_ExpAssignopExp) {
 	struct node* E1 = n->gchild[0];
@@ -455,26 +705,6 @@ helper(Exp_IdLpArgsRp) {
 	struct node* args = n->gchild[2];
 	char* name = id->str;
 	
-	SymbolF* symF = find_symbolF(name);
-	Symbol* sym = find_symbol(name);
-	if(sym != NULL) {
-		printf("Error type 11 at Line %d: \"%s\" is not a function.\n", n->lineno, name);
-		return;
-	}
-	if(symF == NULL) {
-		printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, name);
-		return;
-	}
-	semantic_analysis(args);
-	
-	if(args->u.func.argc != symF->argc) {
-		printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"%s\".\n", n->lineno, name, args->str);//TODO()输出内容有问题
-	}
-	else {
-		
-	}
-	strcpy(n->str, name);
-	//TODO() 函数参数怎么存
 }
 helper(Exp_IdLpRp) {
 
