@@ -31,8 +31,6 @@ typedef struct SymbolEntity_ {
 	char name[55];
 	Type type;	
 	
-	int is_left;
-	
 	Symbol* next;
 } Symbol;
 typedef struct SymbolEntityFunc_ {

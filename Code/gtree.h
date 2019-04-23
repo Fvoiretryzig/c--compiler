@@ -23,7 +23,7 @@ typedef enum {
 	Paramdec_SpecifierVardec,
 	Compst_LcDeflistStmtlistRc,
 	Stmtlist_StmtStmtlist, Stmtlist_Null,
-	Stmt_ExpSemi, Stmt_Compst, Stmt_ReturnExpSemi, Stmt_IfLpExpRpStmtElse, Stmt_IfLpExpRpStmtElseStmt, Stmt_WhileLpExpRpStmt,
+	Stmt_ExpSemi, Stmt_Compst, Stmt_ReturnExpSemi, Stmt_IfLpExpRpStmtElseStmt, Stmt_WhileLpExpRpStmt,
 	Deflist_DefDeflist, Deflist_Null, 
 	Def_SpecifierDeclistSemi,
 	Declist_Dec, Declist_DecCommaDeclist,
@@ -55,6 +55,7 @@ struct node {
 	};
 	//struct node* gparent;
 	int child_cnt;
+	int is_left;
 	struct node* gchild[10];
 };
  
