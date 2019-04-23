@@ -48,7 +48,7 @@ struct node {
 	NodeType n_type;
 	Rule rule;
 	union {
-		char str[53];
+		char str[60];
 		int type_int;
 		float type_float;
 		char relop[4];
