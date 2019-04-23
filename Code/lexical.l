@@ -251,7 +251,7 @@ WHILE	while
 	#ifdef LEX
 	printf("this is \033[47;30msymbol\033[0m \033[46;37m%s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
-	yylval.gnode = CreateGNode("AND", yylineno, Terminal, 0);
+	yylval.gnode = CreateGNode("AND", yylineno, _INIT_, Terminal, 0);
 	#ifdef SYNTAX	
 		return AND;
 	#endif	

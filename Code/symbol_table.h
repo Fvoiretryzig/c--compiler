@@ -6,45 +6,31 @@
 
 #define SYMBOL_TABLE_H
 #ifdef SYMBOL_TABLE_H
-typedef struct Type_* Type;
-typedef struct FieldList_* FieldList;
-typedef enum idkind {_VAR, _STRUCT} IDKind;
 
-struct Type_ {
-	enum { BASIC, ARRAY, STRUCTURE } kind;
-	union {
-		int basic;	//int = 1; float = 0
-		struct { 
-			Type elem; int size; 
-		} array;
-		FieldList structure;
-	} u;
-};
-struct FieldList_ {
-	char name[55]; // 域的名字
-	Type type; // 域的类型
-	FieldList tail; // 下一个域
-};
+typedef enum {_VAR, _STRUCT} IDkind;
 
-typedef struct SymbolEntity_ {
+typedef struct Symbol_* Symbol;
+typedef struct SymbolF_* SymbolF;
+struct Symbol_ {
 	IDkind idkind;
 	char name[55];
 	Type type;	
 	
-	Symbol* next;
-} Symbol;
-typedef struct SymbolEntityFunc_ {
+	Symbol next;
+};
+struct SymbolF_ {
 	char name[55];
 	Type retType;
 	int argc;
 	Type* argv;
 	
-	SymbolF* next;
-} SymbolF;
+	SymbolF next;
+};
 
 void init_table();
 int add_symbol(struct node* n, char* name);
 int add_symbolF(struct node* n, char* name);
-Symbol* find_symbol(char* name);
-SymbolF* find_symbolF(char* name)
+Symbol find_symbol(char* name);
+SymbolF find_symbolF(char* name);
+
 #endif

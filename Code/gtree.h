@@ -5,9 +5,27 @@
 #include "syntax.tab.h"
 
 typedef enum {
-	_INIT_, _BASIC_, _ARRAY_, _STRUCTURE_, _VAR_, _FUNC_
+	_ID_, _INIT_, _BASIC_, _ARRAY_, _STRUCTURE_, _VAR_, _FUNC_
 } NodeType;
 
+typedef struct Type_* Type;
+typedef struct FieldList_* FieldList;
+
+struct Type_ {
+	enum { BASIC, ARRAY, STRUCTURE } kind;
+	union {
+		int basic;	//int = 1; float = 0
+		struct { 
+			Type elem; int size; 
+		} array;
+		FieldList structure;
+	} u;
+};
+struct FieldList_ {
+	char name[55]; // 域的名字
+	Type type; // 域的类型
+	FieldList tail; // 下一个域
+};
 typedef enum {
 	Program_Extdeflist,
 	Extdeflist_ExtdefExtdeflist, Extdeflist_Null,
@@ -39,11 +57,11 @@ struct node {
 	int lineno;
 	union {
 		Type type;
-		struct func {
+		struct {
 			Type retType;
 			int argc;
 			Type* argv;
-		};
+		}func;
 	} u;
 	NodeType n_type;
 	Rule rule;
@@ -63,6 +81,7 @@ struct node* CreateIntGNode(int int_num, int lineno);
 struct node* CreateFloatGNode(float float_num, int lineno);
 struct node* CreateIdGNode(char* id, int lineno);
 struct node* CreateTypeGNode(char* type, int lineno);
+struct node* CreateRelopGNode(int lineno, char* op);
 struct node* CreateGNode(char* name, int lineno, NodeType node_t, Rule rule_t, int child_cnt, ...);
 int tran(struct node* r, int layer);
 
