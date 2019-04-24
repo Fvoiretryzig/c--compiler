@@ -1031,60 +1031,42 @@ void F_Exp_IdLpArgsRp(struct node* n){
 	args->func.argv = (Type*)malloc(sizeof(Type)*MAX_ARGC);
 	semantic_analysis(args);
 	
+	strcpy(n->str, name);;
+	strcat(n->str, "\(");
+	strcat(n->str, args->str);
+	strcat(n->str, ")");
+	
 	SymbolF symF = find_symbolF(name);
 	if(symF == NULL) {
-		printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, name);
+		printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, n->str);
 	}
 	
-	strcpy(n->str, name);
-	char tmp_argv[55];
-	strcat(tmp_argv, "(");
-	int cnt = symF->argc;
-	for(int i = 0; i<cnt; i++) {
-		Type t = symF->argv[i];
-		if(t->kind == BASIC) {
-			if(t->u.basic)
-				strcat(tmp_argv, "int");
-			else if(!t->u.basic)
-				strcat(tmp_argv, "float");
+	if(symF != NULL) {
+		if(args->func.argc != symF->argc)
+			printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"%s\".\n", n->lineno, n->str, 	n->str);
+		int i = 0;
+		int is_argfault = 0;
+		while(symF->argv[i] != NULL && args->func.argv[i] != NULL) {
+			if(!isEqual(symF->argv[i], args->func.argv[i])) {
+				printf("type 9 error");
+				is_argfault = 1;
+				break;
+			}
+			i++;
 		}
-		else if(t->kind == ARRAY) {
-			strcat(tmp_argv, "array");
-		}
-		else if(t->kind == STRUCTURE) {
-			char* s_name = t->u.structure->name;
-			strcat(tmp_argv, s_name);
-		}
-		if(i != cnt-1)
-			strcat(tmp_argv, ", ");
-	}
-	strcat(tmp_argv, ")");
-	//strcat(tmp_argv, '\0');
-	strcat(n->str, tmp_argv);
-	if(args->func.argc != symF->argc)
-		printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"%s\".\n", n->lineno, n->str, tmp_argv);
-	int i = 0;
-	int is_argfault = 0;
-	while(symF->argv[i] != NULL && args->func.argv[i] != NULL) {
-		if(!isEqual(symF->argv[i], args->func.argv[i])) {
-			printf("type 9 error");
-			is_argfault = 1;
-			break;
-		}
-		i++;
-	}
-	n->func.retType = symF->retType;
-	if(!is_argfault) {
 		n->func.retType = symF->retType;
-		n->func.argc = symF->argc;
-		n->func.argv = symF->argv;
-	}
-	else {
-		n->func.argc = -1;
-		n->func.argv = NULL;
+		if(!is_argfault) {
+			n->func.retType = symF->retType;
+			n->func.argc = symF->argc;
+			n->func.argv = symF->argv;
+		}
+		else {
+			n->func.argc = -1;
+			n->func.argv = NULL;
+		}
 	}
 	n->is_left = 0;
-	
+	//printf("haha\n");
 	return;
 }
 void F_Exp_IdLpRp(struct node* n){
@@ -1231,11 +1213,18 @@ void F_Args_ExpCommaArgs(struct node* n){
 	struct node* Args = n->gchild[2];
 	
 	semantic_analysis(Exp);
+	if(n->str) 
+		strcat(n->str, Exp->str);
+	else 
+		strcpy(n->str, Exp->str);
 	n->func.argv[n->func.argc++] = Exp->type;
 	
 	Args->func.argc = n->func.argc;
 	Args->func.argv = n->func.argv;
+	
 	semantic_analysis(Args);
+	strcat(n->str, ", ");
+	strcat(n->str, Args->str);
 	n->func.argc = Args->func.argc;
 	
 	return;
@@ -1248,7 +1237,9 @@ void F_Args_Exp(struct node* n) {
 	struct node* Exp = n->gchild[0];
 	
 	semantic_analysis(Exp);
-	n->func.argv[n->func.argc++] = Exp->type;
+	strcpy(n->str, Exp->str);
+	if(Exp->type)
+		n->func.argv[n->func.argc++] = Exp->type;
 	
 	return;
 }
