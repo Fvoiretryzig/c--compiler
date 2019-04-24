@@ -29,5 +29,6 @@ int main(int argc, char** argv) {
 	//printf("this is the end\n");
 	init_table();
 	semantic_analysis(root);
+	printf("after semantic analysis\n");
 	return 0;
 }

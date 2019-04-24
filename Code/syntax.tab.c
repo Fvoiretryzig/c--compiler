@@ -1468,8 +1468,8 @@ yyreduce:
 					printf("\033[46;37mProgram: ExtDefList(%d)\033[0m\n", (yyloc).first_line);
 					#endif
 					(yyval.gnode) = CreateGNode("Program", (yyloc).first_line, _INIT_, Program_Extdeflist, 1, (yyvsp[0].gnode));
-					if(!is_error)
-						tran((yyval.gnode), 0);
+					//if(!is_error)
+					//	tran($$, 0);
 					root = (yyval.gnode);
 				}
 #line 1476 "syntax.tab.c" /* yacc.c:1646  */

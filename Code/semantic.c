@@ -123,7 +123,7 @@ void F_Extdef_SpecifierExtdeclistSemi(struct node* n){
 	struct node* Extdeclist = n->gchild[1];
 	
 	semantic_analysis(Specifier);
-	Extdeclist->u.type = Specifier->u.type;
+	Extdeclist->type = Specifier->type;
 	semantic_analysis(Extdeclist);
 	
 	return;
@@ -149,9 +149,9 @@ void F_Extdef_SpcifierFundecCompst(struct node* n){
 	struct node* Compst = n->gchild[2];
 	
 	semantic_analysis(Specifier);
-	Fundec->u.func.retType = Specifier->u.type;
+	Fundec->func.retType = Specifier->type;
 	semantic_analysis(Fundec);
-	Compst->u.func.retType = Specifier->u.type;
+	Compst->func.retType = Specifier->type;
 	semantic_analysis(Compst);
 	
 	return;
@@ -187,14 +187,14 @@ void F_Specifier_Type(struct node* n){
 	char* basic_type = ttype->str;
 	
 	if(!strcmp(basic_type, "int")) {
-		n->u.type = (Type)malloc(sizeof(struct Type_));
-		n->u.type->kind = BASIC;
-		n->u.type->u.basic = 1;
+		n->type = (Type)malloc(sizeof(struct Type_));
+		n->type->kind = BASIC;
+		n->type->u.basic = 1;
 	}
 	else if(!strcmp(basic_type, "float")) {
-		n->u.type = (Type)malloc(sizeof(struct Type_));
-		n->u.type->kind = BASIC;
-		n->u.type->u.basic = 0;
+		n->type = (Type)malloc(sizeof(struct Type_));
+		n->type->kind = BASIC;
+		n->type->u.basic = 0;
 	}
 	
 	return;
@@ -206,7 +206,7 @@ void F_Specifier_Structspecifier(struct node* n){
 	struct node* Structspecifier = n->gchild[0];
 	
 	semantic_analysis(Structspecifier);
-	n->u.type = Structspecifier->u.type;
+	n->type = Structspecifier->type;
 	
 	return;
 }
@@ -229,10 +229,10 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	}
 	if(!no_name)
 		strcpy(n->str, name);
-	n->u.type = (Type)malloc(sizeof(struct Type_));
-	n->u.type->kind = STRUCTURE;
+	n->type = (Type)malloc(sizeof(struct Type_));
+	n->type->kind = STRUCTURE;
 	n->n_type = _STRUCTURE_;
-	n->u.type->u.structure = tmp_table[++top];
+	n->type->u.structure = tmp_table[++top];
 	tmp_table[top] = NULL;
 	
 	if(!no_name) {
@@ -245,8 +245,8 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	semantic_analysis(Deflist);
 	
 	//不知道内存分配这些问题对不对//TODO();
-	n->u.type->u.structure = (FieldList)malloc(sizeof(struct FieldList_));
-	memcpy(n->u.type->u.structure, tmp_table[top], sizeof(tmp_table[top]));
+	n->type->u.structure = (FieldList)malloc(sizeof(struct FieldList_));
+	memcpy(n->type->u.structure, tmp_table[top], sizeof(tmp_table[top]));
 	free(tmp_table[top]);
 	if(!no_name)
 		add_symbol(n, name);
@@ -266,7 +266,7 @@ void F_StructSpecifier_StructTag(struct node* n){
 	if((sym == NULL) || sym->idkind != _STRUCT)
 		printf("Error type 17 at Line %d: Undefined structure \"%s\".\n", n->lineno, name);
 	
-	n->u.type = tag->u.type;
+	n->type = tag->type;
 	
 	return;
 }
@@ -305,10 +305,10 @@ void F_Vardec_Id(struct node* n){
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 	
-	id->u.type = n->u.type;
+	id->type = n->type;
 	id->n_type = _VAR_;
 	
-	if(top == -1) {
+	if(top == -1) {	
 		Symbol sym = find_symbol(name);
 		if(sym != NULL && sym->idkind == _VAR)
 			printf("Error type 3 at Line %d: Redefined variable \"%s\".\n", n->lineno, name);
@@ -322,7 +322,7 @@ void F_Vardec_Id(struct node* n){
 		if(tmp_table[top] == NULL) {
 			FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
 			strcpy(new_field->name, name);
-			new_field->type = id->u.type;
+			new_field->type = id->type;
 			new_field->tail = NULL;
 			tmp_table[top] = new_field;
 		}
@@ -334,7 +334,7 @@ void F_Vardec_Id(struct node* n){
 			}
 			FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
 			strcpy(new_field->name, name);
-			new_field->type = id->u.type;
+			new_field->type = id->type;
 			new_field->tail = NULL;
 			field->tail = new_field;
 		}
@@ -350,9 +350,9 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 	struct node* Int = n->gchild[1];
 	int size = Int->type_int;
 	
-	Vardec->u.type->kind = ARRAY;
-	Vardec->u.type->u.array.elem = n->u.type;
-	Vardec->u.type->u.array.size = size;	//大小不知道怎么测
+	Vardec->type->kind = ARRAY;
+	Vardec->type->u.array.elem = n->type;
+	Vardec->type->u.array.size = size;	//大小不知道怎么测
 	
 	semantic_analysis(Vardec);
 	
@@ -368,14 +368,14 @@ void F_Fundec_IdLpVarlistRp(struct node* n){
 	char* name = id->str;
 	
 	id->n_type = _FUNC_;
-	id->u.func.retType = n->u.func.retType;
+	id->func.retType = n->func.retType;
 	
-	Varlist->u.func.argc = 0;
-	Varlist->u.func.argv = (Type*)malloc(sizeof(Type)*MAX_ARGC);
+	Varlist->func.argc = 0;
+	Varlist->func.argv = (Type*)malloc(sizeof(Type)*MAX_ARGC);
 	semantic_analysis(Varlist);
 	
-	id->u.func.argc = Varlist->u.func.argc;
-	id->u.func.argv = Varlist->u.func.argv;
+	id->func.argc = Varlist->func.argc;
+	id->func.argv = Varlist->func.argv;
 	
 	SymbolF symF = find_symbolF(name);
 	if(symF != NULL)
@@ -394,8 +394,8 @@ void F_Fundec_IdLpRp(struct node* n){
 	char* name = id->str;
 	
 	id->n_type = _FUNC_;
-	id->u.func.retType = n->u.func.retType;
-	id->u.func.argc = 0;
+	id->func.retType = n->func.retType;
+	id->func.argc = 0;
 	
 	SymbolF symF = find_symbolF(name);
 	if(symF != NULL)
@@ -413,17 +413,17 @@ void F_Varlist_ParamdecCommaVarlist(struct node* n){
 	struct node* Paramdec = n->gchild[0];
 	struct node* Varlist = n->gchild[2];
 	
-	Paramdec->u.func.argc = n->u.func.argc;
-	Paramdec->u.func.argv = n->u.func.argv;
+	Paramdec->func.argc = n->func.argc;
+	Paramdec->func.argv = n->func.argv;
 	semantic_analysis(Paramdec);
 	
-	n->u.func.argc = Paramdec->u.func.argc;
+	n->func.argc = Paramdec->func.argc;
 	
-	Varlist->u.func.argc = n->u.func.argc;
-	Varlist->u.func.argv = n->u.func.argv;
+	Varlist->func.argc = n->func.argc;
+	Varlist->func.argv = n->func.argv;
 	semantic_analysis(Varlist);
 	
-	n->u.func.argc = Varlist->u.func.argc;
+	n->func.argc = Varlist->func.argc;
 	
 	return;
 }
@@ -434,11 +434,11 @@ void F_Varlist_Paramdec(struct node* n){
 	
 	struct node* Paramdec = n->gchild[0];
 	
-	Paramdec->u.func.argc = n->u.func.argc;
-	Paramdec->u.func.argv = n->u.func.argv;
+	Paramdec->func.argc = n->func.argc;
+	Paramdec->func.argv = n->func.argv;
 	semantic_analysis(Paramdec);
 	
-	n->u.func.argc = Paramdec->u.func.argc;
+	n->func.argc = Paramdec->func.argc;
 	
 	return;
 }
@@ -451,11 +451,11 @@ void F_Paramdec_SpecifierVardec(struct node* n){
 	struct node* Vardec = n->gchild[1];
 	
 	semantic_analysis(Specifier);
-	Vardec->u.type = Specifier->u.type;
+	Vardec->type = Specifier->type;
 	
 	semantic_analysis(Vardec);	//是否要特判加入符号表?先不管
 	
-	n->u.func.argv[n->u.func.argc++] = Vardec->u.type;
+	n->func.argv[n->func.argc++] = Vardec->type;
 	
 	return;
 }
@@ -467,7 +467,7 @@ void F_Compst_LcDeflistStmtlistRc(struct node* n){
 	struct node* Stmtlist = n->gchild[2];
 	
 	semantic_analysis(Deflist);
-	Stmtlist->u.func.retType = n->u.func.retType;
+	Stmtlist->func.retType = n->func.retType;
 	semantic_analysis(Stmtlist);
 	
 	return;
@@ -480,11 +480,11 @@ void F_Stmtlist_StmtStmtlist(struct node* n){
 	struct node* Stmt = n->gchild[0];
 	struct node* Stmtlist = n->gchild[1];
 	
-	Stmt->u.func.retType = n->u.func.retType;
+	Stmt->func.retType = n->func.retType;
 	semantic_analysis(Stmt);
 	
 	if(Stmtlist != NULL) {
-		Stmtlist->u.func.retType = n->u.func.retType;
+		Stmtlist->func.retType = n->func.retType;
 		semantic_analysis(Stmtlist);
 	}
 	return;
@@ -510,7 +510,7 @@ void F_Stmt_Compst(struct node* n){
 
 	struct node* Compst = n->gchild[0];
 	
-	Compst->u.func.retType = n->u.func.retType;
+	Compst->func.retType = n->func.retType;
 	semantic_analysis(Compst);
 	
 	return;
@@ -524,7 +524,7 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 	
 	semantic_analysis(Exp);
 	
-	if(!isEqual(Exp->u.type, n->u.func.retType)) {
+	if(!isEqual(Exp->type, n->func.retType)) {
 		printf("Error type 8 at Line %d: Type mismatched for return.\n", n->lineno);
 		return;
 	}
@@ -540,14 +540,14 @@ void F_Stmt_IfLpExpRpStmtElseStmt(struct node* n){
 	struct node* Stmt2 = n->gchild[6];
 	
 	semantic_analysis(Exp);	
-	if(Exp->u.type->kind != BASIC)
+	if(Exp->type->kind != BASIC)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	else if(Exp->u.type->u.basic != 1)
+	else if(Exp->type->u.basic != 1)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 	
-	Stmt1->u.func.retType = n->u.func.retType;
+	Stmt1->func.retType = n->func.retType;
 	semantic_analysis(Stmt1);
-	Stmt2->u.func.retType = n->u.func.retType;
+	Stmt2->func.retType = n->func.retType;
 	semantic_analysis(Stmt2);
 	
 	return;
@@ -561,12 +561,12 @@ void F_Stmt_WhileLpExpRpStmt(struct node* n){
 	struct node* Stmt = n->gchild[4];
 	
 	semantic_analysis(Exp);
-	if(Exp->u.type->kind != BASIC)
+	if(Exp->type->kind != BASIC)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	else if(Exp->u.type->u.basic != 1)
+	else if(Exp->type->u.basic != 1)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 	
-	Stmt->u.func.retType = n->u.func.retType;
+	Stmt->func.retType = n->func.retType;
 	semantic_analysis(Stmt);
 	
 	return;
@@ -596,7 +596,7 @@ void F_Def_SpecifierDeclistSemi(struct node* n){
 	struct node* Declist = n->gchild[1];
 	
 	semantic_analysis(Specifier);
-	Declist->u.type = Specifier->u.type;
+	Declist->type = Specifier->type;
 	semantic_analysis(Declist);
 }
 void F_Declist_Dec(struct node* n){
@@ -606,8 +606,10 @@ void F_Declist_Dec(struct node* n){
 
 	struct node* Dec = n->gchild[0];
 	
-	Dec->u.type = n->u.type;
+	Dec->type = n->type;
 	semantic_analysis(Dec);
+	
+	return;
 }
 void F_Declist_DecCommaDeclist(struct node* n){
 	#ifdef DEBUG_SEMANTIC
@@ -617,7 +619,7 @@ void F_Declist_DecCommaDeclist(struct node* n){
 	struct node* Dec = n->gchild[0];
 	struct node* Declist = n->gchild[2];
 	
-	Dec->u.type = n->u.type;
+	Dec->type = n->type;
 	semantic_analysis(Dec);
 	
 	semantic_analysis(Declist);
@@ -629,7 +631,7 @@ void F_Dec_Vardec(struct node* n){
 
 	struct node* Vardec = n->gchild[0];
 	
-	Vardec->u.type = n->u.type;
+	Vardec->type = n->type;
 	semantic_analysis(Vardec);
 }
 void F_Dec_VardecAssignopExp(struct node* n){
@@ -640,7 +642,7 @@ void F_Dec_VardecAssignopExp(struct node* n){
 	struct node* Vardec = n->gchild[0];
 	struct node* Exp = n->gchild[2];
 	
-	Vardec->u.type = n->u.type;
+	Vardec->type = n->type;
 	semantic_analysis(Vardec);
 	semantic_analysis(Exp);
 	
@@ -657,14 +659,19 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
-	
-	if(!isEqual(E1->u.type, E2->u.type)) 
-		printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
-	if(!E1->is_left)
-		printf("Error type 6 at Line %d: The left-hand side of an assignment must be a variable.\n", n->lineno);
-	n->u.type = E1->u.type;	//??????????
+	if(E1->type != NULL && E2->type != NULL) {
+		if(!isEqual(E1->type, E2->type)) 
+			printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
+		if(!E1->is_left)
+			printf("Error type 6 at Line %d: The left-hand side of an assignment must be a variable.\n", n->lineno);
+		n->type = E1->type;
+	}
+	else 
+		printf("//E1: %p E2: %p\n", E1->type, E2->type);
+
 	n->is_left = 0;
 	//TODO()根据类型进行判断再把E2的值赋给E1
+		
 	return;
 }
 void F_Exp_ExpAndExp(struct node* n){
@@ -678,11 +685,11 @@ void F_Exp_ExpAndExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
-	if(E1->u.type->kind != BASIC || E2->u.type->kind != BASIC)
+	if(E1->type->kind != BASIC || E2->type->kind != BASIC)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	else if(E1->u.type->u.basic != 1 || E2->u.type->u.basic != 1)
+	else if(E1->type->u.basic != 1 || E2->type->u.basic != 1)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	n->u.type = E1->u.type;
+	n->type = E1->type;
 	n->type_int = E1->type_int && E2->type_int;
 	n->n_type = _BASIC_;
 	n->is_left = 0;
@@ -700,11 +707,11 @@ void F_Exp_ExpOrExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
-	if(E1->u.type->kind != BASIC || E2->u.type->kind != BASIC)
+	if(E1->type->kind != BASIC || E2->type->kind != BASIC)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	else if(E1->u.type->u.basic != 1 || E2->u.type->u.basic != 1)
+	else if(E1->type->u.basic != 1 || E2->type->u.basic != 1)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	n->u.type = E1->u.type;
+	n->type = E1->type;
 	n->type_int = E1->type_int || E2->type_int;
 	n->n_type = _BASIC_;
 	n->is_left = 0;
@@ -724,24 +731,24 @@ void F_Exp_ExpRelopExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 
-	if(E1->u.type->kind != BASIC || E2->u.type->kind != BASIC)
+	if(E1->type->kind != BASIC || E2->type->kind != BASIC)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	if(E1->u.type->u.basic != E2->u.type->u.basic) {
-		if(E1->u.type->u.basic == 1) {
-			E1->u.type->u.basic = 0;
+	if(E1->type->u.basic != E2->type->u.basic) {
+		if(E1->type->u.basic == 1) {
+			E1->type->u.basic = 0;
 			E1->type_float = E1->type_int;
 		}
 		else {
-			E2->u.type->u.basic = 0;
+			E2->type->u.basic = 0;
 			E2->type_float = E1->type_int;
 		}
 		is_float = 1;
 	}
-	if(E1->u.type->u.basic == 0) {
+	if(E1->type->u.basic == 0) {
 		is_float = 1;
 	}
-	n->u.type->kind = BASIC;
-	n->u.type->u.basic = 1;
+	n->type->kind = BASIC;
+	n->type->u.basic = 1;
 	n->n_type = _BASIC_;
 	char* op = Relop->relop;
 	int cas = -1;
@@ -806,33 +813,31 @@ void F_Exp_ExpPlusExp(struct node* n){
 	struct node* E1 = n->gchild[0];
 	struct node* E2 = n->gchild[2];
 	
-	E1->u.type = (Type)malloc(sizeof(struct Type_));
-	E2->u.type = (Type)malloc(sizeof(struct Type_));	
-	semantic_analysis(E1);
+	semantic_analysis(E1);	
 	semantic_analysis(E2);
-	
-	if(E1->u.type == NULL) 
-		printf("jaja\n");
-	if(E1->u.type->kind == BASIC && E2->u.type->kind == BASIC) {
-		if(E1->u.type->u.basic != E2->u.type->u.basic) {
+
+	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
+		if(E1->type->u.basic != E2->type->u.basic) {
 			printf("float and int calculate!!\n");
-			if(E1->u.type->u.basic == 1) {
-				E1->u.type->u.basic = 0;
+			if(E1->type->u.basic == 1) {
+				E1->type->u.basic = 0;
 				E1->type_float = E1->type_int;
 			}
 			else {
-				E2->u.type->u.basic = 0;
+				E2->type->u.basic = 0;
 				E2->type_float = E2->type_int;
 			}
 			n->type_float = E1->type_float + E2->type_float;
 		}
-		else if(E1->u.type->u.basic == 0) {
+		else if(E1->type->u.basic == 0) {
 			n->type_float = E1->type_float + E2->type_float;
 		}
-		else if(E1->u.type->u.basic == 1) {
+		else if(E1->type->u.basic == 1) {
+			
 			n->type_int = E1->type_int + E2->type_int;
 		}
-		n->u.type = E1->u.type;
+		
+		n->type = E1->type;
 		n->n_type = _BASIC_;
 	}
 	else
@@ -852,26 +857,26 @@ void F_Exp_ExpMinusExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
-	if(E1->u.type->kind == BASIC && E2->u.type->kind == BASIC) {
-		if(E1->u.type->u.basic != E2->u.type->u.basic) {
+	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
+		if(E1->type->u.basic != E2->type->u.basic) {
 			printf("float and int calculate!!\n");
-			if(E1->u.type->u.basic == 1) {
-				E1->u.type->u.basic = 0;
+			if(E1->type->u.basic == 1) {
+				E1->type->u.basic = 0;
 				E1->type_float = E1->type_int;
 			}
 			else {
-				E2->u.type->u.basic = 0;
+				E2->type->u.basic = 0;
 				E2->type_float = E2->type_int;
 			}
 			n->type_float = E1->type_float - E2->type_float;
 		}
-		else if(E1->u.type->u.basic == 0) {
+		else if(E1->type->u.basic == 0) {
 			n->type_float = E1->type_float - E2->type_float;
 		}
-		else if(E1->u.type->u.basic == 1) {
+		else if(E1->type->u.basic == 1) {
 			n->type_int = E1->type_int - E2->type_int;
 		}
-		n->u.type = E1->u.type;
+		n->type = E1->type;
 		n->n_type = _BASIC_;
 	}
 	else
@@ -891,26 +896,26 @@ void F_Exp_ExpStarExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
-	if(E1->u.type->kind == BASIC && E2->u.type->kind == BASIC) {
-		if(E1->u.type->u.basic != E2->u.type->u.basic) {
+	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
+		if(E1->type->u.basic != E2->type->u.basic) {
 			printf("float and int calculate!!\n");
-			if(E1->u.type->u.basic == 1) {
-				E1->u.type->u.basic = 0;
+			if(E1->type->u.basic == 1) {
+				E1->type->u.basic = 0;
 				E1->type_float = E1->type_int;
 			}
 			else {
-				E2->u.type->u.basic = 0;
+				E2->type->u.basic = 0;
 				E2->type_float = E2->type_int;
 			}
 			n->type_float = E1->type_float * E2->type_float;
 		}
-		else if(E1->u.type->u.basic == 0) {
+		else if(E1->type->u.basic == 0) {
 			n->type_float = E1->type_float * E2->type_float;
 		}
-		else if(E1->u.type->u.basic == 1) {
+		else if(E1->type->u.basic == 1) {
 			n->type_int = E1->type_int * E2->type_int;
 		}
-		n->u.type = E1->u.type;
+		n->type = E1->type;
 		n->n_type = _BASIC_;
 	}
 	else
@@ -930,26 +935,26 @@ void F_Exp_ExpDivExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
-	if(E1->u.type->kind == BASIC && E2->u.type->kind == BASIC) {
-		if(E1->u.type->u.basic != E2->u.type->u.basic) {
+	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
+		if(E1->type->u.basic != E2->type->u.basic) {
 			printf("float and int calculate!!\n");
-			if(E1->u.type->u.basic == 1) {
-				E1->u.type->u.basic = 0;
+			if(E1->type->u.basic == 1) {
+				E1->type->u.basic = 0;
 				E1->type_float = E1->type_int;
 			}
 			else {
-				E2->u.type->u.basic = 0;
+				E2->type->u.basic = 0;
 				E2->type_float = E2->type_int;
 			}
 			n->type_float = E1->type_float / E2->type_float;
 		}
-		else if(E1->u.type->u.basic == 0) {
+		else if(E1->type->u.basic == 0) {
 			n->type_float = E1->type_float / E2->type_float;
 		}
-		else if(E1->u.type->u.basic == 1) {
+		else if(E1->type->u.basic == 1) {
 			n->type_int = E1->type_int / E2->type_int;
 		}
-		n->u.type = E1->u.type;
+		n->type = E1->type;
 		n->n_type = _BASIC_;
 	}
 	else
@@ -965,7 +970,7 @@ void F_Exp_LpExpRp(struct node* n){
 	struct node* E1 = n->gchild[0];
 	
 	semantic_analysis(E1);
-	n->u.type = E1->u.type;
+	n->type = E1->type;
 	n->is_left = 0;
 	
 	return;
@@ -978,13 +983,13 @@ void F_Exp_MinusExp(struct node* n){
 	struct node* E1 = n->gchild[0];
 	semantic_analysis(E1);
 	
-	if(E1->u.type->kind != BASIC)
+	if(E1->type->kind != BASIC)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 	
-	n->u.type = E1->u.type;
+	n->type = E1->type;
 	n->n_type = _BASIC_;
 	
-	if(E1->u.type->u.basic) {
+	if(E1->type->u.basic) {
 		n->type_int = -E1->type_int;
 	}
 	else {
@@ -1002,12 +1007,12 @@ void F_Exp_NotExp(struct node* n){
 	struct node* E1 = n->gchild[0];
 	semantic_analysis(E1);
 	
-	if(E1->u.type->kind != BASIC)
+	if(E1->type->kind != BASIC)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	else if(E1->u.type->u.basic != 1)
+	else if(E1->type->u.basic != 1)
 		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 	
-	n->u.type = E1->u.type;
+	n->type = E1->type;
 	n->n_type = _BASIC_;
 	n->type_int = !(E1->type_int);
 	n->is_left = 0;
@@ -1022,8 +1027,8 @@ void F_Exp_IdLpArgsRp(struct node* n){
 	struct node* args = n->gchild[2];
 	char* name = id->str;
 	
-	args->u.func.argc = 0;
-	args->u.func.argv = (Type*)malloc(sizeof(Type)*MAX_ARGC);
+	args->func.argc = 0;
+	args->func.argv = (Type*)malloc(sizeof(Type)*MAX_ARGC);
 	semantic_analysis(args);
 	
 	SymbolF symF = find_symbolF(name);
@@ -1056,27 +1061,27 @@ void F_Exp_IdLpArgsRp(struct node* n){
 	strcat(tmp_argv, ")");
 	//strcat(tmp_argv, '\0');
 	strcat(n->str, tmp_argv);
-	if(args->u.func.argc != symF->argc)
+	if(args->func.argc != symF->argc)
 		printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"%s\".\n", n->lineno, n->str, tmp_argv);
 	int i = 0;
 	int is_argfault = 0;
-	while(symF->argv[i] != NULL && args->u.func.argv[i] != NULL) {
-		if(!isEqual(symF->argv[i], args->u.func.argv[i])) {
+	while(symF->argv[i] != NULL && args->func.argv[i] != NULL) {
+		if(!isEqual(symF->argv[i], args->func.argv[i])) {
 			printf("type 9 error");
 			is_argfault = 1;
 			break;
 		}
 		i++;
 	}
-	n->u.func.retType = symF->retType;
+	n->func.retType = symF->retType;
 	if(!is_argfault) {
-		n->u.func.retType = symF->retType;
-		n->u.func.argc = symF->argc;
-		n->u.func.argv = symF->argv;
+		n->func.retType = symF->retType;
+		n->func.argc = symF->argc;
+		n->func.argv = symF->argv;
 	}
 	else {
-		n->u.func.argc = -1;
-		n->u.func.argv = NULL;
+		n->func.argc = -1;
+		n->func.argv = NULL;
 	}
 	n->is_left = 0;
 	
@@ -1097,7 +1102,7 @@ void F_Exp_IdLpRp(struct node* n){
 		printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, name);
 	if(symF->argc != 0)
 		printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"()\".\n", n->lineno, n->str);
-	n->u.func.retType = symF->retType;
+	n->func.retType = symF->retType;
 	n->is_left = 0;
 	
 	return;
@@ -1116,13 +1121,13 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	Symbol sym = find_symbol(name);
 	if(sym == NULL)
 		printf("Error type 1 at Line %d: Undefined variable \"%s\".\n", n->lineno, name);
-	if(Exp1->u.type->kind != ARRAY)
+	if(Exp1->type->kind != ARRAY)
 		printf("Error type 10 at Line %d: \"%s\" is not an array.\n", n->lineno, name);
-	if(Exp2->u.type->kind != BASIC)
+	if(Exp2->type->kind != BASIC)
 		printf("Error type 12 at Line %d: \"%s\" is not an integer.", n->lineno, Exp2->str);
-	else if(Exp2->u.type->u.basic != 1)
+	else if(Exp2->type->u.basic != 1)
 		printf("Error type 12 at Line %d: \"%f\" is not an integer.", n->lineno, Exp2->type_float);
-	n->u.type = Exp1->u.type; //???
+	n->type = Exp1->type; //???
 	n->is_left = 1;
 	
 	return;
@@ -1136,7 +1141,7 @@ void F_Exp_ExpDotId(struct node* n){
 	
 	semantic_analysis(Exp);
 	
-	if(Exp->u.type->kind != STRUCTURE)
+	if(Exp->type->kind != STRUCTURE)
 		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);
 	char* name = Exp->str;
 	Symbol sym = find_symbol(name);
@@ -1155,7 +1160,7 @@ void F_Exp_ExpDotId(struct node* n){
 	if(!is_matched)
 		printf("Error type 14 at Line %d: Non-existent field \"%s\".", n->lineno, id_name);
 	else
-		n->u.type = id->u.type;
+		n->type = id->type;
 	n->is_left = 1;
 	
 	return;
@@ -1170,11 +1175,15 @@ void F_Exp_Id(struct node* n){
 	
 	Symbol sym = find_symbol(name);
 	if(sym == NULL) {
-		printf("Error type 1 at Line %d: Undefined variable \"%s\".", n->lineno, name);
-		return;
+		printf("Error type 1 at Line %d: Undefined variable \"%s\".\n", n->lineno, name);
 	}
+
 	strcpy(n->str, name);
-	n->u.type = id->u.type;
+	//BUG FIXED: ID with null pointer;
+	if(sym != NULL) {
+		id->type = sym->type;
+		n->type = id->type;
+	}
 	n->n_type = _ID_;
 	n->is_left = 1;
 	
@@ -1189,11 +1198,13 @@ void F_Exp_Int(struct node* n){
 	
 	n->n_type = _BASIC_;
 	
-	//n->u.type = (Type)malloc(sizeof(struct Type_));
-	n->u.type->u.basic = 1;
-	n->u.type->kind = BASIC;
+	Type t = (Type)malloc(sizeof(struct Type_));
+	t->u.basic = 1;
+	t->kind = BASIC;
+	n->type = t;
 	n->type_int = Int->type_int;
 	n->is_left = 0;
+	
 	return;
 }
 void F_Exp_Float(struct node* n){
@@ -1203,9 +1214,9 @@ void F_Exp_Float(struct node* n){
 
 	n->n_type = _BASIC_;
 	
-	//n->u.type = (Type)malloc(sizeof(struct Type_));
-	n->u.type->u.basic = 0;
-	n->u.type->kind = BASIC;
+	n->type = (Type)malloc(sizeof(struct Type_));
+	n->type->u.basic = 0;
+	n->type->kind = BASIC;
 	n->type_float = n->gchild[0]->type_float;
 	n->is_left = 0;
 	
@@ -1220,12 +1231,12 @@ void F_Args_ExpCommaArgs(struct node* n){
 	struct node* Args = n->gchild[2];
 	
 	semantic_analysis(Exp);
-	n->u.func.argv[n->u.func.argc++] = Exp->u.type;
+	n->func.argv[n->func.argc++] = Exp->type;
 	
-	Args->u.func.argc = n->u.func.argc;
-	Args->u.func.argv = n->u.func.argv;
+	Args->func.argc = n->func.argc;
+	Args->func.argv = n->func.argv;
 	semantic_analysis(Args);
-	n->u.func.argc = Args->u.func.argc;
+	n->func.argc = Args->func.argc;
 	
 	return;
 }
@@ -1237,7 +1248,7 @@ void F_Args_Exp(struct node* n) {
 	struct node* Exp = n->gchild[0];
 	
 	semantic_analysis(Exp);
-	n->u.func.argv[n->u.func.argc++] = Exp->u.type;
+	n->func.argv[n->func.argc++] = Exp->type;
 	
 	return;
 }

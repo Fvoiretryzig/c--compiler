@@ -7,19 +7,19 @@ void init_table()
 {
 	head = (Symbol)malloc(sizeof(struct Symbol_));
 	if(head == NULL) {
-		printf("ERROR when malloc head\n");
+		printf("\033[47;31mERROR when malloc head\033[0m\n");
 		return; 
 	}
 	head->next = NULL;
 	
 	headF = (SymbolF)malloc(sizeof(struct SymbolF_));
 	if(headF == NULL) {
-		printf("ERROR when malloc headF\n");
+		printf("\033[47;31mERROR when malloc headF\033[0m\n");
 		return;
 	}
 	headF->next = NULL;
 	
-	printf("malloc head and headF successful!!\n");
+	printf("\033[46;37mmalloc head and headF successful!!\033[0m\n");
 	return;
 }
 
@@ -27,17 +27,17 @@ int add_symbol(struct node* n, char* name)
 {
 	Symbol new_sym = (Symbol)malloc(sizeof(struct Symbol_));
 	if(new_sym == NULL) {
-		printf("ERROR when malloc a new symbol\n");
+		printf("\033[47;31mERROR when malloc a new symbol\033[0m\n");
 		return 1;
 	}
 	switch(n->n_type) {
 		case _VAR_ :	
 			new_sym->idkind = _VAR;
-			new_sym->type = n->u.type;
+			new_sym->type = n->type;
 			break;
 		case _STRUCTURE_ :
 			new_sym->idkind = _STRUCT;
-			new_sym->type = n->u.type;
+			new_sym->type = n->type;
 			break;
 		case _FUNC_:
 			free(new_sym);
@@ -56,12 +56,12 @@ int add_symbol(struct node* n, char* name)
 int add_symbolF(struct node* n, char* name) {
 	SymbolF new_sym = (SymbolF)malloc(sizeof(struct SymbolF_));
 	if(new_sym == NULL) {
-		printf("ERROR when malloc a new symbolF\n");
+		printf("\033[47;31mERROR when malloc a new symbolF\033[0m\n");
 		return 1;
 	}
-	new_sym->retType = n-> 	u.func.retType;
-	new_sym->argc = n->u.func.argc;
-	new_sym->argv = n->u.func.argv;
+	new_sym->retType = n->func.retType;
+	new_sym->argc = n->func.argc;
+	new_sym->argv = n->func.argv;
 	strcpy(new_sym->name, name);
 	new_sym->next = NULL;
 	
@@ -85,14 +85,14 @@ Symbol find_symbol(char* name) {
 		curr = curr->next;
 	}
 	if(!if_find) {
-		printf("%s not in symbol table!!\n", name);
+		printf("\033[46;37m%s not in symbol table!!\033[0m\n", name);
 		return NULL;
 	}
-	printf("%s find in symbol table!!\n", name);
+	printf("\033[46;37m%s find in symbol table!!\033[0m\n", name);
 	return curr;
 }
 SymbolF find_symbolF(char* name) {
-	printf("this is find_symbolF\n");
+	printf("\033[46;37mthis is find_symbolF\033[0m\n");
 	SymbolF curr = headF;
 	int if_find = 0;
 	while(curr) {
@@ -103,9 +103,9 @@ SymbolF find_symbolF(char* name) {
 		curr = curr->next;
 	}
 	if(!if_find) {
-		printf("%s not in symbolF table!!\n", name);
+		printf("\033[46;37m%s not in symbolF table!!\033[0m\n", name);
 		return NULL;
 	}
-	printf("%s find in symbolF table!!\n", name);
+	printf("\033[46;37m%s find in symbolF table!!\033[0m\n", name);
 	return curr;
 }
