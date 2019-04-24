@@ -68,8 +68,12 @@ void semantic_analysis(struct node* n) {
 	return;
 }
 int isEqual(Type a, Type b) {
-	if(a->kind != b->kind) 
+	if(a->kind != b->kind && (a->kind != ARRAY || b->kind != ARRAY)) { 
+		printf("a->kind: %d b->kind:%d\n", a->kind, b->kind);
 		return 0;
+	}
+	if(a->kind == ARRAY) {
+	}
 	if(a->kind == BASIC) {
 		if(a->u.basic != b->u.basic)
 			return 0;
@@ -163,6 +167,7 @@ void F_Extdeclist_Vardec(struct node* n){
 
 	struct node* Vardec = n->gchild[0];
 	
+//	Vardec->type = n->type;
 	semantic_analysis(Vardec);
 	return;
 }
@@ -349,13 +354,13 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 	struct node* Vardec = n->gchild[0];
 	struct node* Int = n->gchild[1];
 	int size = Int->type_int;
-	
+	Vardec->type = (Type)malloc(sizeof(struct Type_));
 	Vardec->type->kind = ARRAY;
 	Vardec->type->u.array.elem = n->type;
 	Vardec->type->u.array.size = size;	//大小不知道怎么测
-	
+
 	semantic_analysis(Vardec);
-	
+	printf("hahah\n");
 	return;
 }
 void F_Fundec_IdLpVarlistRp(struct node* n){
@@ -647,6 +652,7 @@ void F_Dec_VardecAssignopExp(struct node* n){
 	Vardec->type = n->type;
 	semantic_analysis(Vardec);
 	semantic_analysis(Exp);
+	//TODO 是否要加两个类型相等判断？？？
 	
 	return;
 }
@@ -1037,17 +1043,23 @@ void F_Exp_IdLpArgsRp(struct node* n){
 	
 	
 	SymbolF symF = find_symbolF(name);
+	Symbol sym = find_symbol(name);
 	if(symF == NULL) {	
-		strcat(n->str, "\(");
-		strcat(n->str, args->str);
-		strcat(n->str, ")");
-		printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, n->str);
+		if(sym != NULL) {
+			printf("Error type 11 at Line %d: \"%s\" is not a function.\n", n->lineno, n->str);
+		}
+		else {
+			strcat(n->str, "\(");
+			strcat(args->str, ")");
+			strcat(n->str, args->str);
+			printf("arg->str:%s\n", n->str);
+			printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, n->str);
+		}
 	}
 	char nargv_type[100];
 	int n_cnt = args->func.argc;
 	strcpy(nargv_type, "(");
 	for(int i = 0; i<n_cnt; i++) {
-		printf("n_cnt:%d\n", n_cnt);
 		int tp = -1; // 0:float 1:int 2:array 3:structure
 		Type tmp = args->func.argv[i];
 		if(tmp->kind == BASIC) {
@@ -1171,10 +1183,12 @@ void F_Exp_ExpLbExpRb(struct node* n){
 		printf("Error type 1 at Line %d: Undefined variable \"%s\".\n", n->lineno, name);
 	if(Exp1->type->kind != ARRAY)
 		printf("Error type 10 at Line %d: \"%s\" is not an array.\n", n->lineno, name);
-	if(Exp2->type->kind != BASIC)
-		printf("Error type 12 at Line %d: \"%s\" is not an integer.", n->lineno, Exp2->str);
-	else if(Exp2->type->u.basic != 1)
-		printf("Error type 12 at Line %d: \"%f\" is not an integer.", n->lineno, Exp2->type_float);
+	if(Exp2->type->kind != BASIC) {
+		printf("Error type 12 at Line %d: \"%s\" is not an integer.\n", n->lineno, Exp2->str);
+	}
+	else if(Exp2->type->u.basic != 1) {
+		printf("Error type 12 at Line %d: \"%g\" is not an integer.\n", n->lineno, Exp2->type_float);
+	}
 	n->type = Exp1->type; //???
 	n->is_left = 1;
 	
