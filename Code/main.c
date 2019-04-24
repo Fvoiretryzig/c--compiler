@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "syntax.tab.h"
-#include "gtree.h"
+#include "semantic.h"
 //#define DEBUG
 extern FILE* yyin;
 extern int yydebug;
@@ -10,6 +10,8 @@ extern void yyrestart(FILE * file);
 extern int yylineno;
 
 extern int is_error;
+
+extern struct node* root;
 int main(int argc, char** argv) {
 	if(argc > 1) {
 		if(!(yyin = fopen(argv[1], "r"))) {
@@ -25,5 +27,7 @@ int main(int argc, char** argv) {
 	yyparse();
 	//yylex();
 	//printf("this is the end\n");
+	init_table();
+	semantic_analysis(root);
 	return 0;
 }

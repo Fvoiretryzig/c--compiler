@@ -59,16 +59,18 @@ int add_symbolF(struct node* n, char* name) {
 		printf("ERROR when malloc a new symbolF\n");
 		return 1;
 	}
-	new_sym->retType = n->u.func.retType;
+	new_sym->retType = n-> 	u.func.retType;
 	new_sym->argc = n->u.func.argc;
 	new_sym->argv = n->u.func.argv;
 	strcpy(new_sym->name, name);
 	new_sym->next = NULL;
 	
+	
 	SymbolF curr = headF;
 	while(curr->next != NULL) {
 		curr = curr->next;
 	}
+	
 	curr->next = new_sym;
 	return 0;
 }
@@ -90,6 +92,7 @@ Symbol find_symbol(char* name) {
 	return curr;
 }
 SymbolF find_symbolF(char* name) {
+	printf("this is find_symbolF\n");
 	SymbolF curr = headF;
 	int if_find = 0;
 	while(curr) {

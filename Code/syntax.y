@@ -3,13 +3,14 @@
 	#include <string.h>
 	#include "gtree.h"
 	#include "lex.yy.c"
+	//#include "semantic.h"
 	
 	void yyerror(const char *s);
 	#define YYERROR_VERBOSE
 	//#define DEBUG_MSG
 	
-	 int is_error;
-
+	int is_error;
+	struct node* root;
 %}
 %locations
 
@@ -50,7 +51,7 @@ Program		:	ExtDefList {
 					$$ = CreateGNode("Program", @$.first_line, _INIT_, Program_Extdeflist, 1, $1);
 					if(!is_error)
 						tran($$, 0);
-
+					root = $$;
 				}
 			;
 ExtDefList	:	ExtDef ExtDefList {

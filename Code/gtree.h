@@ -62,7 +62,7 @@ struct node {
 			int argc;
 			Type* argv;
 		}func;
-	} u;
+	};
 	NodeType n_type;
 	Rule rule;
 	union {

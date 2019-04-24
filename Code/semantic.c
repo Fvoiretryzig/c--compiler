@@ -1,5 +1,7 @@
 #include "semantic.h"
 
+#define DEBUG_SEMANTIC
+
 int top = -1;
 void semantic_analysis(struct node* n) {
 	if(n == NULL)
@@ -85,6 +87,10 @@ int isEqual(Type a, Type b) {
 	return 1;
 }
 void F_Program_Extdeflist(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Program_Extdeflist\n");
+	#endif
+
 	struct node* Extdeflist = n->gchild[0];
 	
 	semantic_analysis(Extdeflist);
@@ -92,6 +98,10 @@ void F_Program_Extdeflist(struct node* n){
 	return;
 }
 void F_Extdeflist_ExtdefExtdeflist(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Extdeflist_ExtdefExtdeflist\n");
+	#endif
+
 	struct node* Extdef = n->gchild[0];
 	struct node* Extdeflist = n->gchild[1];
 	
@@ -105,6 +115,10 @@ void F_Extdeflist_Null(struct node* n){
 	//No Extdef
 }
 void F_Extdef_SpecifierExtdeclistSemi(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Extdef_SpecifierExtdeclistSemi\n");
+	#endif
+
 	struct node* Specifier = n->gchild[0];
 	struct node* Extdeclist = n->gchild[1];
 	
@@ -115,6 +129,10 @@ void F_Extdef_SpecifierExtdeclistSemi(struct node* n){
 	return;
 }
 void F_Extdef_SpecifierSemi(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Extdef_SpecifierSemi\n");
+	#endif
+
 	struct node* Specifier = n->gchild[0];
 	
 	semantic_analysis(Specifier);
@@ -122,6 +140,10 @@ void F_Extdef_SpecifierSemi(struct node* n){
 	return;
 }
 void F_Extdef_SpcifierFundecCompst(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Extdef_SpcifierFundecCompst\n");
+	#endif
+
 	struct node* Specifier = n->gchild[0];
 	struct node* Fundec = n->gchild[1];
 	struct node* Compst = n->gchild[2];
@@ -135,12 +157,20 @@ void F_Extdef_SpcifierFundecCompst(struct node* n){
 	return;
 }
 void F_Extdeclist_Vardec(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Extdeclist_Vardec\n");
+	#endif
+
 	struct node* Vardec = n->gchild[0];
 	
 	semantic_analysis(Vardec);
 	return;
 }
 void F_Extdeclist_VardecCommaExtdeclist(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Extdeclist_VardecCommaExtdeclist\n");
+	#endif
+
 	struct node* Vardec = n->gchild[0];
 	struct node* Extdeclist = n->gchild[2];
 	
@@ -150,6 +180,9 @@ void F_Extdeclist_VardecCommaExtdeclist(struct node* n){
 	return;
 }
 void F_Specifier_Type(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Specifier_Type\n");
+	#endif
 	struct node* ttype = n->gchild[0];
 	char* basic_type = ttype->str;
 	
@@ -167,6 +200,9 @@ void F_Specifier_Type(struct node* n){
 	return;
 }
 void F_Specifier_Structspecifier(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Specifier_Structspecifier\n");
+	#endif
 	struct node* Structspecifier = n->gchild[0];
 	
 	semantic_analysis(Structspecifier);
@@ -175,6 +211,9 @@ void F_Specifier_Structspecifier(struct node* n){
 	return;
 }
 void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_StructSpecifier_StructOpttagLcDeflistRc\n");
+	#endif
 	//两种情况判断
 	struct node* Opttag = n->gchild[1];
 	//还没处理没有名字的情况 //TODO()
@@ -215,6 +254,9 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	return;
 }
 void F_StructSpecifier_StructTag(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_StructSpecifier_StructTag\n");
+	#endif
 	struct node* tag = n->gchild[1];
 	
 	semantic_analysis(tag);
@@ -229,6 +271,10 @@ void F_StructSpecifier_StructTag(struct node* n){
 	return;
 }
 void F_Opttag_Id(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Opttag_Id\n");
+	#endif
+
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 	
@@ -240,6 +286,10 @@ void F_Opttag_Null(struct node* n){
 	//no name
 }
 void F_Tag_Id(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Tag_Id\n");
+	#endif
+
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 	
@@ -248,6 +298,10 @@ void F_Tag_Id(struct node* n){
 	return;
 }
 void F_Vardec_Id(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Vardec_Id\n");
+	#endif
+
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 	
@@ -288,6 +342,10 @@ void F_Vardec_Id(struct node* n){
 	return;
 }
 void F_Vardec_VardecLbIntRb(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Vardec_VardecLbIntRb\n");
+	#endif
+
 	struct node* Vardec = n->gchild[0];
 	struct node* Int = n->gchild[1];
 	int size = Int->type_int;
@@ -301,6 +359,10 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 	return;
 }
 void F_Fundec_IdLpVarlistRp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Fundec_IdLpVarlistRp\n");
+	#endif
+
 	struct node* id = n->gchild[0];
 	struct node* Varlist = n->gchild[2];
 	char* name = id->str;
@@ -324,6 +386,10 @@ void F_Fundec_IdLpVarlistRp(struct node* n){
 	return;
 }
 void F_Fundec_IdLpRp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Fundec_IdLpRp\n");
+	#endif
+
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 	
@@ -340,6 +406,10 @@ void F_Fundec_IdLpRp(struct node* n){
 	return;
 }
 void F_Varlist_ParamdecCommaVarlist(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Varlist_ParamdecCommaVarlist\n");
+	#endif
+
 	struct node* Paramdec = n->gchild[0];
 	struct node* Varlist = n->gchild[2];
 	
@@ -358,6 +428,10 @@ void F_Varlist_ParamdecCommaVarlist(struct node* n){
 	return;
 }
 void F_Varlist_Paramdec(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Varlist_Paramdec\n");
+	#endif
+	
 	struct node* Paramdec = n->gchild[0];
 	
 	Paramdec->u.func.argc = n->u.func.argc;
@@ -369,6 +443,10 @@ void F_Varlist_Paramdec(struct node* n){
 	return;
 }
 void F_Paramdec_SpecifierVardec(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Paramdec_SpecifierVardec\n");
+	#endif
+
 	struct node* Specifier = n->gchild[0];
 	struct node* Vardec = n->gchild[1];
 	
@@ -382,6 +460,9 @@ void F_Paramdec_SpecifierVardec(struct node* n){
 	return;
 }
 void F_Compst_LcDeflistStmtlistRc(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Compst_LcDeflistStmtlistRc\n");
+	#endif
 	struct node* Deflist = n->gchild[1];
 	struct node* Stmtlist = n->gchild[2];
 	
@@ -392,6 +473,10 @@ void F_Compst_LcDeflistStmtlistRc(struct node* n){
 	return;
 }
 void F_Stmtlist_StmtStmtlist(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Stmtlist_StmtStmtlist\n");
+	#endif
+
 	struct node* Stmt = n->gchild[0];
 	struct node* Stmtlist = n->gchild[1];
 	
@@ -408,6 +493,10 @@ void F_Stmtlist_Null(struct node* n){
 	//No stmt
 }
 void F_Stmt_ExpSemi(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Stmt_ExpSemi\n");
+	#endif
+
 	struct node* Exp = n->gchild[0];
 	
 	semantic_analysis(Exp);
@@ -415,6 +504,10 @@ void F_Stmt_ExpSemi(struct node* n){
 	return;
 }
 void F_Stmt_Compst(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Stmt_Compst\n");
+	#endif
+
 	struct node* Compst = n->gchild[0];
 	
 	Compst->u.func.retType = n->u.func.retType;
@@ -423,6 +516,10 @@ void F_Stmt_Compst(struct node* n){
 	return;
 }
 void F_Stmt_ReturnExpSemi(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Stmt_ReturnExpSemi\n");
+	#endif
+
 	struct node* Exp = n->gchild[1];
 	
 	semantic_analysis(Exp);
@@ -434,6 +531,10 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 	return;
 }
 void F_Stmt_IfLpExpRpStmtElseStmt(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Stmt_IfLpExpRpStmtElseStmt\n");
+	#endif
+
 	struct node* Exp = n->gchild[2];
 	struct node* Stmt1 = n->gchild[4];
 	struct node* Stmt2 = n->gchild[6];
@@ -452,6 +553,10 @@ void F_Stmt_IfLpExpRpStmtElseStmt(struct node* n){
 	return;
 }
 void F_Stmt_WhileLpExpRpStmt(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Stmt_WhileLpExpRpStmt\n");
+	#endif
+
 	struct node* Exp = n->gchild[2];
 	struct node* Stmt = n->gchild[4];
 	
@@ -467,6 +572,10 @@ void F_Stmt_WhileLpExpRpStmt(struct node* n){
 	return;
 }
 void F_Deflist_DefDeflist(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Deflist_DefDeflist\n");
+	#endif
+
 	struct node* Def = n->gchild[0];
 	struct node* Deflist = n->gchild[1];
 	
@@ -479,6 +588,10 @@ void F_Deflist_Null(struct node* n){
 	//No Def
 }
 void F_Def_SpecifierDeclistSemi(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Def_SpecifierDeclistSemi\n");
+	#endif
+
 	struct node* Specifier = n->gchild[0];
 	struct node* Declist = n->gchild[1];
 	
@@ -487,12 +600,20 @@ void F_Def_SpecifierDeclistSemi(struct node* n){
 	semantic_analysis(Declist);
 }
 void F_Declist_Dec(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Declist_Dec\n");
+	#endif
+
 	struct node* Dec = n->gchild[0];
 	
 	Dec->u.type = n->u.type;
 	semantic_analysis(Dec);
 }
 void F_Declist_DecCommaDeclist(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Declist_DecCommaDeclist\n");
+	#endif
+
 	struct node* Dec = n->gchild[0];
 	struct node* Declist = n->gchild[2];
 	
@@ -502,12 +623,20 @@ void F_Declist_DecCommaDeclist(struct node* n){
 	semantic_analysis(Declist);
 }
 void F_Dec_Vardec(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Dec_Vardec\n");
+	#endif
+
 	struct node* Vardec = n->gchild[0];
 	
 	Vardec->u.type = n->u.type;
 	semantic_analysis(Vardec);
 }
 void F_Dec_VardecAssignopExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Dec_VardecAssignopExp\n");
+	#endif
+
 	struct node* Vardec = n->gchild[0];
 	struct node* Exp = n->gchild[2];
 	
@@ -518,8 +647,13 @@ void F_Dec_VardecAssignopExp(struct node* n){
 	return;
 }
 void F_Exp_ExpAssignopExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpAssignopExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	struct node* E2 = n->gchild[2];
+	
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
@@ -534,6 +668,10 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	return;
 }
 void F_Exp_ExpAndExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpAndExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	struct node* E2 = n->gchild[2];
 	
@@ -552,6 +690,10 @@ void F_Exp_ExpAndExp(struct node* n){
 	return;
 }
 void F_Exp_ExpOrExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpOrExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	struct node* E2 = n->gchild[2];
 	
@@ -570,6 +712,10 @@ void F_Exp_ExpOrExp(struct node* n){
 	return;
 }
 void F_Exp_ExpRelopExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpRelopExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	struct node* Relop = n->gchild[1];
 	struct node* E2 = n->gchild[2];
@@ -652,12 +798,21 @@ void F_Exp_ExpRelopExp(struct node* n){
 	return;
 }
 void F_Exp_ExpPlusExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpPlusExp\n");
+	#endif
+
+
 	struct node* E1 = n->gchild[0];
 	struct node* E2 = n->gchild[2];
 	
+	E1->u.type = (Type)malloc(sizeof(struct Type_));
+	E2->u.type = (Type)malloc(sizeof(struct Type_));	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
+	if(E1->u.type == NULL) 
+		printf("jaja\n");
 	if(E1->u.type->kind == BASIC && E2->u.type->kind == BASIC) {
 		if(E1->u.type->u.basic != E2->u.type->u.basic) {
 			printf("float and int calculate!!\n");
@@ -687,6 +842,10 @@ void F_Exp_ExpPlusExp(struct node* n){
 	return;
 }
 void F_Exp_ExpMinusExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpMinusExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	struct node* E2 = n->gchild[2];
 	
@@ -722,6 +881,10 @@ void F_Exp_ExpMinusExp(struct node* n){
 	return;
 }
 void F_Exp_ExpStarExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpStarExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	struct node* E2 = n->gchild[2];
 	
@@ -757,6 +920,10 @@ void F_Exp_ExpStarExp(struct node* n){
 	return;
 }
 void F_Exp_ExpDivExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpDivExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	struct node* E2 = n->gchild[2];
 	
@@ -792,6 +959,9 @@ void F_Exp_ExpDivExp(struct node* n){
 	return;
 }
 void F_Exp_LpExpRp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_LpExpRp\n");
+	#endif
 	struct node* E1 = n->gchild[0];
 	
 	semantic_analysis(E1);
@@ -801,6 +971,10 @@ void F_Exp_LpExpRp(struct node* n){
 	return;
 }
 void F_Exp_MinusExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_MinusExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	semantic_analysis(E1);
 	
@@ -821,6 +995,10 @@ void F_Exp_MinusExp(struct node* n){
 	return;
 }
 void F_Exp_NotExp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_NotExp\n");
+	#endif
+
 	struct node* E1 = n->gchild[0];
 	semantic_analysis(E1);
 	
@@ -837,6 +1015,9 @@ void F_Exp_NotExp(struct node* n){
 	return;
 }
 void F_Exp_IdLpArgsRp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_IdLpArgsRp\n");
+	#endif
 	struct node* id = n->gchild[0];
 	struct node* args = n->gchild[2];
 	char* name = id->str;
@@ -902,6 +1083,9 @@ void F_Exp_IdLpArgsRp(struct node* n){
 	return;
 }
 void F_Exp_IdLpRp(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_IdLpRp\n");
+	#endif
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 	
@@ -919,6 +1103,9 @@ void F_Exp_IdLpRp(struct node* n){
 	return;
 }
 void F_Exp_ExpLbExpRb(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpLbExpRb\n");
+	#endif
 	struct node* Exp1 = n->gchild[0];
 	struct node* Exp2 = n->gchild[2];
 	
@@ -941,6 +1128,9 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	return;
 }
 void F_Exp_ExpDotId(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_ExpDotId\n");
+	#endif
 	struct node* Exp = n->gchild[0];
 	struct node* id = n->gchild[2];
 	
@@ -971,6 +1161,10 @@ void F_Exp_ExpDotId(struct node* n){
 	return;
 }
 void F_Exp_Id(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_Id\n");
+	#endif
+
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 	
@@ -987,20 +1181,29 @@ void F_Exp_Id(struct node* n){
 	return;
 }
 void F_Exp_Int(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_Int\n");
+	#endif
+	
+	struct node* Int = n->gchild[0];
+	
 	n->n_type = _BASIC_;
 	
-	n->u.type = (Type)malloc(sizeof(struct Type_));
+	//n->u.type = (Type)malloc(sizeof(struct Type_));
 	n->u.type->u.basic = 1;
 	n->u.type->kind = BASIC;
-	n->type_int = n->gchild[0]->type_int;
+	n->type_int = Int->type_int;
 	n->is_left = 0;
-	
 	return;
 }
 void F_Exp_Float(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Exp_Float\n");
+	#endif
+
 	n->n_type = _BASIC_;
 	
-	n->u.type = (Type)malloc(sizeof(struct Type_));
+	//n->u.type = (Type)malloc(sizeof(struct Type_));
 	n->u.type->u.basic = 0;
 	n->u.type->kind = BASIC;
 	n->type_float = n->gchild[0]->type_float;
@@ -1009,6 +1212,10 @@ void F_Exp_Float(struct node* n){
 	return;
 }
 void F_Args_ExpCommaArgs(struct node* n){
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Args_ExpCommaArgs\n");
+	#endif
+
 	struct node* Exp = n->gchild[0];
 	struct node* Args = n->gchild[2];
 	
@@ -1022,8 +1229,11 @@ void F_Args_ExpCommaArgs(struct node* n){
 	
 	return;
 }
-void F_Args_Exp(struct node* n)
-{
+void F_Args_Exp(struct node* n) {
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Args_Exp\n");
+	#endif
+
 	struct node* Exp = n->gchild[0];
 	
 	semantic_analysis(Exp);
