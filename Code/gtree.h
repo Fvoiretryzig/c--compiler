@@ -66,7 +66,7 @@ struct node {
 	NodeType n_type;
 	Rule rule;
 	union {
-		char str[60];
+		char str[100];
 		int type_int;
 		float type_float;
 		char relop[4];

@@ -376,13 +376,15 @@ void F_Fundec_IdLpVarlistRp(struct node* n){
 	
 	id->func.argc = Varlist->func.argc;
 	id->func.argv = Varlist->func.argv;
-	
 	SymbolF symF = find_symbolF(name);
 	if(symF != NULL)
 		printf("Error type 4 at Line %d: Redefined function \"%s\".\n", n->lineno, name);
-	int ret = add_symbolF(n, name);
-	if(ret)
-		printf("error when add func %s\n", name);
+	else {
+		//BUG FIXED: no n but ID!!!!
+		int ret = add_symbolF(id, name);
+		if(ret)
+			printf("error when add func %s\n", name);
+	}
 	return;
 }
 void F_Fundec_IdLpRp(struct node* n){
@@ -818,7 +820,7 @@ void F_Exp_ExpPlusExp(struct node* n){
 
 	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
 		if(E1->type->u.basic != E2->type->u.basic) {
-			printf("float and int calculate!!\n");
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			if(E1->type->u.basic == 1) {
 				E1->type->u.basic = 0;
 				E1->type_float = E1->type_int;
@@ -859,7 +861,7 @@ void F_Exp_ExpMinusExp(struct node* n){
 	
 	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
 		if(E1->type->u.basic != E2->type->u.basic) {
-			printf("float and int calculate!!\n");
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			if(E1->type->u.basic == 1) {
 				E1->type->u.basic = 0;
 				E1->type_float = E1->type_int;
@@ -898,7 +900,7 @@ void F_Exp_ExpStarExp(struct node* n){
 	
 	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
 		if(E1->type->u.basic != E2->type->u.basic) {
-			printf("float and int calculate!!\n");
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			if(E1->type->u.basic == 1) {
 				E1->type->u.basic = 0;
 				E1->type_float = E1->type_int;
@@ -937,7 +939,7 @@ void F_Exp_ExpDivExp(struct node* n){
 	
 	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
 		if(E1->type->u.basic != E2->type->u.basic) {
-			printf("float and int calculate!!\n");
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			if(E1->type->u.basic == 1) {
 				E1->type->u.basic = 0;
 				E1->type_float = E1->type_int;
@@ -1031,30 +1033,94 @@ void F_Exp_IdLpArgsRp(struct node* n){
 	args->func.argv = (Type*)malloc(sizeof(Type)*MAX_ARGC);
 	semantic_analysis(args);
 	
-	strcpy(n->str, name);;
-	strcat(n->str, "\(");
-	strcat(n->str, args->str);
-	strcat(n->str, ")");
+	strcpy(n->str, name);
+	
 	
 	SymbolF symF = find_symbolF(name);
-	if(symF == NULL) {
+	if(symF == NULL) {	
+		strcat(n->str, "\(");
+		strcat(n->str, args->str);
+		strcat(n->str, ")");
 		printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, n->str);
 	}
-	
+	char nargv_type[100];
+	int n_cnt = args->func.argc;
+	strcpy(nargv_type, "(");
+	for(int i = 0; i<n_cnt; i++) {
+		printf("n_cnt:%d\n", n_cnt);
+		int tp = -1; // 0:float 1:int 2:array 3:structure
+		Type tmp = args->func.argv[i];
+		if(tmp->kind == BASIC) {
+			if(!tmp->u.basic)
+				tp = 0;
+			else
+				tp = 1;
+		}
+		else if(tmp->kind == BASIC) {
+			tp = 2;
+		}
+		else if(tmp->kind == STRUCTURE) {
+			tp = 3;
+		}
+		switch(tp) {
+			case 0: strcat(nargv_type, "float"); break;
+			case 1: strcat(nargv_type, "int"); break;
+			case 2: strcat(nargv_type, "array"); break;
+			case 3: strcat(nargv_type, "structure"); strcat(nargv_type, tmp->u.structure->name); break;
+		}
+		if(i != n_cnt-1)
+			strcat(nargv_type, ", ");
+		else
+			strcat(nargv_type, ")");
+	}
 	if(symF != NULL) {
-		if(args->func.argc != symF->argc)
-			printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"%s\".\n", n->lineno, n->str, 	n->str);
-		int i = 0;
+		char Fargv_type[100];
+		int F_cnt = symF->argc;
+		strcpy(Fargv_type, "(");
+		for(int i = 0; i<F_cnt; i++) {
+			int tp = -1; // 0:float 1:int 2:array 3:structure
+			Type tmp = symF->argv[i];
+			if(tmp->kind == BASIC) {
+				if(!tmp->u.basic)
+					tp = 0;
+				else
+					tp = 1;
+			}
+			else if(tmp->kind == BASIC) {
+				tp = 2;
+			}
+			else if(tmp->kind == STRUCTURE) {
+				tp = 3;
+			}
+			switch(tp) {
+				case 0: strcat(Fargv_type, "float"); break;
+				case 1: strcat(Fargv_type, "int"); break;
+				case 2: strcat(Fargv_type, "array"); break;
+				case 3: strcat(Fargv_type, "structure"); strcat(Fargv_type, tmp->u.structure->name); break;
+			}
+			if(i != F_cnt-1)
+				strcat(Fargv_type, ", ");
+			else
+				strcat(Fargv_type, ")");
+		}
 		int is_argfault = 0;
+		if(args->func.argc != symF->argc) {
+			char print_tmp[160];
+			strcpy(print_tmp, symF->name);
+			strcat(print_tmp, Fargv_type);
+			printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"%s\".\n", n->lineno, print_tmp, 	nargv_type);//TODO()!!!!!!
+			is_argfault = 1;
+		}
+
+		int i = 0;
 		while(symF->argv[i] != NULL && args->func.argv[i] != NULL) {
 			if(!isEqual(symF->argv[i], args->func.argv[i])) {
-				printf("type 9 error");
+				printf("type 9 error");	//TODO()!!!!!!!
 				is_argfault = 1;
 				break;
 			}
 			i++;
 		}
-		n->func.retType = symF->retType;
 		if(!is_argfault) {
 			n->func.retType = symF->retType;
 			n->func.argc = symF->argc;
@@ -1066,7 +1132,7 @@ void F_Exp_IdLpArgsRp(struct node* n){
 		}
 	}
 	n->is_left = 0;
-	//printf("haha\n");
+	
 	return;
 }
 void F_Exp_IdLpRp(struct node* n){
