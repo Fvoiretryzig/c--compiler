@@ -70,27 +70,9 @@ void semantic_analysis(struct node* n) {
 }
 int isEqual(Type a, Type b) {
 	//数组判断不太对
-	if(a->kind != b->kind && (a->kind != ARRAY || b->kind != ARRAY)) { 
-		if(a->kind == ARRAY) {
-			Type tmp = a->u.array.elem;
-			while(tmp->kind == ARRAY) {
-				tmp = tmp->u.array.elem;
-			}
-			if(tmp->kind != b->kind) 
-				return 0;
-		}
-		else if(b->kind = ARRAY) {
-			Type tmp = a->u.array.elem;
-			while(tmp->kind == ARRAY) {
-				tmp = tmp->u.array.elem;
-			}
-			if(tmp->kind != a->kind)
-				return 0;
-		}
-		else {
-			printf("a->kind: %d b->kind:%d\n", a->kind, b->kind);
-			return 0;
-		}
+	if(a->kind != b->kind) { 
+		printf("a->kind: %d b->kind:%d\n", a->kind, b->kind);
+		return 0;
 	}
 	else {
 		if(a->kind == BASIC) {
@@ -100,14 +82,25 @@ int isEqual(Type a, Type b) {
 		else if(a->kind == ARRAY) {
 			if(!isEqual(a->u.array.elem, b->u.array.elem))
 				return 0;
-			/*if(a->u.array.size != b->u.array.size)
-				return 0;*/
 		}
 		else if(a->kind == STRUCTURE) {
 			if(!isEqual(a->u.structure->type, b->u.structure->type))
 				return 0;
 		}
 	}
+	return 1;
+}
+int isEqual_array(Type a, Type b, int a_dim, int b_dim) {
+	Type a_cmp = a;
+	Type b_cmp = b;
+	for(int i = 0; i<a_dim; i++) {
+		a_cmp = a_cmp->u.array.elem;
+	}
+	for(int i = 0; i<b_dim; i++) {
+		b_cmp = b_cmp->u.array.elem;
+	}
+	if(!isEqual(a_cmp, b_cmp))
+		return 0;
 	return 1;
 }
 void F_Program_Extdeflist(struct node* n){
@@ -274,7 +267,6 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	free(tmp_table[top]);
 	if(!no_name)
 		add_symbol(n, name);
-	Symbol sym = find_symbol(name);
 	top--;
 	return;
 }
@@ -554,10 +546,19 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 	struct node* Exp = n->gchild[1];
 	
 	semantic_analysis(Exp);
-	
-	if(!isEqual(Exp->type, n->func.retType)) {
-		printf("Error type 8 at Line %d: Type mismatched for return.\n", n->lineno);
+	if(Exp->type != NULL) {
+		if(Exp->type->kind != ARRAY && n->func.retType->kind != ARRAY) {
+			if(!isEqual(Exp->type, n->func.retType)) {
+				printf("Error type 8 at Line %d: Type mismatched for return.\n", n->lineno);
+			}
+		}
+		else {
+			if(!isEqual_array(Exp->type, n->func.retType, Exp->arr_dim, n->arr_dim))
+				printf("Error type 8 at Line %d: Type mismatched for return.\n", n->lineno);			
+		}
+				
 	}
+
 	return;
 }
 void F_Stmt_IfLpExpRpStmt(struct node* n) {
@@ -698,8 +699,14 @@ void F_Dec_VardecAssignopExp(struct node* n){
 	semantic_analysis(Exp);
 	//TODO 是否要加两个类型相等判断？？？要啊!!!!!!
 	if(Vardec->type != NULL && Exp->type != NULL) {
-		if(!isEqual(Vardec->type, Exp->type))
-			printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
+		if(Vardec->type->kind != ARRAY && Exp->type->kind != ARRAY) {
+			if(!isEqual(Vardec->type, Exp->type))
+				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
+		}
+		else {
+			if(!isEqual_array(Vardec->type, Exp->type, Vardec->arr_dim, Exp->arr_dim))
+				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
+		}
 	}
 	
 	return;
@@ -716,8 +723,14 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	if(E1->type != NULL && E2->type != NULL) {
-		if(!isEqual(E1->type, E2->type)) 
-			printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
+		if(E1->type->kind != ARRAY && E2->type->kind != ARRAY) {
+			if(!isEqual(E1->type, E2->type)) 
+				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
+		}
+		else {
+			if(!isEqual_array(E1->type, E2->type, E1->arr_dim, E2->arr_dim))
+				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
+		}
 		if(!E1->is_left)
 			printf("Error type 6 at Line %d: The left-hand side of an assignment must be a variable.\n", n->lineno);
 		n->type = E1->type;
@@ -1177,7 +1190,10 @@ void F_Exp_IdLpArgsRp(struct node* n){
 		int i = 0;
 		while(symF->argv[i] != NULL && args->func.argv[i] != NULL) {
 			if(!isEqual(symF->argv[i], args->func.argv[i])) {
-				printf("type 9 error");	//TODO()!!!!!!!
+				char print_tmp[160];
+				strcpy(print_tmp, symF->name);
+				strcat(print_tmp, Fargv_type);				
+				printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"%s\".\n", n->lineno, print_tmp, 	nargv_type);
 				is_argfault = 1;
 				break;
 			}
@@ -1242,6 +1258,7 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	}
 	n->type = Exp1->type; //???
 	n->is_left = 1;
+	n->arr_dim = Exp1->arr_dim + 1;
 	
 	return;
 }
@@ -1278,7 +1295,7 @@ void F_Exp_ExpDotId(struct node* n){
 		//	n->type = id->type;
 		}
 	n->is_left = 1;
-	n->type = id->type;
+	//n->type = id->type;
 	return;
 }
 void F_Exp_Id(struct node* n){
@@ -1301,6 +1318,7 @@ void F_Exp_Id(struct node* n){
 	}
 	n->n_type = _ID_;
 	n->is_left = 1;
+	n->arr_dim = 1;
 	return;
 }
 void F_Exp_Int(struct node* n){
