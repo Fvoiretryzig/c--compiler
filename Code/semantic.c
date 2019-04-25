@@ -1189,7 +1189,6 @@ void F_Exp_Id(struct node* n){
 		id->type = sym->type;
 		n->type = id->type;
 	}
-	printf("name: %s p: %p\n", name, id->type);
 	n->n_type = _ID_;
 	n->is_left = 1;
 	n->arr_dim = 1;
