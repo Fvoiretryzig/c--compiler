@@ -41,7 +41,7 @@ typedef enum {
 	Paramdec_SpecifierVardec,
 	Compst_LcDeflistStmtlistRc,
 	Stmtlist_StmtStmtlist, Stmtlist_Null,
-	Stmt_ExpSemi, Stmt_Compst, Stmt_ReturnExpSemi, Stmt_IfLpExpRpStmtElseStmt, Stmt_WhileLpExpRpStmt,
+	Stmt_ExpSemi, Stmt_Compst, Stmt_ReturnExpSemi, Stmt_IfLpExpRpStmt, Stmt_IfLpExpRpStmtElseStmt, Stmt_WhileLpExpRpStmt,
 	Deflist_DefDeflist, Deflist_Null, 
 	Def_SpecifierDeclistSemi,
 	Declist_Dec, Declist_DecCommaDeclist,

@@ -49,8 +49,8 @@ Program		:	ExtDefList {
 					printf("\033[46;37mProgram: ExtDefList(%d)\033[0m\n", @$.first_line);
 					#endif
 					$$ = CreateGNode("Program", @$.first_line, _INIT_, Program_Extdeflist, 1, $1);
-					//if(!is_error)
-					//	tran($$, 0);
+					if(!is_error)
+						tran($$, 0);
 					root = $$;
 				}
 			;
@@ -259,7 +259,8 @@ Stmt	:	Exp SEMI {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mStmt: IF LP Exp RP Stmt prec LOWER_THAN_ELSE(%d)\033[0m\n", @$.first_line);
 				#endif
-				//$$ = CreateGNode("Stmt", @$.first_line, _INIT_, Stmt_IfLpExpRpStmtElseStmt, 5, $1, $2, $3, $4, $5);
+				//BUG FIXED: wrong rule!!!!!
+				$$ = CreateGNode("Stmt", @$.first_line, _INIT_, Stmt_IfLpExpRpStmt, 5, $1, $2, $3, $4, $5);
 			}
 		|	IF LP Exp RP Stmt ELSE Stmt {
 				#ifdef DEBUG_MSG

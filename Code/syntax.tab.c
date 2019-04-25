@@ -488,10 +488,10 @@ static const yytype_uint16 yyrline[] =
        0,    47,    47,    57,    66,    73,    79,    85,    93,   100,
      106,   114,   120,   127,   133,   140,   146,   153,   161,   167,
      174,   180,   187,   193,   200,   208,   216,   223,   229,   236,
-     242,   248,   258,   264,   270,   278,   284,   295,   301,   308,
-     316,   323,   329,   336,   342,   351,   357,   363,   369,   375,
-     381,   387,   393,   399,   405,   411,   417,   423,   429,   435,
-     441,   447,   453,   467,   474,   480
+     242,   248,   258,   265,   271,   279,   285,   296,   302,   309,
+     317,   324,   330,   337,   343,   352,   358,   364,   370,   376,
+     382,   388,   394,   400,   406,   412,   418,   424,   430,   436,
+     442,   448,   454,   468,   475,   481
 };
 #endif
 
@@ -1468,8 +1468,8 @@ yyreduce:
 					printf("\033[46;37mProgram: ExtDefList(%d)\033[0m\n", (yyloc).first_line);
 					#endif
 					(yyval.gnode) = CreateGNode("Program", (yyloc).first_line, _INIT_, Program_Extdeflist, 1, (yyvsp[0].gnode));
-					//if(!is_error)
-					//	tran($$, 0);
+					if(!is_error)
+						tran((yyval.gnode), 0);
 					root = (yyval.gnode);
 				}
 #line 1476 "syntax.tab.c" /* yacc.c:1646  */
@@ -1803,46 +1803,47 @@ yyreduce:
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mStmt: IF LP Exp RP Stmt prec LOWER_THAN_ELSE(%d)\033[0m\n", (yyloc).first_line);
 				#endif
-				//$$ = CreateGNode("Stmt", @$.first_line, _INIT_, Stmt_IfLpExpRpStmtElseStmt, 5, $1, $2, $3, $4, $5);
+				//BUG FIXED: wrong rule!!!!!
+				(yyval.gnode) = CreateGNode("Stmt", (yyloc).first_line, _INIT_, Stmt_IfLpExpRpStmt, 5, (yyvsp[-4].gnode), (yyvsp[-3].gnode), (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 			}
-#line 1809 "syntax.tab.c" /* yacc.c:1646  */
+#line 1810 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 264 "syntax.y" /* yacc.c:1646  */
+#line 265 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mStmt: IF LP Exp RP Stmt ELSE Stmt(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("Stmt", (yyloc).first_line, _INIT_, Stmt_IfLpExpRpStmtElseStmt, 7, (yyvsp[-6].gnode), (yyvsp[-5].gnode), (yyvsp[-4].gnode), (yyvsp[-3].gnode), (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 			}
-#line 1820 "syntax.tab.c" /* yacc.c:1646  */
+#line 1821 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 270 "syntax.y" /* yacc.c:1646  */
+#line 271 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mStmt: WHILE LP Exp RP Stmt(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("Stmt", (yyloc).first_line, _INIT_, Stmt_WhileLpExpRpStmt, 5, (yyvsp[-4].gnode), (yyvsp[-3].gnode), (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 			}
-#line 1831 "syntax.tab.c" /* yacc.c:1646  */
+#line 1832 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 278 "syntax.y" /* yacc.c:1646  */
+#line 279 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[47;32mERROR: stmt: error SEMI in line %d\033[0m \n", (yyloc).first_line-1);
 				#endif
 				is_error = 1;
 			}
-#line 1842 "syntax.tab.c" /* yacc.c:1646  */
+#line 1843 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 284 "syntax.y" /* yacc.c:1646  */
+#line 285 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[47;32mERROR: stmt: Exp error in line %d\033[0m \n", (yyloc).first_line);
@@ -1852,297 +1853,297 @@ yyreduce:
 				printf("\033[47;32mis_error in line %d\033[0m \n", (yyloc).first_line);
 				#endif
 			}
-#line 1856 "syntax.tab.c" /* yacc.c:1646  */
+#line 1857 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 295 "syntax.y" /* yacc.c:1646  */
+#line 296 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mDefList: Def DefList(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("DefList", (yyloc).first_line, _INIT_, Deflist_DefDeflist, 2, (yyvsp[-1].gnode), (yyvsp[0].gnode));
 			}
-#line 1867 "syntax.tab.c" /* yacc.c:1646  */
+#line 1868 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 301 "syntax.y" /* yacc.c:1646  */
+#line 302 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mDefList: EMPTY(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("DefList", (yyloc).first_line, _INIT_, Deflist_Null, -1);
 			}
-#line 1878 "syntax.tab.c" /* yacc.c:1646  */
+#line 1879 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 39:
-#line 308 "syntax.y" /* yacc.c:1646  */
+#line 309 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mDef: Specifier DecList SEMI(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("Def", (yyloc).first_line, _INIT_, Def_SpecifierDeclistSemi, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 			}
-#line 1889 "syntax.tab.c" /* yacc.c:1646  */
+#line 1890 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 40:
-#line 316 "syntax.y" /* yacc.c:1646  */
+#line 317 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("D\n");
 				#endif
 				is_error = 1;
 			}
-#line 1900 "syntax.tab.c" /* yacc.c:1646  */
+#line 1901 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 41:
-#line 323 "syntax.y" /* yacc.c:1646  */
+#line 324 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mDecList: Dec(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("DecList", (yyloc).first_line, _INIT_, Declist_Dec, 1, (yyvsp[0].gnode));
 			}
-#line 1911 "syntax.tab.c" /* yacc.c:1646  */
+#line 1912 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 42:
-#line 329 "syntax.y" /* yacc.c:1646  */
+#line 330 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mDecList: Dec COMMA DecList(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("DecList", (yyloc).first_line, _INIT_, Declist_DecCommaDeclist, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 			}
-#line 1922 "syntax.tab.c" /* yacc.c:1646  */
+#line 1923 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 43:
-#line 336 "syntax.y" /* yacc.c:1646  */
+#line 337 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mDec: VarDec(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("Dec", (yyloc).first_line, _INIT_, Dec_Vardec, 1, (yyvsp[0].gnode));
 			}
-#line 1933 "syntax.tab.c" /* yacc.c:1646  */
+#line 1934 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 44:
-#line 342 "syntax.y" /* yacc.c:1646  */
+#line 343 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mDec: VarDec ASSIGNOP Exp(%d)\033[0m\n", (yyloc).first_line);
 				#endif
 				(yyval.gnode) = CreateGNode("Dec", (yyloc).first_line, _INIT_, Dec_VardecAssignopExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 			}
-#line 1944 "syntax.tab.c" /* yacc.c:1646  */
+#line 1945 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 45:
-#line 351 "syntax.y" /* yacc.c:1646  */
+#line 352 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp ASSIGNOP Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpAssignopExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 1955 "syntax.tab.c" /* yacc.c:1646  */
+#line 1956 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 46:
-#line 357 "syntax.y" /* yacc.c:1646  */
+#line 358 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp AND Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpAndExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 1966 "syntax.tab.c" /* yacc.c:1646  */
+#line 1967 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 47:
-#line 363 "syntax.y" /* yacc.c:1646  */
+#line 364 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp OR Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpOrExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 1977 "syntax.tab.c" /* yacc.c:1646  */
+#line 1978 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 48:
-#line 369 "syntax.y" /* yacc.c:1646  */
+#line 370 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp RELOP Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpRelopExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 1988 "syntax.tab.c" /* yacc.c:1646  */
+#line 1989 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 49:
-#line 375 "syntax.y" /* yacc.c:1646  */
+#line 376 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp PLUS Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpPlusExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 1999 "syntax.tab.c" /* yacc.c:1646  */
+#line 2000 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 50:
-#line 381 "syntax.y" /* yacc.c:1646  */
+#line 382 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp MINUS Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpMinusExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2010 "syntax.tab.c" /* yacc.c:1646  */
+#line 2011 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 51:
-#line 387 "syntax.y" /* yacc.c:1646  */
+#line 388 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp STAR Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpStarExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2021 "syntax.tab.c" /* yacc.c:1646  */
+#line 2022 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 52:
-#line 393 "syntax.y" /* yacc.c:1646  */
+#line 394 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp DIV Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpDivExp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2032 "syntax.tab.c" /* yacc.c:1646  */
+#line 2033 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 53:
-#line 399 "syntax.y" /* yacc.c:1646  */
+#line 400 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: LP Exp RP(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_LpExpRp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2043 "syntax.tab.c" /* yacc.c:1646  */
+#line 2044 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 54:
-#line 405 "syntax.y" /* yacc.c:1646  */
+#line 406 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: MINUS Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_MinusExp, 2, (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2054 "syntax.tab.c" /* yacc.c:1646  */
+#line 2055 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 55:
-#line 411 "syntax.y" /* yacc.c:1646  */
+#line 412 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: NOT Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_NotExp, 2, (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2065 "syntax.tab.c" /* yacc.c:1646  */
+#line 2066 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 56:
-#line 417 "syntax.y" /* yacc.c:1646  */
+#line 418 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: ID LP Args RP(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_IdLpArgsRp, 4, (yyvsp[-3].gnode), (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2076 "syntax.tab.c" /* yacc.c:1646  */
+#line 2077 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 57:
-#line 423 "syntax.y" /* yacc.c:1646  */
+#line 424 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: ID LP RP(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_IdLpRp, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2087 "syntax.tab.c" /* yacc.c:1646  */
+#line 2088 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 58:
-#line 429 "syntax.y" /* yacc.c:1646  */
+#line 430 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp LB Exp RB(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpLbExpRb, 4, (yyvsp[-3].gnode), (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2098 "syntax.tab.c" /* yacc.c:1646  */
+#line 2099 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 59:
-#line 435 "syntax.y" /* yacc.c:1646  */
+#line 436 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: Exp DOT ID	(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_ExpDotId, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2109 "syntax.tab.c" /* yacc.c:1646  */
+#line 2110 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 60:
-#line 441 "syntax.y" /* yacc.c:1646  */
+#line 442 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: ID	(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_Id, 1, (yyvsp[0].gnode));
 		}
-#line 2120 "syntax.tab.c" /* yacc.c:1646  */
+#line 2121 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 61:
-#line 447 "syntax.y" /* yacc.c:1646  */
+#line 448 "syntax.y" /* yacc.c:1646  */
     {	
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: INT (%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_Int, 1, (yyvsp[0].gnode));
 		}
-#line 2131 "syntax.tab.c" /* yacc.c:1646  */
+#line 2132 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 62:
-#line 453 "syntax.y" /* yacc.c:1646  */
+#line 454 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: FLOAT (%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_Float, 1, (yyvsp[0].gnode));
 		}
-#line 2142 "syntax.tab.c" /* yacc.c:1646  */
+#line 2143 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 63:
-#line 467 "syntax.y" /* yacc.c:1646  */
+#line 468 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mExp: exp LB error RB (%d)\033[0m\n", (yyloc).first_line);
@@ -2150,33 +2151,33 @@ yyreduce:
 				is_error = 1;
 				//yyerror("unexpected ']'");
 			}
-#line 2154 "syntax.tab.c" /* yacc.c:1646  */
+#line 2155 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 64:
-#line 474 "syntax.y" /* yacc.c:1646  */
+#line 475 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mArgs: Exp COMMA Args(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Args", (yyloc).first_line, _INIT_, Args_ExpCommaArgs, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2165 "syntax.tab.c" /* yacc.c:1646  */
+#line 2166 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 65:
-#line 480 "syntax.y" /* yacc.c:1646  */
+#line 481 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mArgs: Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Args", (yyloc).first_line, _INIT_, Args_Exp, 1, (yyvsp[0].gnode));
 		}
-#line 2176 "syntax.tab.c" /* yacc.c:1646  */
+#line 2177 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 2180 "syntax.tab.c" /* yacc.c:1646  */
+#line 2181 "syntax.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2411,7 +2412,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 487 "syntax.y" /* yacc.c:1906  */
+#line 488 "syntax.y" /* yacc.c:1906  */
 
 void yyerror(const char *s)
 {

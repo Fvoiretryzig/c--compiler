@@ -37,6 +37,7 @@ void F_Stmtlist_Null(struct node* n);
 void F_Stmt_ExpSemi(struct node* n);
 void F_Stmt_Compst(struct node* n);
 void F_Stmt_ReturnExpSemi(struct node* n);
+void F_Stmt_IfLpExpRpStmt(struct node* n);
 void F_Stmt_IfLpExpRpStmtElseStmt(struct node* n);
 void F_Stmt_WhileLpExpRpStmt(struct node* n);
 void F_Deflist_DefDeflist(struct node* n);
