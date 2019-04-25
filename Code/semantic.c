@@ -68,25 +68,44 @@ void semantic_analysis(struct node* n) {
 	return;
 }
 int isEqual(Type a, Type b) {
+	//数组判断不太对
 	if(a->kind != b->kind && (a->kind != ARRAY || b->kind != ARRAY)) { 
-		printf("a->kind: %d b->kind:%d\n", a->kind, b->kind);
-		return 0;
-	}
-	if(a->kind == ARRAY) {
-	}
-	if(a->kind == BASIC) {
-		if(a->u.basic != b->u.basic)
+		if(a->kind == ARRAY) {
+			Type tmp = a->u.array.elem;
+			while(tmp->kind == ARRAY) {
+				tmp = tmp->u.array.elem;
+			}
+			if(tmp->kind != b->kind) 
+				return 0;
+		}
+		else if(b->kind = ARRAY) {
+			Type tmp = a->u.array.elem;
+			while(tmp->kind == ARRAY) {
+				tmp = tmp->u.array.elem;
+			}
+			if(tmp->kind != a->kind)
+				return 0;
+		}
+		else {
+			printf("a->kind: %d b->kind:%d\n", a->kind, b->kind);
 			return 0;
+		}
 	}
-	else if(a->kind == ARRAY) {
-		if(a->u.array.elem != b->u.array.elem)
-			return 0;
-		if(a->u.array.size != b->u.array.size)
-			return 0;
-	}
-	else if(a->kind == STRUCTURE) {
-		if(!isEqual(a->u.structure->type, b->u.structure->type))
-			return 0;
+	else {
+		if(a->kind == BASIC) {
+			if(a->u.basic != b->u.basic)
+				return 0;
+		}
+		else if(a->kind == ARRAY) {
+			if(!isEqual(a->u.array.elem, b->u.array.elem))
+				return 0;
+			/*if(a->u.array.size != b->u.array.size)
+				return 0;*/
+		}
+		else if(a->kind == STRUCTURE) {
+			if(!isEqual(a->u.structure->type, b->u.structure->type))
+				return 0;
+		}
 	}
 	return 1;
 }
@@ -358,9 +377,11 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 	Vardec->type->kind = ARRAY;
 	Vardec->type->u.array.elem = n->type;
 	Vardec->type->u.array.size = size;	//大小不知道怎么测
-
+	//Vardec->type = n->type;
 	semantic_analysis(Vardec);
-	printf("hahah\n");
+	//n->type->kind = ARRAY;
+	//n->type->u.array.elem = Vardec->type;
+	//n->type->u.array.size = size;
 	return;
 }
 void F_Fundec_IdLpVarlistRp(struct node* n){
@@ -507,7 +528,7 @@ void F_Stmt_ExpSemi(struct node* n){
 	struct node* Exp = n->gchild[0];
 	
 	semantic_analysis(Exp);
-	
+
 	return;
 }
 void F_Stmt_Compst(struct node* n){
@@ -1209,20 +1230,23 @@ void F_Exp_ExpDotId(struct node* n){
 	Symbol sym = find_symbol(name);
 	if(sym == NULL)
 		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);
-	char* id_name = id->str;
-	FieldList p = sym->type->u.structure;
-	int is_matched = 0;
-	while(p != NULL) {
-		if(!strcmp(p->name, id_name)) {
-			is_matched = 1;
-			break;			
+	
+	if(sym && sym->type->kind == STRUCTURE	) {
+		char* id_name = id->str;
+		FieldList p = sym->type->u.structure;
+		int is_matched = 0;
+		while(p != NULL) {
+			if(!strcmp(p->name, id_name)) {
+				is_matched = 1;
+				break;			
+			}
+			p = p->tail;
 		}
-		p = p->tail;
-	}
-	if(!is_matched)
-		printf("Error type 14 at Line %d: Non-existent field \"%s\".", n->lineno, id_name);
-	else
-		n->type = id->type;
+		if(!is_matched)
+			printf("Error type 14 at Line %d: Non-existent field \"%s\".", n->lineno, id_name);
+		else
+			n->type = id->type;
+		}
 	n->is_left = 1;
 	
 	return;
