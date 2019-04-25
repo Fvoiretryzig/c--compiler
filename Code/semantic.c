@@ -674,6 +674,7 @@ void F_Declist_DecCommaDeclist(struct node* n){
 	Dec->type = n->type;
 	semantic_analysis(Dec);
 	
+	Declist->type = n->type;
 	semantic_analysis(Declist);
 }
 void F_Dec_Vardec(struct node* n){
@@ -698,7 +699,7 @@ void F_Dec_VardecAssignopExp(struct node* n){
 	semantic_analysis(Vardec);
 	semantic_analysis(Exp);
 	//TODO 是否要加两个类型相等判断？？？要啊!!!!!!
-	if(Vardec->type != NULL && Exp->type != NULL) {
+	if(Vardec->type && Exp->type) {
 		if(Vardec->type->kind != ARRAY && Exp->type->kind != ARRAY) {
 			if(!isEqual(Vardec->type, Exp->type))
 				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
@@ -722,7 +723,7 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
-	if(E1->type != NULL && E2->type != NULL) {
+	if(E1->type  && E2->type) {
 		if(E1->type->kind != ARRAY && E2->type->kind != ARRAY) {
 			if(!isEqual(E1->type, E2->type)) 
 				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
@@ -735,11 +736,7 @@ void F_Exp_ExpAssignopExp(struct node* n){
 			printf("Error type 6 at Line %d: The left-hand side of an assignment must be a variable.\n", n->lineno);
 		n->type = E1->type;
 	}
-	else 
-		printf("E1: %p E2: %p\n", E1->type, E2->type);
-
 	n->is_left = 0;
-	//TODO()根据类型进行判断再把E2的值赋给E1
 		
 	return;
 }
@@ -754,12 +751,13 @@ void F_Exp_ExpAndExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
-	if(E1->type->kind != BASIC || E2->type->kind != BASIC)
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	else if(E1->type->u.basic != 1 || E2->type->u.basic != 1)
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	n->type = E1->type;
-	n->type_int = E1->type_int && E2->type_int;
+	if(E1->type && E2->type) {
+		if(E1->type->kind != BASIC || E2->type->kind != BASIC)
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		else if(E1->type->u.basic != 1 || E2->type->u.basic != 1)
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		n->type = E1->type;
+	}
 	n->n_type = _BASIC_;
 	n->is_left = 0;
 	
@@ -775,13 +773,13 @@ void F_Exp_ExpOrExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
-	
-	if(E1->type->kind != BASIC || E2->type->kind != BASIC)
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	else if(E1->type->u.basic != 1 || E2->type->u.basic != 1)
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	n->type = E1->type;
-	n->type_int = E1->type_int || E2->type_int;
+	if(E1->type && E2->type) {
+		if(E1->type->kind != BASIC || E2->type->kind != BASIC)
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		else if(E1->type->u.basic != 1 || E2->type->u.basic != 1)
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		n->type = E1->type;
+	}
 	n->n_type = _BASIC_;
 	n->is_left = 0;
 	
@@ -799,79 +797,12 @@ void F_Exp_ExpRelopExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
-	//printf("relop: E1:%p E2: %p\n", E1->type, E2->type);
 	if(E1->type && E2->type){
 		if(E1->type->kind != BASIC || E2->type->kind != BASIC)
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-		if(E1->type->u.basic != E2->type->u.basic) {
-			if(E1->type->u.basic == 1) {
-				E1->type->u.basic = 0;
-				E1->type_float = E1->type_int;
-			}
-			else {
-				E2->type->u.basic = 0;
-				E2->type_float = E1->type_int;
-			}
-			is_float = 1;
-		}
-		if(E1->type->u.basic == 0) {
-			is_float = 1;
-		}
 		n->type->kind = BASIC;
 		n->type->u.basic = 1;
 		n->n_type = _BASIC_;
-		char* op = Relop->relop;
-		int cas = -1;
-		if(!strcmp(op, ">"))
-			cas = 0;
-		else if(!strcmp(op, "<"))
-			cas = 1;
-		else if(!strcmp(op, ">="))
-			cas = 2;
-		else if(!strcmp(op, "<="))
-			cas = 3;
-		else if(!strcmp(op, "=="))
-			cas = 4;
-		else if(!strcmp(op, "!="))
-			cas = 5;
-		switch(cas) {
-			case 0:
-				if(is_float)
-					n->type_int = (E1->type_float > E2->type_float);
-				else
-					n->type_int = (E1->type_int > E2->type_int);
-				break;
-			case 1:
-				if(is_float)
-					n->type_int = (E1->type_float < E2->type_float);
-				else
-					n->type_int = (E1->type_int < E2->type_int);
-				break;
-			case 2:
-				if(is_float)
-					n->type_int = (E1->type_float >= E2->type_float);
-				else
-					n->type_int = (E1->type_int >= E2->type_int);
-				break;
-			case 3:
-				if(is_float)
-					n->type_int = (E1->type_float <= E2->type_float);
-				else
-					n->type_int = (E1->type_int <= E2->type_int);
-				break;
-			case 4:
-				if(is_float)
-					n->type_int = (E1->type_float == E2->type_float);
-				else
-					n->type_int = (E1->type_int == E2->type_int);
-				break;
-			case 5:
-				if(is_float)
-					n->type_int = (E1->type_float != E2->type_float);
-				else
-					n->type_int = (E1->type_int != E2->type_int);
-				break;
-		}
 	}
 	return;
 }
@@ -886,35 +817,18 @@ void F_Exp_ExpPlusExp(struct node* n){
 	
 	semantic_analysis(E1);	
 	semantic_analysis(E2);
-
-	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
-		if(E1->type->u.basic != E2->type->u.basic) {
-			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-			if(E1->type->u.basic == 1) {
-				E1->type->u.basic = 0;
-				E1->type_float = E1->type_int;
+	if(E1->type && E2->type) {
+		if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
+			if(E1->type->u.basic != E2->type->u.basic) {
+				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			}
-			else {
-				E2->type->u.basic = 0;
-				E2->type_float = E2->type_int;
-			}
-			n->type_float = E1->type_float + E2->type_float;
+			n->type = E1->type;
+			n->n_type = _BASIC_;
 		}
-		else if(E1->type->u.basic == 0) {
-			n->type_float = E1->type_float + E2->type_float;
-		}
-		else if(E1->type->u.basic == 1) {
-			
-			n->type_int = E1->type_int + E2->type_int;
-		}
-		
-		n->type = E1->type;
-		n->n_type = _BASIC_;
+		else
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);	
 	}
-	else
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 	n->is_left = 0;
-	
 	return;
 }
 void F_Exp_ExpMinusExp(struct node* n){
@@ -927,31 +841,17 @@ void F_Exp_ExpMinusExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
-	
-	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
-		if(E1->type->u.basic != E2->type->u.basic) {
+	if(E1->type && E2->type) {
+		if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
+			if(E1->type->u.basic != E2->type->u.basic) {
+				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+			}
+			n->type = E1->type;
+			n->n_type = _BASIC_;
+		}
+		else
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-			if(E1->type->u.basic == 1) {
-				E1->type->u.basic = 0;
-				E1->type_float = E1->type_int;
-			}
-			else {
-				E2->type->u.basic = 0;
-				E2->type_float = E2->type_int;
-			}
-			n->type_float = E1->type_float - E2->type_float;
-		}
-		else if(E1->type->u.basic == 0) {
-			n->type_float = E1->type_float - E2->type_float;
-		}
-		else if(E1->type->u.basic == 1) {
-			n->type_int = E1->type_int - E2->type_int;
-		}
-		n->type = E1->type;
-		n->n_type = _BASIC_;
 	}
-	else
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 	n->is_left = 0;
 	
 	return;
@@ -967,32 +867,18 @@ void F_Exp_ExpStarExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
-	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
-		if(E1->type->u.basic != E2->type->u.basic) {
+	if(E1->type && E2->type) {
+		if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
+			if(E1->type->u.basic != E2->type->u.basic) {
+				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+			}
+			n->type = E1->type;
+			n->n_type = _BASIC_;
+		}
+		else
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-			if(E1->type->u.basic == 1) {
-				E1->type->u.basic = 0;
-				E1->type_float = E1->type_int;
-			}
-			else {
-				E2->type->u.basic = 0;
-				E2->type_float = E2->type_int;
-			}
-			n->type_float = E1->type_float * E2->type_float;
-		}
-		else if(E1->type->u.basic == 0) {
-			n->type_float = E1->type_float * E2->type_float;
-		}
-		else if(E1->type->u.basic == 1) {
-			n->type_int = E1->type_int * E2->type_int;
-		}
-		n->type = E1->type;
-		n->n_type = _BASIC_;
+		n->is_left = 0;
 	}
-	else
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	n->is_left = 0;
-	
 	return;
 }
 void F_Exp_ExpDivExp(struct node* n){
@@ -1006,32 +892,18 @@ void F_Exp_ExpDivExp(struct node* n){
 	semantic_analysis(E1);
 	semantic_analysis(E2);
 	
-	if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
-		if(E1->type->u.basic != E2->type->u.basic) {
+	if(E1->type && E2->type) {
+		if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
+			if(E1->type->u.basic != E2->type->u.basic) {
+				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+			}
+			n->type = E1->type;
+			n->n_type = _BASIC_;
+		}
+		else
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-			if(E1->type->u.basic == 1) {
-				E1->type->u.basic = 0;
-				E1->type_float = E1->type_int;
-			}
-			else {
-				E2->type->u.basic = 0;
-				E2->type_float = E2->type_int;
-			}
-			n->type_float = E1->type_float / E2->type_float;
-		}
-		else if(E1->type->u.basic == 0) {
-			n->type_float = E1->type_float / E2->type_float;
-		}
-		else if(E1->type->u.basic == 1) {
-			n->type_int = E1->type_int / E2->type_int;
-		}
-		n->type = E1->type;
-		n->n_type = _BASIC_;
+		n->is_left = 0;
 	}
-	else
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	n->is_left = 0;
-	
 	return;
 }
 void F_Exp_LpExpRp(struct node* n){
@@ -1041,7 +913,8 @@ void F_Exp_LpExpRp(struct node* n){
 	struct node* E1 = n->gchild[0];
 	
 	semantic_analysis(E1);
-	n->type = E1->type;
+	if(E1->type)
+		n->type = E1->type;
 	n->is_left = 0;
 	
 	return;
@@ -1060,12 +933,12 @@ void F_Exp_MinusExp(struct node* n){
 	n->type = E1->type;
 	n->n_type = _BASIC_;
 	
-	if(E1->type->u.basic) {
+	/*if(E1->type->u.basic) {
 		n->type_int = -E1->type_int;
 	}
 	else {
 		n->type_float = -E1->type_float;
-	}
+	}*/
 	n->is_left = 0;
 	
 	return;
@@ -1085,7 +958,7 @@ void F_Exp_NotExp(struct node* n){
 	
 	n->type = E1->type;
 	n->n_type = _BASIC_;
-	n->type_int = !(E1->type_int);
+	//n->type_int = !(E1->type_int);
 	n->is_left = 0;
 	
 	return;
@@ -1316,6 +1189,7 @@ void F_Exp_Id(struct node* n){
 		id->type = sym->type;
 		n->type = id->type;
 	}
+	printf("name: %s p: %p\n", name, id->type);
 	n->n_type = _ID_;
 	n->is_left = 1;
 	n->arr_dim = 1;
@@ -1334,7 +1208,7 @@ void F_Exp_Int(struct node* n){
 	t->u.basic = 1;
 	t->kind = BASIC;
 	n->type = t;
-	n->type_int = Int->type_int;
+	//n->type_int = Int->type_int;
 	n->is_left = 0;
 	
 	return;
