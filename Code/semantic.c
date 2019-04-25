@@ -332,7 +332,6 @@ void F_Vardec_Id(struct node* n){
 	
 	id->type = n->type;
 	id->n_type = _VAR_;
-	
 	if(top == -1) {	
 		Symbol sym = find_symbol(name);
 		if(sym != NULL && sym->idkind == _VAR)
@@ -697,7 +696,11 @@ void F_Dec_VardecAssignopExp(struct node* n){
 	Vardec->type = n->type;
 	semantic_analysis(Vardec);
 	semantic_analysis(Exp);
-	//TODO 是否要加两个类型相等判断？？？
+	//TODO 是否要加两个类型相等判断？？？要啊!!!!!!
+	if(Vardec->type != NULL && Exp->type != NULL) {
+		if(!isEqual(Vardec->type, Exp->type))
+			printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
+	}
 	
 	return;
 }
@@ -720,7 +723,7 @@ void F_Exp_ExpAssignopExp(struct node* n){
 		n->type = E1->type;
 	}
 	else 
-		printf("//E1: %p E2: %p\n", E1->type, E2->type);
+		printf("E1: %p E2: %p\n", E1->type, E2->type);
 
 	n->is_left = 0;
 	//TODO()根据类型进行判断再把E2的值赋给E1
@@ -1204,12 +1207,13 @@ void F_Exp_IdLpRp(struct node* n){
 	strcpy(n->str, name);
 	strcat(n->str, "()");
 	SymbolF symF = find_symbolF(name);
-	
 	if(symF == NULL)
 		printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, name);
-	if(symF->argc != 0)
-		printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"()\".\n", n->lineno, n->str);
-	n->func.retType = symF->retType;
+	else {
+		if(symF->argc != 0)
+			printf("Error type 9 at Line %d: Function \"%s\" is not applicable for arguments \"()\".\n", n->lineno, n->str);
+		n->func.retType = symF->retType;
+	}
 	n->is_left = 0;
 	
 	return;
