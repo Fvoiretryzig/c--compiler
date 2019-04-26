@@ -278,6 +278,7 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	}
 	f->tail = NULL;
 	free(tmp_table[top]);
+	printf("adddddddddddd_symbol: name: %s\n", name);
 	add_symbol(n, name);
 
 	top--;
@@ -716,6 +717,7 @@ void F_Dec_VardecAssignopExp(struct node* n){
 		Vardec->type = n->type;
 	semantic_analysis(Vardec);
 	semantic_analysis(Exp);
+	
 	//TODO 是否要加两个类型相等判断？？？要啊!!!!!!
 	if(Vardec->type && Exp->type) {
 		if(Vardec->type->kind != ARRAY && Exp->type->kind != ARRAY) {
@@ -727,7 +729,7 @@ void F_Dec_VardecAssignopExp(struct node* n){
 				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
 		}
 	}
-	
+	printf("VVVVVVVVVVVVVVardec->type: %d exp->type: %d\n", Vardec->type->kind, Exp->type->kind);
 	return;
 }
 void F_Exp_ExpAssignopExp(struct node* n){
@@ -741,7 +743,7 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
-	printf("E1->type: %p E2->type: %p\n", E1->type, E2->type);
+	//printf("E1->type: %p E2->type: %p\n", E1->type, E2->type);
 	if(E1->type  && E2->type) {
 		printf("E1->str: %s E2->str: %s\n", E1->str, E2->str);
 		if(E1->type->kind != ARRAY && E2->type->kind != ARRAY) {
@@ -1012,7 +1014,6 @@ void F_Exp_IdLpArgsRp(struct node* n){
 	for(int i = 0; i<n_cnt; i++) {
 		int tp = -1; // 0:float 1:int 2:array 3:structure
 		Type tmp = args->func.argv[i];
-		printf("in nnnnnnnnnnnnnatvie i: %d n_cnt: %d args str: %s\n", i, n_cnt, args->gchild[2]->str);
 		if(tmp->kind == BASIC) {
 			if(!tmp->u.basic)
 				tp = 0;
@@ -1152,10 +1153,13 @@ void F_Exp_ExpLbExpRb(struct node* n){
 		else if(Exp2->type->u.basic != 1)
 			printf("Error type 12 at Line %d: \"%g\" is not an integer.\n", n->lineno, Exp2->type_float);	
 	}
-	n->type = Exp1->type;
+	if(Exp1->type) {
+		n->type = Exp1->type;
+		n->type->arr_dim = n->arr_dim;
+	}
 	n->is_left = 1;
 	n->arr_dim = Exp1->arr_dim + 1;
-	n->type->arr_dim = n->arr_dim;
+	
 	//printf("n->name: %s n->arr_dim: %d\n", n->str, n->arr_dim);
 	
 	return;
@@ -1216,7 +1220,6 @@ void F_Exp_Id(struct node* n){
 
 	struct node* id = n->gchild[0];
 	char* name = id->str;
-	
 	Symbol sym = find_symbol(name);
 	if(sym == NULL) {
 		printf("Error type 1 at Line %d: Undefined variable \"%s\".\n", n->lineno, name);
@@ -1227,11 +1230,12 @@ void F_Exp_Id(struct node* n){
 		printf("sym->name: %s\n", sym->name);
 		id->type = sym->type;
 		n->type = id->type;
+		n->type->arr_dim = n->arr_dim;
 	}
 	n->n_type = _ID_;
 	n->is_left = 1;
 	n->arr_dim = 0;
-	n->type->arr_dim = n->arr_dim;
+	
 	return;
 }
 void F_Exp_Int(struct node* n){
@@ -1275,7 +1279,7 @@ void F_Args_ExpCommaArgs(struct node* n){
 	struct node* Args = n->gchild[2];
 	
 	semantic_analysis(Exp);
-	printf("ARGGGGGGGGGGGGGGGGGGG exp: %s\n", Exp->str);
+	//printf("ARGGGGGGGGGGGGGGGGGGG exp: %s\n", Exp->str);
 	if(n->str) 
 		strcat(n->str, Exp->str);
 	else 
@@ -1301,7 +1305,7 @@ void F_Args_Exp(struct node* n) {
 	
 	semantic_analysis(Exp);
 	
-	printf("in arg Exp COMMA ARGGGGGGGGGGGGGGGGGGGGGGGGG Exp->str: %s Exp->type: %p\n", Exp->str, Exp->type);
+	//printf("in arg Exp COMMA ARGGGGGGGGGGGGGGGGGGGGGGGGG Exp->str: %s Exp->type: %p\n", Exp->str, Exp->type);
 	strcpy(n->str, Exp->str);
 	if(Exp->type)
 		n->func.argv[n->func.argc++] = Exp->type;
