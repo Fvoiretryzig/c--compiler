@@ -491,7 +491,7 @@ static const yytype_uint16 yyrline[] =
      242,   248,   258,   265,   271,   279,   285,   296,   302,   309,
      317,   324,   330,   337,   343,   352,   358,   364,   370,   376,
      382,   388,   394,   400,   406,   412,   418,   424,   430,   436,
-     442,   448,   454,   468,   476,   482
+     442,   449,   456,   471,   479,   485
 };
 #endif
 
@@ -2116,34 +2116,37 @@ yyreduce:
 			printf("\033[46;37mExp: ID	(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_Id, 1, (yyvsp[0].gnode));
+			//$$ = CreateIdGNode(yytext, @$.first_line);
 		}
-#line 2121 "syntax.tab.c" /* yacc.c:1646  */
+#line 2122 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 61:
-#line 448 "syntax.y" /* yacc.c:1646  */
+#line 449 "syntax.y" /* yacc.c:1646  */
     {	
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: INT (%d)\033[0m\n", (yyloc).first_line);
 			#endif
-			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_Int, 1, (yyvsp[0].gnode));
+			//$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Int, 1, $1);
+			(yyval.gnode) = CreateIntGNode(atoi(yytext), (yyloc).first_line);
 		}
-#line 2132 "syntax.tab.c" /* yacc.c:1646  */
+#line 2134 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 62:
-#line 454 "syntax.y" /* yacc.c:1646  */
+#line 456 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: FLOAT (%d)\033[0m\n", (yyloc).first_line);
 			#endif
-			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_Float, 1, (yyvsp[0].gnode));
+			//$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Float, 1, $1);
+			(yyval.gnode) - CreateFloatGNode(atof(yytext), (yyloc).first_line);
 		}
-#line 2143 "syntax.tab.c" /* yacc.c:1646  */
+#line 2146 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 63:
-#line 468 "syntax.y" /* yacc.c:1646  */
+#line 471 "syntax.y" /* yacc.c:1646  */
     {
 				#ifdef DEBUG_MSG
 				printf("\033[46;37mExp: exp LB error RB (%d)\033[0m\n", (yyloc).first_line);
@@ -2151,33 +2154,33 @@ yyreduce:
 				is_error = 1;
 				//yyerror("unexpected ']'");
 			}
-#line 2155 "syntax.tab.c" /* yacc.c:1646  */
+#line 2158 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 64:
-#line 476 "syntax.y" /* yacc.c:1646  */
+#line 479 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mArgs: Exp COMMA Args(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Args", (yyloc).first_line, _INIT_, Args_ExpCommaArgs, 3, (yyvsp[-2].gnode), (yyvsp[-1].gnode), (yyvsp[0].gnode));
 		}
-#line 2166 "syntax.tab.c" /* yacc.c:1646  */
+#line 2169 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 65:
-#line 482 "syntax.y" /* yacc.c:1646  */
+#line 485 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mArgs: Exp(%d)\033[0m\n", (yyloc).first_line);
 			#endif
 			(yyval.gnode) = CreateGNode("Args", (yyloc).first_line, _INIT_, Args_Exp, 1, (yyvsp[0].gnode));
 		}
-#line 2177 "syntax.tab.c" /* yacc.c:1646  */
+#line 2180 "syntax.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 2181 "syntax.tab.c" /* yacc.c:1646  */
+#line 2184 "syntax.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2412,7 +2415,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 489 "syntax.y" /* yacc.c:1906  */
+#line 492 "syntax.y" /* yacc.c:1906  */
 
 void yyerror(const char *s)
 {

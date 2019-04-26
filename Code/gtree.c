@@ -9,6 +9,7 @@ struct node* CreateIntGNode(int int_num, int lineno)
 	strcpy(gnode->name, "INT");
 	gnode->lineno = lineno;
 	gnode->type_int = int_num;
+	printf("in create intnode : %d\n", gnode->type_int);
 	gnode->n_type = _INIT_;
 	gnode->rule = Terminal;	
 	gnode->child_cnt = 0;

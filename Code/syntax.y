@@ -444,18 +444,21 @@ Exp	:	Exp ASSIGNOP Exp {
 			printf("\033[46;37mExp: ID	(%d)\033[0m\n", @$.first_line);
 			#endif
 			$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Id, 1, $1);
+			//$$ = CreateIdGNode(yytext, @$.first_line);
 		}
 	|	INT {	
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: INT (%d)\033[0m\n", @$.first_line);
 			#endif
-			$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Int, 1, $1);
+			//$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Int, 1, $1);
+			$$ = CreateIntGNode(atoi(yytext), @$.first_line);
 		}
 	|	FLOAT {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: FLOAT (%d)\033[0m\n", @$.first_line);
 			#endif
-			$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Float, 1, $1);
+			//$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Float, 1, $1);
+			$$ - CreateFloatGNode(atof(yytext), @$.first_line);
 		}
 	;
 /*error*/

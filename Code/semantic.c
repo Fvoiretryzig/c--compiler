@@ -1130,8 +1130,10 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	
 	semantic_analysis(Exp1);
 	semantic_analysis(Exp2);
-	
+	printf("exp1->str: %s\n", Exp1->str);
+	printf("exp2->int: %d\n", Exp2->type_int);
 	char* name = Exp1->str;
+	strcpy(n->str, Exp1->str);
 	Symbol sym = find_symbol(name);
 	if(sym == NULL)
 		printf("Error type 1 at Line %d: Undefined variable \"%s\".\n", n->lineno, name);
@@ -1147,6 +1149,7 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	n->type = Exp1->type;
 	n->is_left = 1;
 	n->arr_dim = Exp1->arr_dim + 1;
+	printf("n->name: %s n->arr_dim: %d\n", n->str, n->arr_dim);
 	
 	return;
 }
@@ -1160,15 +1163,23 @@ void F_Exp_ExpDotId(struct node* n){
 	semantic_analysis(Exp);
 	
 	if(Exp->type) {
-		if(Exp->type->kind != STRUCTURE) {
+		Type tmp = Exp->type;
+		if(tmp->kind == ARRAY) {
+			for(int i = 0; i<Exp->arr_dim; i++) {
+				tmp = tmp->u.array.elem;
+			}
+		}
+		if(tmp->kind != STRUCTURE) {printf("hahahahahahaha name:%s arr_dim: %d\n",Exp->str, Exp->arr_dim);
 			printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);		
 		}
 	}
 	char* name = Exp->str;
 	int is_matched = 0;
 	Symbol sym = find_symbol(name);
-	if(sym == NULL)
+	if(sym == NULL) {
+		
 		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);
+	}
 	if(sym && sym->type->kind == STRUCTURE) {
 		char* id_name = id->str;
 		FieldList p = sym->type->u.structure;
@@ -1187,7 +1198,6 @@ void F_Exp_ExpDotId(struct node* n){
 	strcpy(n->str, Exp->str); strcpy(n->str, "."); strcpy(n->str, id->str);
 	if(is_matched && id->type) {
 		n->type = id->type;
-		printf("hahahahahahahahahaah   %s.%s: kind: %d\n", Exp->str, id->str, n->type->kind);
 	}
 	n->is_left = 1;
 	
@@ -1213,7 +1223,7 @@ void F_Exp_Id(struct node* n){
 	}
 	n->n_type = _ID_;
 	n->is_left = 1;
-	n->arr_dim = 1;
+	n->arr_dim = 0;
 	return;
 }
 void F_Exp_Int(struct node* n){
@@ -1231,6 +1241,7 @@ void F_Exp_Int(struct node* n){
 	n->type = t;
 	n->is_left = 0;
 	
+	printf("Exp int: %d\n", n->type_int);
 	return;
 }
 void F_Exp_Float(struct node* n){
