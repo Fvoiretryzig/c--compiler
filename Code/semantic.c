@@ -390,7 +390,6 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 		Vardec->type->u.array.elem = n->type;
 	Vardec->type->u.array.size = size;	//大小不知道怎么测
 	semantic_analysis(Vardec);
-	printf("vardec->type in vardecLBINTRB: %p\n", Vardec->type);
 	return;
 }
 void F_Fundec_IdLpVarlistRp(struct node* n){
@@ -743,7 +742,9 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
+	printf("E1->type: %p E2->type: %p\n", E1->type, E2->type);
 	if(E1->type  && E2->type) {
+		printf("E1->str: %s E2->str: %s\n", E1->str, E2->str);
 		if(E1->type->kind != ARRAY && E2->type->kind != ARRAY) {
 			if(!isEqual(E1->type, E2->type)) 
 				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
@@ -1149,7 +1150,7 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	n->type = Exp1->type;
 	n->is_left = 1;
 	n->arr_dim = Exp1->arr_dim + 1;
-	printf("n->name: %s n->arr_dim: %d\n", n->str, n->arr_dim);
+	//printf("n->name: %s n->arr_dim: %d\n", n->str, n->arr_dim);
 	
 	return;
 }
@@ -1161,32 +1162,33 @@ void F_Exp_ExpDotId(struct node* n){
 	struct node* id = n->gchild[2];
 	
 	semantic_analysis(Exp);
-	
+	Type tmp = Exp->type;
 	if(Exp->type) {
-		Type tmp = Exp->type;
 		if(tmp->kind == ARRAY) {
 			for(int i = 0; i<Exp->arr_dim; i++) {
 				tmp = tmp->u.array.elem;
 			}
 		}
-		if(tmp->kind != STRUCTURE) {printf("hahahahahahaha name:%s arr_dim: %d\n",Exp->str, Exp->arr_dim);
+		if(tmp->kind != STRUCTURE) {
 			printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);		
 		}
 	}
 	char* name = Exp->str;
 	int is_matched = 0;
+	//printf("Exp->str: %s id->str: %s\n", Exp->str, id->str);
 	Symbol sym = find_symbol(name);
-	if(sym == NULL) {
-		
+	if(sym == NULL)
 		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);
-	}
+	sym = find_symbol(id->str);
 	if(sym && sym->type->kind == STRUCTURE) {
 		char* id_name = id->str;
 		FieldList p = sym->type->u.structure;
 		while(p != NULL) {
 			if(!strcmp(p->name, id_name)) {
 				is_matched = 1;
+				//printf("hahahahhaahhhhhhhhhhhhhhhhhhhhhhhhh id->str: %s\n", id->str);
 				id->type = p->type;
+				//printf("p->type->kind: %d\n", p->type->kind);	
 				break;			
 			}
 			
@@ -1197,10 +1199,10 @@ void F_Exp_ExpDotId(struct node* n){
 	}
 	strcpy(n->str, Exp->str); strcpy(n->str, "."); strcpy(n->str, id->str);
 	if(is_matched && id->type) {
+		//printf("id str: %s id->type: %p\n", id->str, id->type);
 		n->type = id->type;
 	}
 	n->is_left = 1;
-	
 	return;
 }
 void F_Exp_Id(struct node* n){

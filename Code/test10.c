@@ -12,6 +12,7 @@ int main(int a3, int b4[1][4])
 	struct hello a;
 	a.b2[1][0] = 3.3;
 	test[0][1].b1[1][2] = a.b2[1][0];
-    return a.b2[1][0];
+	test[0][0].a1 = a.b2[1][0];
+    return a.b2[0][1];
 }
 

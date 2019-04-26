@@ -76,7 +76,7 @@ int add_symbolF(struct node* n, char* name) {
 	return 0;
 }
 Symbol find_symbol(char* name) {
-	printf("\033[46;37min findsymbol name: %s\033[0m\n",name);
+	//printf("\033[46;37min findsymbol name: %s\033[0m\n",name);
 	Symbol curr = head;
 	int if_find = 0;
 	while(curr) {
@@ -100,14 +100,14 @@ Symbol find_symbol(char* name) {
 		curr = curr->next;
 	}
 	if(!if_find) {
-		printf("\033[46;37m%s not in symbol table!!\033[0m\n", name);
+		//printf("\033[46;37m%s not in symbol table!!\033[0m\n", name);
 		return NULL;
 	}
-	printf("\033[46;37m%s find in symbol table!!\033[0m\n", name);
+	//printf("\033[46;37m%s find in symbol table!!\033[0m\n", name);
 	return curr;
 }
 SymbolF find_symbolF(char* name) {
-	printf("\033[46;37mthis is find_symbolF\033[0m\n");
+	//printf("\033[46;37mthis is find_symbolF\033[0m\n");
 	SymbolF curr = headF;
 	int if_find = 0;
 	while(curr) {
@@ -118,9 +118,9 @@ SymbolF find_symbolF(char* name) {
 		curr = curr->next;
 	}
 	if(!if_find) {
-		printf("\033[46;37m%s not in symbolF table!!\033[0m\n", name);
+		//printf("\033[46;37m%s not in symbolF table!!\033[0m\n", name);
 		return NULL;
 	}
-	printf("\033[46;37m%s find in symbolF table!!\033[0m\n", name);
+	//printf("\033[46;37m%s find in symbolF table!!\033[0m\n", name);
 	return curr;
 }
