@@ -373,7 +373,6 @@ void F_Vardec_Id(struct node* n){
 			field->tail = new_field;
 		}	
 	}
-
 	return;
 }
 void F_Vardec_VardecLbIntRb(struct node* n){
@@ -559,8 +558,7 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 	#endif
 
 	struct node* Exp = n->gchild[1];
-	
-	semantic_analysis(Exp);
+	semantic_analysis(Exp);//
 	if(Exp->type != NULL) {
 		if(Exp->type->kind != ARRAY && n->func.retType->kind != ARRAY) {
 			if(!isEqual(Exp->type, n->func.retType)) {
@@ -568,12 +566,14 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 			}
 		}
 		else {
+			
+			printf("Exp->arr_dim: %d n->arr_dim: %d\n", Exp->arr_dim, n->arr_dim);
 			if(!isEqual_array(Exp->type, n->func.retType, Exp->arr_dim, n->arr_dim))
 				printf("Error type 8 at Line %d: Type mismatched for return.\n", n->lineno);			
 		}
 				
 	}
-
+	printf("Exp->type: %p\n", Exp->type);
 	return;
 }
 void F_Stmt_IfLpExpRpStmt(struct node* n) {
@@ -729,7 +729,6 @@ void F_Dec_VardecAssignopExp(struct node* n){
 				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
 		}
 	}
-	printf("VVVVVVVVVVVVVVardec->type: %d exp->type: %d\n", Vardec->type->kind, Exp->type->kind);
 	return;
 }
 void F_Exp_ExpAssignopExp(struct node* n){
@@ -1193,13 +1192,13 @@ void F_Exp_ExpDotId(struct node* n){
 	if(sym && sym->type->kind == STRUCTURE) {
 		char* id_name = id->str;
 		FieldList p = sym->type->u.structure;
-		while(p != NULL) {
+		while(p != NULL) {	//TODO 递归判断问题
+			if(x->)
 			if(!strcmp(p->name, id_name)) {
 				is_matched = 1;
 				id->type = p->type;
 				break;			
 			}
-			
 			p = p->tail;
 		}
 		if(!is_matched)
@@ -1207,7 +1206,7 @@ void F_Exp_ExpDotId(struct node* n){
 	}
 	strcpy(n->str, Exp->str); strcpy(n->str, "."); strcpy(n->str, id->str);
 	if(is_matched && id->type) {
-		//printf("id str: %s id->type: %p\n", id->str, id->type);
+		printf("id str: %s id->kind: %d\n", id->str, id->type->kind);
 		n->type = id->type;
 	}
 	n->is_left = 1;
@@ -1227,7 +1226,7 @@ void F_Exp_Id(struct node* n){
 	strcpy(n->str, name);
 	//BUG FIXED: ID with null pointer;
 	if(sym != NULL) {
-		printf("sym->name: %s\n", sym->name);
+		printf("sym->name: %s kind: %d\n", sym->name, sym->type->kind);
 		id->type = sym->type;
 		n->type = id->type;
 		n->type->arr_dim = n->arr_dim;

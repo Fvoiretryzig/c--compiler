@@ -30,7 +30,7 @@ int add_symbol(struct node* n, char* name)
 		printf("\033[47;31mERROR when malloc a new symbol\033[0m\n");
 		return 1;
 	}
-	printf("\033[46;37min addsymbol name: %s type: %p\033[0m\n", name, n->type);
+	printf("\033[46;37min addsymbol name: %s type: %p kind: %d\033[0m\n", name, n->type, n->type->kind);
 	switch(n->n_type) {
 		case _VAR_ :	
 			new_sym->idkind = _VAR;
@@ -100,14 +100,14 @@ Symbol find_symbol(char* name) {
 		curr = curr->next;
 	}
 	if(!if_find) {
-		//printf("\033[46;37m%s not in symbol table!!\033[0m\n", name);
+		printf("\033[46;37m%s not in symbol table!!\033[0m\n", name);
 		return NULL;
 	}
-	//printf("\033[46;37m%s find in symbol table!!\033[0m\n", name);
+	printf("\033[46;37m%s find in symbol table!!\033[0m\n", name);
 	return curr;
 }
 SymbolF find_symbolF(char* name) {
-	printf("\033[46;37mthis is find_symbolF\033[0m\n");
+	//printf("\033[46;37mthis is find_symbolF\033[0m\n");
 	SymbolF curr = headF;
 	int if_find = 0;
 	while(curr) {

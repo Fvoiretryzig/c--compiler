@@ -1,5 +1,5 @@
 struct ccc{
-	int a;
+	int dd;
 };
 
 struct {
@@ -14,6 +14,6 @@ float f()
 }
 int main()
 {
-	test[1][2].bbb.a = f();
+	test[1][2].bbb.abcd = f();
 	return 0;
 }
