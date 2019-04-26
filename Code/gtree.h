@@ -20,6 +20,7 @@ struct Type_ {
 		} array;
 		FieldList structure;
 	} u;
+	int arr_dim;
 };
 struct FieldList_ {
 	char name[55]; // 域的名字

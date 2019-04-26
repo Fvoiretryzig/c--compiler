@@ -76,7 +76,7 @@ int add_symbolF(struct node* n, char* name) {
 	return 0;
 }
 Symbol find_symbol(char* name) {
-	//printf("\033[46;37min findsymbol name: %s\033[0m\n",name);
+	printf("\033[46;37min findsymbol name: %s\033[0m\n",name);
 	Symbol curr = head;
 	int if_find = 0;
 	while(curr) {
@@ -107,7 +107,7 @@ Symbol find_symbol(char* name) {
 	return curr;
 }
 SymbolF find_symbolF(char* name) {
-	//printf("\033[46;37mthis is find_symbolF\033[0m\n");
+	printf("\033[46;37mthis is find_symbolF\033[0m\n");
 	SymbolF curr = headF;
 	int if_find = 0;
 	while(curr) {
