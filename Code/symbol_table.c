@@ -30,6 +30,7 @@ int add_symbol(struct node* n, char* name)
 		printf("\033[47;31mERROR when malloc a new symbol\033[0m\n");
 		return 1;
 	}
+	printf("\033[46;37min addsymbol name: %s type: %p\033[0m\n", name, n->type);
 	switch(n->n_type) {
 		case _VAR_ :	
 			new_sym->idkind = _VAR;
@@ -75,6 +76,7 @@ int add_symbolF(struct node* n, char* name) {
 	return 0;
 }
 Symbol find_symbol(char* name) {
+	printf("\033[46;37min findsymbol name: %s\033[0m\n",name);
 	Symbol curr = head;
 	int if_find = 0;
 	while(curr) {

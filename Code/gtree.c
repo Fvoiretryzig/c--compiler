@@ -64,7 +64,6 @@ struct node* CreateRelopGNode(int lineno, char* op) {
 }
 struct node* CreateGNode(char* name, int lineno, NodeType node_t, Rule rule_t, int child_cnt, ...)
 {
-	//printf("in CreateGNode: name:%s child_cnt:%d\n", name, child_cnt);
 	struct node* gnode = (struct node*)malloc(sizeof(struct node));
 	va_list argp; 
 	
@@ -78,14 +77,10 @@ struct node* CreateGNode(char* name, int lineno, NodeType node_t, Rule rule_t, i
 	va_start(argp, child_cnt);
 	if(child_cnt > 0) {
 		for(int i = 0; i<child_cnt; i++) {
-			//struct node* tmp = gnode->gchild[i];
 			struct node* tmp = (struct node*)malloc(sizeof(struct node));
 			tmp = va_arg(argp, struct node*);
 			gnode->gchild[i] = tmp;
 		}
-		/*for(int i = 0; i<child_cnt; i++) {
-			printf("%s child%d %s\n", gnode->name, i, gnode->gchild[i]->name);
-		}*/
 	}
 
 	va_end(argp);

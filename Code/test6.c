@@ -1,3 +1,4 @@
+//type 1
 int main()
 {
 	int a, b;

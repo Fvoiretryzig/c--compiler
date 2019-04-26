@@ -140,7 +140,8 @@ void F_Extdef_SpecifierExtdeclistSemi(struct node* n){
 	struct node* Extdeclist = n->gchild[1];
 	
 	semantic_analysis(Specifier);
-	Extdeclist->type = Specifier->type;
+	if(Specifier->type)
+		Extdeclist->type = Specifier->type;
 	semantic_analysis(Extdeclist);
 	
 	return;
@@ -166,9 +167,11 @@ void F_Extdef_SpcifierFundecCompst(struct node* n){
 	struct node* Compst = n->gchild[2];
 	
 	semantic_analysis(Specifier);
-	Fundec->func.retType = Specifier->type;
+	if(Specifier)
+		Fundec->func.retType = Specifier->type;
 	semantic_analysis(Fundec);
-	Compst->func.retType = Specifier->type;
+	if(Specifier)
+		Compst->func.retType = Specifier->type;
 	semantic_analysis(Compst);
 	
 	return;
@@ -179,8 +182,8 @@ void F_Extdeclist_Vardec(struct node* n){
 	#endif
 
 	struct node* Vardec = n->gchild[0];
-	
-//	Vardec->type = n->type;
+	if(n->type)	
+		Vardec->type = n->type;
 	semantic_analysis(Vardec);
 	return;
 }
@@ -223,7 +226,8 @@ void F_Specifier_Structspecifier(struct node* n){
 	struct node* Structspecifier = n->gchild[0];
 	
 	semantic_analysis(Structspecifier);
-	n->type = Structspecifier->type;
+	if(Structspecifier->type)
+		n->type = Structspecifier->type;
 	
 	return;
 }
@@ -236,12 +240,13 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	struct node* Deflist = n->gchild[3];
 	int no_name = 0;
 	char name[60];
-	if(Opttag != NULL) {
+	if(Opttag->gchild[0] != NULL) {
 		semantic_analysis(Opttag);
 		strcpy(name, Opttag->str);
 	}
 	else { 
 		no_name = 1;
+		strcpy(name, "no-name");
 	}
 	if(!no_name)
 		strcpy(n->str, name);
@@ -254,20 +259,29 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	
 	if(!no_name) {
 		Symbol sym = find_symbol(name);
-		if(sym != (Symbol)NULL) {	//类型和变量重名?
+		if(sym != (Symbol)NULL)	//类型和变量重名?
 			printf("Error type 16 at Line %d: Duplicated name \"%s\".\n", n->lineno, name);
-			return;
-		}
 	}
 	semantic_analysis(Deflist);
 	
-	//不知道内存分配这些问题对不对//TODO();
+	//不知道内存分配这些问题对不对//TODO();不对啊啊啊啊啊啊
 	n->type->u.structure = (FieldList)malloc(sizeof(struct FieldList_));
-	memcpy(n->type->u.structure, tmp_table[top], sizeof(tmp_table[top]));
+	FieldList f = n->type->u.structure;
+	FieldList f_tmp = tmp_table[top];
+	while(f_tmp) {
+		memcpy(f, f_tmp, sizeof(f_tmp));
+		f_tmp = f_tmp->tail;
+		if(f_tmp) {
+			f->tail = (FieldList)malloc(sizeof(struct FieldList_));
+			f = f->tail;
+		}
+	}
+	f->tail = NULL;
 	free(tmp_table[top]);
-	if(!no_name)
-		add_symbol(n, name);
+	add_symbol(n, name);
 	top--;
+	Symbol sym = find_symbol(name);
+	printf("name!!!!!!!!!!: %s kind: %d\n", sym->name, sym->idkind);
 	return;
 }
 void F_StructSpecifier_StructTag(struct node* n){
@@ -322,7 +336,8 @@ void F_Vardec_Id(struct node* n){
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 	
-	id->type = n->type;
+	if(n->type)
+		id->type = n->type;
 	id->n_type = _VAR_;
 	if(top == -1) {	
 		Symbol sym = find_symbol(name);
@@ -335,10 +350,11 @@ void F_Vardec_Id(struct node* n){
 		}	
 	}
 	else {
+		FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
 		if(tmp_table[top] == NULL) {
-			FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
 			strcpy(new_field->name, name);
-			new_field->type = id->type;
+			if(id->type)
+				new_field->type = id->type;
 			new_field->tail = NULL;
 			tmp_table[top] = new_field;
 		}
@@ -349,13 +365,15 @@ void F_Vardec_Id(struct node* n){
 					printf("Error type 15 at Line %d: Redefined field \"%s\".\n", n->lineno, name);
 				field = field->tail;
 			}
-			FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
+			//FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
 			strcpy(new_field->name, name);
-			new_field->type = id->type;
+			if(id->type)
+				new_field->type = id->type;
 			new_field->tail = NULL;
 			field->tail = new_field;
-		}
+		}	
 	}
+
 	return;
 }
 void F_Vardec_VardecLbIntRb(struct node* n){
@@ -368,14 +386,11 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 	int size = Int->type_int;
 	Vardec->type = (Type)malloc(sizeof(struct Type_));
 	Vardec->type->kind = ARRAY;
-	Vardec->type->u.array.elem = n->type;
+	if(n->type)
+		Vardec->type->u.array.elem = n->type;
 	Vardec->type->u.array.size = size;	//大小不知道怎么测
-	//Vardec->type = n->type;
 	semantic_analysis(Vardec);
 	printf("vardec->type in vardecLBINTRB: %p\n", Vardec->type);
-	//n->type->kind = ARRAY;
-	//n->type->u.array.elem = Vardec->type;
-	//n->type->u.array.size = size;
 	return;
 }
 void F_Fundec_IdLpVarlistRp(struct node* n){
@@ -473,11 +488,12 @@ void F_Paramdec_SpecifierVardec(struct node* n){
 	struct node* Vardec = n->gchild[1];
 	
 	semantic_analysis(Specifier);
-	Vardec->type = Specifier->type;
+	if(Specifier->type)
+		Vardec->type = Specifier->type;
 	
 	semantic_analysis(Vardec);	//是否要特判加入符号表?先不管
-	
-	n->func.argv[n->func.argc++] = Vardec->type;
+	if(Vardec->type)
+		n->func.argv[n->func.argc++] = Vardec->type;
 	
 	return;
 }
@@ -600,7 +616,6 @@ void F_Stmt_IfLpExpRpStmtElseStmt(struct node* n){
 	}
 	Stmt1->func.retType = n->func.retType;
 	semantic_analysis(Stmt1);
-	printf("\033[41;35mStmt2: %p\033[0m\n", Stmt2);printf("!!!!!!!!!!!\n");
 	Stmt2->func.retType = n->func.retType;
 	semantic_analysis(Stmt2);
 	return;
@@ -649,7 +664,8 @@ void F_Def_SpecifierDeclistSemi(struct node* n){
 	struct node* Declist = n->gchild[1];
 	
 	semantic_analysis(Specifier);
-	Declist->type = Specifier->type;
+	if(Specifier->type)
+		Declist->type = Specifier->type;
 	semantic_analysis(Declist);
 }
 void F_Declist_Dec(struct node* n){
@@ -658,7 +674,8 @@ void F_Declist_Dec(struct node* n){
 	#endif
 
 	struct node* Dec = n->gchild[0];
-	Dec->type = n->type;
+	if(n->type)
+		Dec->type = n->type;
 	semantic_analysis(Dec);
 	
 	return;
@@ -671,10 +688,11 @@ void F_Declist_DecCommaDeclist(struct node* n){
 	struct node* Dec = n->gchild[0];
 	struct node* Declist = n->gchild[2];
 	
-	Dec->type = n->type;
+	if(n->type)
+		Dec->type = n->type;
 	semantic_analysis(Dec);
-	
-	Declist->type = n->type;
+	if(n->type)
+		Declist->type = n->type;
 	semantic_analysis(Declist);
 }
 void F_Dec_Vardec(struct node* n){
@@ -684,7 +702,8 @@ void F_Dec_Vardec(struct node* n){
 
 	struct node* Vardec = n->gchild[0];
 	
-	Vardec->type = n->type;
+	if(n->type)
+		Vardec->type = n->type;
 	semantic_analysis(Vardec);
 }
 void F_Dec_VardecAssignopExp(struct node* n){
@@ -695,7 +714,8 @@ void F_Dec_VardecAssignopExp(struct node* n){
 	struct node* Vardec = n->gchild[0];
 	struct node* Exp = n->gchild[2];
 	
-	Vardec->type = n->type;
+	if(n->type)
+		Vardec->type = n->type;
 	semantic_analysis(Vardec);
 	semantic_analysis(Exp);
 	//TODO 是否要加两个类型相等判断？？？要啊!!!!!!
@@ -927,18 +947,12 @@ void F_Exp_MinusExp(struct node* n){
 	struct node* E1 = n->gchild[0];
 	semantic_analysis(E1);
 	
-	if(E1->type->kind != BASIC)
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	
-	n->type = E1->type;
-	n->n_type = _BASIC_;
-	
-	/*if(E1->type->u.basic) {
-		n->type_int = -E1->type_int;
+	if(E1->type){
+		if(E1->type->kind != BASIC)
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		n->type = E1->type;
 	}
-	else {
-		n->type_float = -E1->type_float;
-	}*/
+	n->n_type = _BASIC_;
 	n->is_left = 0;
 	
 	return;
@@ -951,14 +965,14 @@ void F_Exp_NotExp(struct node* n){
 	struct node* E1 = n->gchild[0];
 	semantic_analysis(E1);
 	
-	if(E1->type->kind != BASIC)
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	else if(E1->type->u.basic != 1)
-		printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-	
-	n->type = E1->type;
+	if(E1->type) {
+		if(E1->type->kind != BASIC)
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		else if(E1->type->u.basic != 1)
+			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		n->type = E1->type;
+	}
 	n->n_type = _BASIC_;
-	//n->type_int = !(E1->type_int);
 	n->is_left = 0;
 	
 	return;
@@ -1121,15 +1135,16 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	Symbol sym = find_symbol(name);
 	if(sym == NULL)
 		printf("Error type 1 at Line %d: Undefined variable \"%s\".\n", n->lineno, name);
-	if(Exp1->type->kind != ARRAY)
-		printf("Error type 10 at Line %d: \"%s\" is not an array.\n", n->lineno, name);
-	if(Exp2->type->kind != BASIC) {
-		printf("Error type 12 at Line %d: \"%s\" is not an integer.\n", n->lineno, Exp2->str);
+	if(Exp1->type)
+		if(Exp1->type->kind != ARRAY)
+			printf("Error type 10 at Line %d: \"%s\" is not an array.\n", n->lineno, name);
+	if(Exp2->type) {
+		if(Exp2->type->kind != BASIC)
+			printf("Error type 12 at Line %d: \"%s\" is not an integer.\n", n->lineno, Exp2->str);
+		else if(Exp2->type->u.basic != 1)
+			printf("Error type 12 at Line %d: \"%g\" is not an integer.\n", n->lineno, Exp2->type_float);	
 	}
-	else if(Exp2->type->u.basic != 1) {
-		printf("Error type 12 at Line %d: \"%g\" is not an integer.\n", n->lineno, Exp2->type_float);
-	}
-	n->type = Exp1->type; //???
+	n->type = Exp1->type;
 	n->is_left = 1;
 	n->arr_dim = Exp1->arr_dim + 1;
 	
@@ -1144,31 +1159,34 @@ void F_Exp_ExpDotId(struct node* n){
 	
 	semantic_analysis(Exp);
 	
-	if(Exp->type->kind != STRUCTURE) {
-		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);		
+	if(Exp->type) {
+		if(Exp->type->kind != STRUCTURE) {
+			printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);		
+		}
 	}
 	char* name = Exp->str;
 	Symbol sym = find_symbol(name);
 	if(sym == NULL)
 		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);
-	if(sym && sym->type->kind == STRUCTURE) {
-		char* id_name = id->str;
-		FieldList p = sym->type->u.structure;
-		int is_matched = 0; 
-		while(p != NULL) {
-			if(!strcmp(p->name, id_name)) {
-				is_matched = 1;
-				break;			
+	//if(sym->type) {
+		if(sym && sym->type->kind == STRUCTURE) {
+			char* id_name = id->str;
+			FieldList p = sym->type->u.structure;
+			int is_matched = 0; 
+			while(p != NULL) {
+				if(!strcmp(p->name, id_name)) {
+					is_matched = 1;
+					break;			
+				}
+				p = p->tail;
 			}
-			p = p->tail;
+			if(!is_matched)
+				printf("Error type 14 at Line %d: Non-existent field \"%s\".\n", n->lineno, id_name);
 		}
-		if(!is_matched)
-			printf("Error type 14 at Line %d: Non-existent field \"%s\".", n->lineno, id_name);
-		//else
-		//	n->type = id->type;
-		}
+	//}
+	
 	n->is_left = 1;
-	//n->type = id->type;
+	
 	return;
 }
 void F_Exp_Id(struct node* n){
@@ -1207,7 +1225,6 @@ void F_Exp_Int(struct node* n){
 	t->u.basic = 1;
 	t->kind = BASIC;
 	n->type = t;
-	//n->type_int = Int->type_int;
 	n->is_left = 0;
 	
 	return;
@@ -1222,7 +1239,6 @@ void F_Exp_Float(struct node* n){
 	n->type = (Type)malloc(sizeof(struct Type_));
 	n->type->u.basic = 0;
 	n->type->kind = BASIC;
-	n->type_float = n->gchild[0]->type_float;
 	n->is_left = 0;
 
 	return;
@@ -1240,7 +1256,8 @@ void F_Args_ExpCommaArgs(struct node* n){
 		strcat(n->str, Exp->str);
 	else 
 		strcpy(n->str, Exp->str);
-	n->func.argv[n->func.argc++] = Exp->type;
+	if(Exp->type)
+		n->func.argv[n->func.argc++] = Exp->type;
 	
 	Args->func.argc = n->func.argc;
 	Args->func.argv = n->func.argv;
