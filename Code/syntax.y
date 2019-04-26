@@ -472,6 +472,7 @@ Exp		:	/*error Exp{
 				is_error = 1;
 				//yyerror("unexpected ']'");
 			}
+		;
 Args:	Exp COMMA Args {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mArgs: Exp COMMA Args(%d)\033[0m\n", @$.first_line);

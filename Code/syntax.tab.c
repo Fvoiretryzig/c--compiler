@@ -491,7 +491,7 @@ static const yytype_uint16 yyrline[] =
      242,   248,   258,   265,   271,   279,   285,   296,   302,   309,
      317,   324,   330,   337,   343,   352,   358,   364,   370,   376,
      382,   388,   394,   400,   406,   412,   418,   424,   430,   436,
-     442,   448,   454,   468,   475,   481
+     442,   448,   454,   468,   476,   482
 };
 #endif
 
@@ -2155,7 +2155,7 @@ yyreduce:
     break;
 
   case 64:
-#line 475 "syntax.y" /* yacc.c:1646  */
+#line 476 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mArgs: Exp COMMA Args(%d)\033[0m\n", (yyloc).first_line);
@@ -2166,7 +2166,7 @@ yyreduce:
     break;
 
   case 65:
-#line 481 "syntax.y" /* yacc.c:1646  */
+#line 482 "syntax.y" /* yacc.c:1646  */
     {
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mArgs: Exp(%d)\033[0m\n", (yyloc).first_line);
@@ -2412,7 +2412,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 488 "syntax.y" /* yacc.c:1906  */
+#line 489 "syntax.y" /* yacc.c:1906  */
 
 void yyerror(const char *s)
 {

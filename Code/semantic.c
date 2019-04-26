@@ -69,7 +69,6 @@ void semantic_analysis(struct node* n) {
 	return;
 }
 int isEqual(Type a, Type b) {
-	//数组判断不太对
 	if(a->kind != b->kind) { 
 		printf("a->kind: %d b->kind:%d\n", a->kind, b->kind);
 		return 0;
@@ -264,12 +263,14 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	}
 	semantic_analysis(Deflist);
 	
-	//不知道内存分配这些问题对不对//TODO();不对啊啊啊啊啊啊
+	//不知道内存分配这些问题对不对 TODO();不对啊啊啊啊啊啊
 	n->type->u.structure = (FieldList)malloc(sizeof(struct FieldList_));
 	FieldList f = n->type->u.structure;
 	FieldList f_tmp = tmp_table[top];
 	while(f_tmp) {
-		memcpy(f, f_tmp, sizeof(f_tmp));
+		f->type = (Type)malloc(sizeof(struct Type_));
+		memcpy(f, f_tmp, sizeof(struct Type_));
+		memcpy(f->type, f_tmp->type, sizeof(struct Type_));
 		f_tmp = f_tmp->tail;
 		if(f_tmp) {
 			f->tail = (FieldList)malloc(sizeof(struct FieldList_));
@@ -279,9 +280,8 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	f->tail = NULL;
 	free(tmp_table[top]);
 	add_symbol(n, name);
+
 	top--;
-	Symbol sym = find_symbol(name);
-	printf("name!!!!!!!!!!: %s kind: %d\n", sym->name, sym->idkind);
 	return;
 }
 void F_StructSpecifier_StructTag(struct node* n){
@@ -1165,26 +1165,30 @@ void F_Exp_ExpDotId(struct node* n){
 		}
 	}
 	char* name = Exp->str;
+	int is_matched = 0;
 	Symbol sym = find_symbol(name);
 	if(sym == NULL)
 		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);
-	//if(sym->type) {
-		if(sym && sym->type->kind == STRUCTURE) {
-			char* id_name = id->str;
-			FieldList p = sym->type->u.structure;
-			int is_matched = 0; 
-			while(p != NULL) {
-				if(!strcmp(p->name, id_name)) {
-					is_matched = 1;
-					break;			
-				}
-				p = p->tail;
+	if(sym && sym->type->kind == STRUCTURE) {
+		char* id_name = id->str;
+		FieldList p = sym->type->u.structure;
+		while(p != NULL) {
+			if(!strcmp(p->name, id_name)) {
+				is_matched = 1;
+				id->type = p->type;
+				break;			
 			}
-			if(!is_matched)
-				printf("Error type 14 at Line %d: Non-existent field \"%s\".\n", n->lineno, id_name);
+			
+			p = p->tail;
 		}
-	//}
-	
+		if(!is_matched)
+			printf("Error type 14 at Line %d: Non-existent field \"%s\".\n", n->lineno, id_name);
+	}
+	strcpy(n->str, Exp->str); strcpy(n->str, "."); strcpy(n->str, id->str);
+	if(is_matched && id->type) {
+		n->type = id->type;
+		printf("hahahahahahahahahaah   %s.%s: kind: %d\n", Exp->str, id->str, n->type->kind);
+	}
 	n->is_left = 1;
 	
 	return;
