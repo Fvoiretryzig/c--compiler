@@ -78,14 +78,14 @@ int isEqual(Type a, Type b) {
 				return 0;
 		}
 		else if(a->kind == ARRAY) {
-			if(!isEqual(a->u.array.elem, b->u.array.elem))
+			if(!isEqual(a->u.array.elem, b->u.array.elem)) 
 				return 0;
-			Type tmp_a = a; Type tmp_b = b;
-			while(tmp_a->u.array.elem->kind == ARRAY && b->u.array.elem->kind == ARRAY) {
+			/*Type tmp_a = a; Type tmp_b = b;
+			while(tmp_a->kind == ARRAY && tmp_b->kind == ARRAY ) {
 				if(tmp_a->u.array.size != tmp_b->u.array.size)
 					return 0;
 				tmp_a = tmp_a->u.array.elem; tmp_b = tmp_b->u.array.elem;
-			}
+			}*/
 		}
 		else if(a->kind == STRUCTURE) {
 			FieldList fa = a->u.structure;
@@ -355,7 +355,7 @@ void F_Vardec_Id(struct node* n){
 
 	struct node* id = n->gchild[0];
 	char* name = id->str;
-	
+
 	if(n->type)
 		id->type = n->type;
 	id->n_type = _VAR_;
@@ -381,17 +381,25 @@ void F_Vardec_Id(struct node* n){
 		}
 		else {
 			FieldList field = tmp_table[top];
-			while(field->tail != NULL) {
-				if(!strcmp(name, field->name))
+			int redefine = 0;
+			while(field != NULL) {
+				if(!strcmp(name, field->name)) {
 					printf("Error type 15 at Line %d: Redefined field \"%s\".\n", n->lineno, name);
+					redefine = 1;
+					break;
+				}
 				field = field->tail;
 			}
-			//FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
+			if(!redefine) {
+			field = tmp_table[top];
+			while(field->tail != NULL)
+				field = field->tail;
 			strcpy(new_field->name, name);
 			if(id->type)
 				new_field->type = id->type;
 			new_field->tail = NULL;
 			field->tail = new_field;
+			}
 		}	
 	}
 	return;
@@ -774,6 +782,7 @@ void F_Exp_ExpAssignopExp(struct node* n){
 				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
 		}
 		else {
+			
 			if(!isEqual_array(E1->type, E2->type, E1->arr_dim, E2->arr_dim))
 				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
 		}
