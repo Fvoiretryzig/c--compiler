@@ -49,8 +49,8 @@ Program		:	ExtDefList {
 					printf("\033[46;37mProgram: ExtDefList(%d)\033[0m\n", @$.first_line);
 					#endif
 					$$ = CreateGNode("Program", @$.first_line, _INIT_, Program_Extdeflist, 1, $1);
-					if(!is_error)
-						tran($$, 0);
+					//if(!is_error)
+						//tran($$, 0);
 					root = $$;
 				}
 			;

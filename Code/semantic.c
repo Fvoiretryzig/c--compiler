@@ -1,6 +1,6 @@
 #include "semantic.h"
 
-#define DEBUG_SEMANTIC
+//#define DEBUG_SEMANTIC
 
 int top = -1;
 void semantic_analysis(struct node* n) {
@@ -82,7 +82,22 @@ int isEqual(Type a, Type b) {
 				return 0;
 		}
 		else if(a->kind == STRUCTURE) {
-			if(!isEqual(a->u.structure->type, b->u.structure->type))
+			FieldList fa = a->u.structure;
+			FieldList fb = b->u.structure;
+			int ret = 1;
+			while(fa && fb) {
+				if(!isEqual(fa->type, fb->type)) {
+					ret = 0;
+					break;
+				}
+				else {
+					fa = fa->tail;
+					fb = fb->tail;
+				}
+			}
+			if((fa && !fb) || (!fa && fb))
+				ret = 0;
+			if(!ret)
 				return 0;
 		}
 	}
@@ -227,7 +242,6 @@ void F_Specifier_Structspecifier(struct node* n){
 	semantic_analysis(Structspecifier);
 	if(Structspecifier->type)
 		n->type = Structspecifier->type;
-	
 	return;
 }
 void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
@@ -279,8 +293,8 @@ void F_StructSpecifier_StructOpttagLcDeflistRc(struct node* n){
 	}
 	f->tail = NULL;
 	free(tmp_table[top]);
-	printf("adddddddddddd_symbol: name: %s\n", name);
-	add_symbol(n, name);
+	if(n->type)
+		add_symbol(n, name);
 
 	top--;
 	return;
@@ -301,7 +315,6 @@ void F_StructSpecifier_StructTag(struct node* n){
 		tag->type = sym->type;
 	}
 	n->type = tag->type;
-	
 	return;
 }
 void F_Opttag_Id(struct node* n){
@@ -344,11 +357,12 @@ void F_Vardec_Id(struct node* n){
 		Symbol sym = find_symbol(name);
 		if(sym != NULL && sym->idkind == _VAR)
 			printf("Error type 3 at Line %d: Redefined variable \"%s\".\n", n->lineno, name);
-		else {
+		else if(id->type){
 			int ret = add_symbol(id, name);
 			if(ret)
 				printf("add to symbol table error!\n");
-		}	
+		}
+		;	
 	}
 	else {
 		FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
@@ -415,7 +429,9 @@ void F_Fundec_IdLpVarlistRp(struct node* n){
 		printf("Error type 4 at Line %d: Redefined function \"%s\".\n", n->lineno, name);
 	else {
 		//BUG FIXED: no n but ID!!!!
-		int ret = add_symbolF(id, name);
+		int ret = 0;
+		if(id->type)
+			ret = add_symbolF(id, name);
 		if(ret)
 			printf("error when add func %s\n", name);
 	}
@@ -436,7 +452,9 @@ void F_Fundec_IdLpRp(struct node* n){
 	SymbolF symF = find_symbolF(name);
 	if(symF != NULL)
 		printf("Error type 4 at Line %d: Redefined function \"%s\".\n", n->lineno, name);
-	int ret = add_symbolF(n, name);
+	int ret = 0;
+	if(n->type)
+		ret = add_symbolF(n, name);
 	if(ret)
 		printf("error when add func %s\n", name);
 	return;
@@ -560,7 +578,6 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 
 	struct node* Exp = n->gchild[1];
 	semantic_analysis(Exp);
-	printf("gchild[1]->name: %s\n", Exp->name);
 	if(Exp->type != NULL) {
 		if(Exp->type->kind != ARRAY && n->func.retType->kind != ARRAY) {
 			if(!isEqual(Exp->type, n->func.retType)) {
@@ -575,7 +592,6 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 		}
 				
 	}
-	printf("Exp->type: %p Exp str: %s\n", Exp->type, Exp->str);
 	return;
 }
 void F_Stmt_IfLpExpRpStmt(struct node* n) {
@@ -654,7 +670,9 @@ void F_Deflist_DefDeflist(struct node* n){
 	return;
 }
 void F_Deflist_Null(struct node* n){
-	//No Def
+	#ifdef DEBUG_SEMANTIC
+	printf("this is F_Deflist_Null\n");
+	#endif	
 }
 void F_Def_SpecifierDeclistSemi(struct node* n){
 	#ifdef DEBUG_SEMANTIC
@@ -668,6 +686,7 @@ void F_Def_SpecifierDeclistSemi(struct node* n){
 	if(Specifier->type)
 		Declist->type = Specifier->type;
 	semantic_analysis(Declist);
+	
 }
 void F_Declist_Dec(struct node* n){
 	#ifdef DEBUG_SEMANTIC
@@ -746,7 +765,6 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	semantic_analysis(E2);
 	//printf("E1->type: %p E2->type: %p\n", E1->type, E2->type);
 	if(E1->type  && E2->type) {
-		printf("E1->str: %s E2->str: %s\n", E1->str, E2->str);
 		if(E1->type->kind != ARRAY && E2->type->kind != ARRAY) {
 			if(!isEqual(E1->type, E2->type)) 
 				printf("Error type 5 at Line %d: Type mismatched for assignment.\n", n->lineno);
@@ -1081,13 +1099,12 @@ void F_Exp_IdLpArgsRp(struct node* n){
 		int i = 0;
 		while(symF->argv[i] != NULL && args->func.argv[i] != NULL) {
 			int is_equal = 0;
-			printf("symF->argv[%d]->kind: %d args->arg[%d]->kind: %d\n", i, symF->argv[i]->kind, i, args->func.argv[i]->kind);
+			//printf("symF->argv[%d]->kind: %d args->arg[%d]->kind: %d\n", i, symF->argv[i]->kind, i, args->func.argv[i]->kind);
 			if(symF->argv[i]->kind == ARRAY || args->func.argv[i]->kind == ARRAY)
 				is_equal = isEqual_array(symF->argv[i], args->func.argv[i], symF->argv[i]->arr_dim, args->func.argv[i]->arr_dim);
 			else
 				is_equal = isEqual(symF->argv[i], args->func.argv[i]);		
 			if(!is_equal) {
-				printf("hahahha\n");
 				char print_tmp[160];
 				strcpy(print_tmp, symF->name);
 				strcat(print_tmp, Fargv_type);		
@@ -1187,7 +1204,7 @@ void F_Exp_ExpDotId(struct node* n){
 	
 	char* name = Exp->str;
 	
-	int is_matched = 0; printf("Exp->str: %s id->str: %s\n", Exp->str, id->str);
+	int is_matched = 0;
 	Symbol sym = find_symbol(name); 
 	if(sym == NULL)
 		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);
@@ -1206,10 +1223,8 @@ void F_Exp_ExpDotId(struct node* n){
 		}
 	}
 	strcpy(n->str, Exp->str); strcpy(n->str, "."); strcpy(n->str, id->str);
-	if(is_matched && id->type) {
-		printf("id str: %s id->kind: %d\n", id->str, id->type->kind);
+	if(is_matched && id->type)
 		n->type = id->type;
-	}
 	n->is_left = 1;
 	return;
 }
@@ -1251,6 +1266,7 @@ void F_Exp_Int(struct node* n){
 	t->kind = BASIC;
 	n->type = t;
 	n->is_left = 0;
+	n->type_int = Int->type_int;
 	
 	return;
 }
@@ -1265,8 +1281,9 @@ void F_Exp_Float(struct node* n){
 	n->type->u.basic = 0;
 	n->type->kind = BASIC;
 	n->is_left = 0;
+	n->type_float = n->gchild[0]->type_float;
 
-	printf("%f float\n", n->gchild[0]->type_float);
+	//printf("%f float\n", n->gchild[0]->type_float);
 	return;
 }
 void F_Args_ExpCommaArgs(struct node* n){
