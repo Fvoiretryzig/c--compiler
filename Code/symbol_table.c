@@ -87,7 +87,6 @@ Symbol find_symbol(char* name) {
 		if(curr->type && curr->type->kind == STRUCTURE) {
 			FieldList f = curr->type->u.structure;
 			while(f) {
-				//printf("name!!!!!!!: %s f->name: %s\n", name, f->name);
 				if(!strcmp(f->name, name)) {
 					if_find = 1;
 					break;

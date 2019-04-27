@@ -89,6 +89,7 @@ int isEqual(Type a, Type b) {
 	return 1;
 }
 int isEqual_array(Type a, Type b, int a_dim, int b_dim) {
+	printf("a->kind: %d b->kind: %d a->arr_dim: %d b->arr_dim: %d\n", a->kind, b->kind, a->arr_dim, b->arr_dim);
 	Type a_cmp = a;
 	Type b_cmp = b;
 	for(int i = 0; i<a_dim; i++) {
@@ -558,7 +559,8 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 	#endif
 
 	struct node* Exp = n->gchild[1];
-	semantic_analysis(Exp);//
+	semantic_analysis(Exp);
+	printf("gchild[1]->name: %s\n", Exp->name);
 	if(Exp->type != NULL) {
 		if(Exp->type->kind != ARRAY && n->func.retType->kind != ARRAY) {
 			if(!isEqual(Exp->type, n->func.retType)) {
@@ -573,7 +575,7 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 		}
 				
 	}
-	printf("Exp->type: %p\n", Exp->type);
+	printf("Exp->type: %p Exp str: %s\n", Exp->type, Exp->str);
 	return;
 }
 void F_Stmt_IfLpExpRpStmt(struct node* n) {
@@ -989,7 +991,6 @@ void F_Exp_IdLpArgsRp(struct node* n){
 	args->func.argc = 0;
 	args->func.argv = (Type*)malloc(sizeof(Type)*MAX_ARGC);
 	semantic_analysis(args);
-	
 	strcpy(n->str, name);
 	
 	
@@ -1000,9 +1001,9 @@ void F_Exp_IdLpArgsRp(struct node* n){
 			printf("Error type 11 at Line %d: \"%s\" is not a function.\n", n->lineno, n->str);
 		}
 		else {
-			strcat(n->str, "\(");
-			strcat(args->str, ")");
-			strcat(n->str, args->str);
+			//strcat(n->str, "\(");
+			//strcat(args->str, ")");
+			//strcat(n->str, args->str);
 			printf("arg->str:%s\n", n->str);
 			printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, n->str);
 		}
@@ -1019,7 +1020,7 @@ void F_Exp_IdLpArgsRp(struct node* n){
 			else
 				tp = 1;
 		}
-		else if(tmp->kind == BASIC) {
+		else if(tmp->kind == ARRAY) {
 			tp = 2;
 		}
 		else if(tmp->kind == STRUCTURE) {
@@ -1080,11 +1081,13 @@ void F_Exp_IdLpArgsRp(struct node* n){
 		int i = 0;
 		while(symF->argv[i] != NULL && args->func.argv[i] != NULL) {
 			int is_equal = 0;
+			printf("symF->argv[%d]->kind: %d args->arg[%d]->kind: %d\n", i, symF->argv[i]->kind, i, args->func.argv[i]->kind);
 			if(symF->argv[i]->kind == ARRAY || args->func.argv[i]->kind == ARRAY)
 				is_equal = isEqual_array(symF->argv[i], args->func.argv[i], symF->argv[i]->arr_dim, args->func.argv[i]->arr_dim);
 			else
 				is_equal = isEqual(symF->argv[i], args->func.argv[i]);		
 			if(!is_equal) {
+				printf("hahahha\n");
 				char print_tmp[160];
 				strcpy(print_tmp, symF->name);
 				strcat(print_tmp, Fargv_type);		
@@ -1116,7 +1119,7 @@ void F_Exp_IdLpRp(struct node* n){
 	char* name = id->str;
 	
 	strcpy(n->str, name);
-	strcat(n->str, "()");
+	//strcat(n->str, "()");
 	SymbolF symF = find_symbolF(name);
 	if(symF == NULL)
 		printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, name);
@@ -1159,7 +1162,6 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	n->is_left = 1;
 	n->arr_dim = Exp1->arr_dim + 1;
 	
-	//printf("n->name: %s n->arr_dim: %d\n", n->str, n->arr_dim);
 	
 	return;
 }
@@ -1184,25 +1186,24 @@ void F_Exp_ExpDotId(struct node* n){
 	}
 	
 	char* name = Exp->str;
-	int is_matched = 0;
-	Symbol sym = find_symbol(name);
+	
+	int is_matched = 0; printf("Exp->str: %s id->str: %s\n", Exp->str, id->str);
+	Symbol sym = find_symbol(name); 
 	if(sym == NULL)
 		printf("Error type 13 at Line %d: Illegal use of \".\".\n", n->lineno);
 	sym = find_symbol(id->str);
-	if(sym && sym->type->kind == STRUCTURE) {
-		char* id_name = id->str;
+	if(sym == NULL)
+		printf("Error type 14 at Line %d: Non-existent field \"%s\".\n", n->lineno, id->str);
+	else {
 		FieldList p = sym->type->u.structure;
-		while(p != NULL) {	//TODO 递归判断问题
-			if(x->)
-			if(!strcmp(p->name, id_name)) {
+		while(p!=NULL) {
+			if(!strcmp(p->name, id->str)) {
 				is_matched = 1;
 				id->type = p->type;
-				break;			
+				break;
 			}
 			p = p->tail;
 		}
-		if(!is_matched)
-			printf("Error type 14 at Line %d: Non-existent field \"%s\".\n", n->lineno, id_name);
 	}
 	strcpy(n->str, Exp->str); strcpy(n->str, "."); strcpy(n->str, id->str);
 	if(is_matched && id->type) {
@@ -1226,7 +1227,6 @@ void F_Exp_Id(struct node* n){
 	strcpy(n->str, name);
 	//BUG FIXED: ID with null pointer;
 	if(sym != NULL) {
-		printf("sym->name: %s kind: %d\n", sym->name, sym->type->kind);
 		id->type = sym->type;
 		n->type = id->type;
 		n->type->arr_dim = n->arr_dim;
@@ -1252,7 +1252,6 @@ void F_Exp_Int(struct node* n){
 	n->type = t;
 	n->is_left = 0;
 	
-	printf("Exp int: %d\n", n->type_int);
 	return;
 }
 void F_Exp_Float(struct node* n){
@@ -1267,6 +1266,7 @@ void F_Exp_Float(struct node* n){
 	n->type->kind = BASIC;
 	n->is_left = 0;
 
+	printf("%f float\n", n->gchild[0]->type_float);
 	return;
 }
 void F_Args_ExpCommaArgs(struct node* n){
@@ -1278,10 +1278,9 @@ void F_Args_ExpCommaArgs(struct node* n){
 	struct node* Args = n->gchild[2];
 	
 	semantic_analysis(Exp);
-	//printf("ARGGGGGGGGGGGGGGGGGGG exp: %s\n", Exp->str);
-	if(n->str) 
-		strcat(n->str, Exp->str);
-	else 
+	//if(n->str) 
+		//strcat(n->str, Exp->str);
+	//else 
 		strcpy(n->str, Exp->str);
 	if(Exp->type)
 		n->func.argv[n->func.argc++] = Exp->type;
@@ -1292,6 +1291,7 @@ void F_Args_ExpCommaArgs(struct node* n){
 	semantic_analysis(Args);
 	strcat(n->str, ", ");
 	strcat(n->str, Args->str);
+	//printf("Args->str: %s\n", Args->str);
 	n->func.argc = Args->func.argc;
 	return;
 }
@@ -1304,11 +1304,10 @@ void F_Args_Exp(struct node* n) {
 	
 	semantic_analysis(Exp);
 	
-	//printf("in arg Exp COMMA ARGGGGGGGGGGGGGGGGGGGGGGGGG Exp->str: %s Exp->type: %p\n", Exp->str, Exp->type);
 	strcpy(n->str, Exp->str);
 	if(Exp->type)
 		n->func.argv[n->func.argc++] = Exp->type;
-	printf("func.argc: %d argv type kind : %d arr_dim:%d\n", n->func.argc, n->func.argv[n->func.argc-1]->kind, Exp->arr_dim);
+	//printf("Exp: %s func.argc: %d argv type kind : %d arr_dim:%d\n",Exp->str, n->func.argc, n->func.argv[n->func.argc-1]->kind, Exp->arr_dim);
 	
 	return;
 }

@@ -15,8 +15,8 @@ int f(int aa, float bb)
 int main(int a3, int b4[1][4]) 
 {
     struct hello a;
-	float tmp;
-	tmp = f(a.a2, test[0][1].a1);
+	int tmp;
+	tmp = f(a.a2, test[0][1].b1);
     return tmp;
 }
 

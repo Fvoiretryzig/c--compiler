@@ -2127,8 +2127,8 @@ yyreduce:
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: INT (%d)\033[0m\n", (yyloc).first_line);
 			#endif
-			//$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Int, 1, $1);
-			(yyval.gnode) = CreateIntGNode(atoi(yytext), (yyloc).first_line);
+			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_Int, 1, (yyvsp[0].gnode));
+			//$$ = CreateIntGNode(atoi(yytext), @$.first_line);
 		}
 #line 2134 "syntax.tab.c" /* yacc.c:1646  */
     break;
@@ -2139,8 +2139,8 @@ yyreduce:
 			#ifdef DEBUG_MSG
 			printf("\033[46;37mExp: FLOAT (%d)\033[0m\n", (yyloc).first_line);
 			#endif
-			//$$ = CreateGNode("Exp", @$.first_line, _INIT_, Exp_Float, 1, $1);
-			(yyval.gnode) - CreateFloatGNode(atof(yytext), (yyloc).first_line);
+			(yyval.gnode) = CreateGNode("Exp", (yyloc).first_line, _INIT_, Exp_Float, 1, (yyvsp[0].gnode));
+			//$$ - CreateFloatGNode(atof(yytext), @$.first_line);
 		}
 #line 2146 "syntax.tab.c" /* yacc.c:1646  */
     break;
