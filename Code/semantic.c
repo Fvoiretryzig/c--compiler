@@ -812,7 +812,7 @@ void F_Exp_ExpAndExp(struct node* n){
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 		n->type = E1->type;
 	}
-	n->n_type = _BASIC_;
+	//n->n_type = _BASIC_;
 	n->is_left = 0;
 	
 	return;
@@ -834,7 +834,7 @@ void F_Exp_ExpOrExp(struct node* n){
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 		n->type = E1->type;
 	}
-	n->n_type = _BASIC_;
+	//n->n_type = _BASIC_;
 	n->is_left = 0;
 	
 	return;
@@ -856,7 +856,7 @@ void F_Exp_ExpRelopExp(struct node* n){
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 		n->type->kind = BASIC;
 		n->type->u.basic = 1;
-		n->n_type = _BASIC_;
+		//n->n_type = _BASIC_;
 	}
 	return;
 }
@@ -877,7 +877,7 @@ void F_Exp_ExpPlusExp(struct node* n){
 				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			}
 			n->type = E1->type;
-			n->n_type = _BASIC_;
+			//n->n_type = _BASIC_;
 		}
 		else
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);	
@@ -901,7 +901,7 @@ void F_Exp_ExpMinusExp(struct node* n){
 				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			}
 			n->type = E1->type;
-			n->n_type = _BASIC_;
+			//n->n_type = _BASIC_;
 		}
 		else
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
@@ -927,7 +927,7 @@ void F_Exp_ExpStarExp(struct node* n){
 				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			}
 			n->type = E1->type;
-			n->n_type = _BASIC_;
+			//n->n_type = _BASIC_;
 		}
 		else
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
@@ -952,7 +952,7 @@ void F_Exp_ExpDivExp(struct node* n){
 				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			}
 			n->type = E1->type;
-			n->n_type = _BASIC_;
+			//n->n_type = _BASIC_;
 		}
 		else
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
@@ -986,7 +986,7 @@ void F_Exp_MinusExp(struct node* n){
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 		n->type = E1->type;
 	}
-	n->n_type = _BASIC_;
+	//n->n_type = _BASIC_;
 	n->is_left = 0;
 	
 	return;
@@ -1006,7 +1006,7 @@ void F_Exp_NotExp(struct node* n){
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 		n->type = E1->type;
 	}
-	n->n_type = _BASIC_;
+	//n->n_type = _BASIC_;
 	n->is_left = 0;
 	
 	return;
@@ -1257,7 +1257,7 @@ void F_Exp_Id(struct node* n){
 		n->type = id->type;
 		n->type->arr_dim = n->arr_dim;
 	}
-	n->n_type = _ID_;
+	//n->n_type = _ID_;
 	n->is_left = 1;
 	n->arr_dim = 0;
 	
@@ -1270,7 +1270,7 @@ void F_Exp_Int(struct node* n){
 	
 	struct node* Int = n->gchild[0];
 	
-	n->n_type = _BASIC_;
+	//n->n_type = _BASIC_;
 	
 	Type t = (Type)malloc(sizeof(struct Type_));
 	t->u.basic = 1;
@@ -1286,7 +1286,7 @@ void F_Exp_Float(struct node* n){
 	printf("this is F_Exp_Float\n");
 	#endif
 
-	n->n_type = _BASIC_;
+	//n->n_type = _BASIC_;
 	
 	n->type = (Type)malloc(sizeof(struct Type_));
 	n->type->u.basic = 0;
