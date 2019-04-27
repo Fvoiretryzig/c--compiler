@@ -1035,7 +1035,6 @@ void F_Exp_IdLpArgsRp(struct node* n){
 			//strcat(n->str, "\(");
 			//strcat(args->str, ")");
 			//strcat(n->str, args->str);
-			printf("arg->str:%s\n", n->str);
 			printf("Error type 2 at Line %d: Undefined function \"%s\".\n", n->lineno, n->str);
 		}
 	}
