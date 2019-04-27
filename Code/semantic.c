@@ -80,6 +80,12 @@ int isEqual(Type a, Type b) {
 		else if(a->kind == ARRAY) {
 			if(!isEqual(a->u.array.elem, b->u.array.elem))
 				return 0;
+			Type tmp_a = a; Type tmp_b = b;
+			while(tmp_a->u.array.elem->kind == ARRAY && b->u.array.elem->kind == ARRAY) {
+				if(tmp_a->u.array.size != tmp_b->u.array.size)
+					return 0;
+				tmp_a = tmp_a->u.array.elem; tmp_b = tmp_b->u.array.elem;
+			}
 		}
 		else if(a->kind == STRUCTURE) {
 			FieldList fa = a->u.structure;
@@ -104,7 +110,7 @@ int isEqual(Type a, Type b) {
 	return 1;
 }
 int isEqual_array(Type a, Type b, int a_dim, int b_dim) {
-	printf("a->kind: %d b->kind: %d a->arr_dim: %d b->arr_dim: %d\n", a->kind, b->kind, a->arr_dim, b->arr_dim);
+	//printf("a->kind: %d b->kind: %d a->arr_dim: %d b->arr_dim: %d\n", a->kind, b->kind, a->arr_dim, b->arr_dim);
 	Type a_cmp = a;
 	Type b_cmp = b;
 	for(int i = 0; i<a_dim; i++) {
@@ -396,7 +402,7 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 	#endif
 
 	struct node* Vardec = n->gchild[0];
-	struct node* Int = n->gchild[1];
+	struct node* Int = n->gchild[2];
 	int size = Int->type_int;
 	Vardec->type = (Type)malloc(sizeof(struct Type_));
 	Vardec->type->kind = ARRAY;
@@ -404,6 +410,7 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 		Vardec->type->u.array.elem = n->type;
 	Vardec->type->u.array.size = size;	//大小不知道怎么测
 	semantic_analysis(Vardec);
+	n->type = Vardec->type;
 	return;
 }
 void F_Fundec_IdLpVarlistRp(struct node* n){
@@ -585,8 +592,6 @@ void F_Stmt_ReturnExpSemi(struct node* n){
 			}
 		}
 		else {
-			
-			printf("Exp->arr_dim: %d n->arr_dim: %d\n", Exp->arr_dim, n->arr_dim);
 			if(!isEqual_array(Exp->type, n->func.retType, Exp->arr_dim, n->arr_dim))
 				printf("Error type 8 at Line %d: Type mismatched for return.\n", n->lineno);			
 		}
@@ -763,7 +768,6 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
-	//printf("E1->type: %p E2->type: %p\n", E1->type, E2->type);
 	if(E1->type  && E2->type) {
 		if(E1->type->kind != ARRAY && E2->type->kind != ARRAY) {
 			if(!isEqual(E1->type, E2->type)) 
@@ -1174,11 +1178,10 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	}
 	if(Exp1->type) {
 		n->type = Exp1->type;
-		n->type->arr_dim = n->arr_dim;
 	}
 	n->is_left = 1;
 	n->arr_dim = Exp1->arr_dim + 1;
-	
+	n->type->arr_dim = n->arr_dim;
 	
 	return;
 }
@@ -1324,8 +1327,7 @@ void F_Args_Exp(struct node* n) {
 	strcpy(n->str, Exp->str);
 	if(Exp->type)
 		n->func.argv[n->func.argc++] = Exp->type;
-	//printf("Exp: %s func.argc: %d argv type kind : %d arr_dim:%d\n",Exp->str, n->func.argc, n->func.argv[n->func.argc-1]->kind, Exp->arr_dim);
-	
+		
 	return;
 }
 
