@@ -1,7 +1,7 @@
 struct c
 {
 	int a;
-	float a;
+	float a;	//Error type 15 at Line 4: Redefined field "a".
 };
 
 int main()

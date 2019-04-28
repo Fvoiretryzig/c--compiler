@@ -1,0 +1,9 @@
+int main()
+{
+	int a[2][3][4];
+	int b[3][4];	
+	a[0] = b[2];	//Error type 5 at Line 6: Type mismatched for assignment.
+
+
+	return 0;
+}

@@ -3,7 +3,7 @@ struct a {
 	float b;
 };
 struct c{
-	int u[2][3][4];
+	int u[2][3];
 	float v;
 };
 int tmp_a[10][6];
@@ -13,7 +13,7 @@ int main()
 	struct a aaa;
 	struct c ccc;
 	tmp_a = tmp_b;
-	tmp_a[1][0] = tmp_b[0][1];
+	tmp_a[1] = tmp_b[0][1];	//Error type 5 at Line 16: Type mismatched for assignment.
 	aaa = ccc;
 	return 0;
 }

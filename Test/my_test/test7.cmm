@@ -1,0 +1,6 @@
+int main()
+{
+	float a;
+	a = 3.3;
+	return a;	//Error type 8 at Line 5: Type mismatched for return.
+}

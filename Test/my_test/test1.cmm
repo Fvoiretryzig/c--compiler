@@ -1,0 +1,7 @@
+int main()
+{
+	int a, b;
+	struct a b;	//Error type 17 at Line 4: Undefined structure "a".Error type 3 at Line 4: Redefined variable "b".
+
+	return 0;
+}

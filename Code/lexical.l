@@ -46,7 +46,7 @@ nIntDec_type10	-21474836[0-3]({digit}{1})
 nIntDec_type11	-214748364[0-8]
 pIntDec	{IntDec_type1}|{IntDec_type2}|{IntDec_type3}|{IntDec_type4}|{IntDec_type5}|{IntDec_type6}|{IntDec_type7}|{IntDec_type8}|{IntDec_type9}|{IntDec_type10}|{IntDec_type11}
 nIntDec	{nIntDec_type1}|{nIntDec_type2}|{nIntDec_type3}|{nIntDec_type4}|{nIntDec_type5}|{nIntDec_type6}|{nIntDec_type7}|{IntDec_type8}|{nIntDec_type9}|{nIntDec_type10}|{nIntDec_type11}
-IntDec	{pIntDec}|{nIntDec}
+IntDec	{pIntDec}
 IntOct	0(([1-7]([0-7]{0,9})?)|(1[0-7]{10})|([2-3][0-7]{10}))
 IntHex	(0x|0X)[1-9a-fA-F]([0-9a-fA-F]{0,7})?
 INT		{IntDec}|{IntOct}|{IntHex}
@@ -54,7 +54,7 @@ pFloat	[0-9]+\.[0-9]+
 nFloat	-[0-9]+\.[0-9]+
 pFloExp	[0-9]*(\.)?[0-9]*[Ee][+-]?[0-9]+
 nFloExp -[0-9]*(\.)?[0-9]*[Ee][+-]?[0-9]+
-FLOAT	{pFloat}|{nFloat}|{pFloExp}|{nFloExp}
+FLOAT	{pFloat}|{pFloExp}
 ID		[_a-zA-Z]([_a-zA-Z0-9]{1,51})?
 SEMI	;
 COMMA	,
@@ -168,7 +168,7 @@ WHILE	while
 	}
 {ID}	{
 	#ifdef LEX
-	printf("this is \033[47;30mid\033[0m at line \033[45;37m%d \033[0m\n", yylineno);
+	printf("this is \033[47;30mid: %s\033[0m at line \033[45;37m%d \033[0m\n", yytext, yylineno);
 	#endif
 	yylval.gnode = CreateIdGNode(yytext, yylineno);
 	#ifdef SYNTAX	

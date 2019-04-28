@@ -1,0 +1,11 @@
+int c()
+{
+	
+}
+int main()
+{
+	int a = b();	//Error type 2 at Line 7: Undefined function "b".
+	float u = c();	//Error type 5 at Line 8: Type mismatched for assignment.
+
+	return 0;
+}

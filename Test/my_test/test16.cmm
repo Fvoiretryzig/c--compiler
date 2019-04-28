@@ -1,7 +1,7 @@
 struct c
 {
 	int a;
-	float a;
+	float a;	//Error type 15 at Line 4: Redefined field "a".
 };
 
 int main1()
@@ -13,7 +13,7 @@ int main1()
 
 int aa()
 {
-	return 3.3;
+	return 3.3;	//Error type 8 at Line 16: Type mismatched for return.
 }
 float bb()
 {

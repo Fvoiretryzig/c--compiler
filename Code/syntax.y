@@ -50,13 +50,13 @@ Program		:	ExtDefList {
 					#endif
 					$$ = CreateGNode("Program", @$.first_line, _INIT_, Program_Extdeflist, 1, $1);
 					//if(!is_error)
-					//	tran($$, 0);
+					//tran($$, 0);
 					root = $$;
 				}
 			;
 ExtDefList	:	ExtDef ExtDefList {
 					#ifdef DEBUG_MSG
-					printf("in ExtDefList: child:name1:%s name2:%s\n", $$->gchild[0]->name, $$->gchild[1]->name);
+					//printf("in ExtDefList: child:name1:%s name2:%s\n", $$->gchild[0]->name, $$->gchild[1]->name);
 					
 					printf("\033[46;37mExtDefList: ExtDef ExtDefList(%d)\033[0m\n", @$.first_line);
 					#endif

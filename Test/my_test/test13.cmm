@@ -14,6 +14,6 @@ float f()
 }
 int main()
 {
-	test[1][2].bbb.abcd = f();
+	test[1][2].bbb.abcd = f();	//Error type 14 at Line 17: Non-existent field "abcd".
 	return 0;
 }

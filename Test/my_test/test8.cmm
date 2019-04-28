@@ -1,0 +1,14 @@
+struct {
+	int i;
+	float b;
+}a;
+
+int main()
+{
+	int c = 1;
+	a.i = 1;
+	a.b = c;	//Error type 5 at Line 10: Type mismatched for assignment.
+	a.u = 6;	//Error type 14 at Line 11: Non-existent field "u".
+
+	return 0;
+}

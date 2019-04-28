@@ -1,0 +1,7 @@
+int main()
+{
+	int i, j;
+	j = i[0];	//Error type 10 at Line 4: "i" is not an array.
+
+	return 0;
+}
