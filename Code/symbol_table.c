@@ -4,6 +4,7 @@
 
 Symbol head;
 SymbolF headF;
+
 void init_table() 
 {
 	head = (Symbol)malloc(sizeof(struct Symbol_));
@@ -26,6 +27,24 @@ void init_table()
 	#ifdef DEBUG_symboltable
 	printf("\033[46;37mmalloc head and headF successful!!\033[0m\n");
 	#endif
+	
+	/*insert read*/
+	SymbolF sym_read = (SymbolF)malloc(sizeof(struct SymbolF_));
+	strcpy(sym_read->name, "read");
+	sym_read->retType->kind = BASIC; sym_read->retType->u.basic = 1; sym_read->retType->arr_dim = -1;
+	sym_read->argc = 0;
+	sym_read->argv = NULL;
+	sym_read->next = NULL;
+	headF->next = sym_read;
+	/*insert write*/
+	SymbolF sym_write = (SymbolF)malloc(sizeof(struct SymbolF_));
+	strcpy(sym_write->name, "write");
+	sym_write->retType->kind = BASIC; sym_write->retType->u.basic = 1; sym_read->retType->arr_dim = -1;
+	sym_read->argc = 1;
+	Type tmp_argv = (Type)malloc(sizeof(struct Type_));
+	tmp_argv->kind = BASIC; tmp_argv->u.basic = 1; tmp_argv->arr_dim = -1;
+	sym_read->argv[0] = tmp_argv;
+
 	return;
 }
 
