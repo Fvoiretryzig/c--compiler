@@ -54,5 +54,6 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 
 int get_relop(struct node* gnode);
 InterCodes translate_exp(struct node* exp, Operand place);
+InterCode translate_stmt(struct node* stmt);
 InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_faluse);
 #endif
