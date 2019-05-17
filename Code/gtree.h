@@ -76,6 +76,7 @@ struct node {
 	int child_cnt;
 	int is_left;
 	int arr_dim;
+	
 	struct node* gchild[10];
 };
  

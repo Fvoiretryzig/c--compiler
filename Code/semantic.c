@@ -1167,6 +1167,7 @@ void F_Exp_IdLpRp(struct node* n){
 	}
 	n->is_left = 0;
 	
+
 	return;
 }
 void F_Exp_ExpLbExpRb(struct node* n){
@@ -1209,6 +1210,7 @@ void F_Exp_ExpLbExpRb(struct node* n){
 	}
 	n->is_left = 1;
 
+	
 	return;
 }
 void F_Exp_ExpDotId(struct node* n){
@@ -1266,6 +1268,7 @@ void F_Exp_ExpDotId(struct node* n){
 	if(is_matched && id->type)
 		n->type = id->type;
 	n->is_left = Exp->is_left;
+	
 	return;
 }
 void F_Exp_Id(struct node* n){
@@ -1289,7 +1292,7 @@ void F_Exp_Id(struct node* n){
 	//n->n_type = _ID_;
 	n->is_left = 1;
 	n->arr_dim = 0;
-	
+		
 	return;
 }
 void F_Exp_Int(struct node* n){
@@ -1307,7 +1310,7 @@ void F_Exp_Int(struct node* n){
 	n->type = t;
 	n->is_left = 0;
 	n->type_int = Int->type_int;
-	
+		
 	return;
 }
 void F_Exp_Float(struct node* n){
@@ -1322,6 +1325,7 @@ void F_Exp_Float(struct node* n){
 	n->type->kind = BASIC;
 	n->is_left = 0;
 	n->type_float = n->gchild[0]->type_float;
+	
 
 	//printf("%f float\n", n->gchild[0]->type_float);
 	return;
