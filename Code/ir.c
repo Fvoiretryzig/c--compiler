@@ -63,7 +63,10 @@ Operand new_Operand(struct node* gnode, int kind, float n, int if_float)
 		case CONSTANT
 		case ADDRESS
 		case LABEL
-		case FUNCTION
+		case FUNCTION:
+			op->kind = FUNCTION;
+			strcpy(op->u.f_name, gnode->str);
+			break;
 		case TMP
 		case IMM_NUMBER:
 			op->kind = IMM_NUMBER;
@@ -101,8 +104,11 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 {
 	InterCodes ir = (InterCodes)malloc(sizeof(struct InterCodes_));
 	switch(kind) {
-		case D_LABEL
-		case D_FUNCTION
+		case D_LABEL:
+			ir->kind = D_LABEL;
+			ir->u.label.x = op1;
+			break;
+		case D_FUNCTION:
 		case ASSIGN:
 			ir->kind = ASSIGN;
 			ir->u.assign.x = op1;
@@ -151,10 +157,20 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 			break;
 		case DEC
 		case ARG
-		case CALL
+		case CALL:
+			ir->kind = CALL;
+			ir->u.call.x = op1;
+			ir->u.call.f = op2;
+			break;
 		case PARA
-		case READ
-		case WRITE
+		case READ:
+			ir->kind = READ;
+			ir->u.read.x = op1;
+			break;
+		case WRITE:
+			ir->kind = WRITE;
+			ir->u.write.x = op1;
+			break;
 	}
 	return ir;
 }
@@ -243,8 +259,40 @@ InterCodes translate_exp(struct node* exp, Operand place)
 			
 			ir1->next = ir2; ir2->prev = ir1;
 			return ir1;
-		case Exp_IdLpArgsRp
-		case Exp_IdLpRp
+		case Exp_IdLpArgsRp:
+			char* name = exp->str;
+			Operand* arg_list = NULL;
+			int arg_cnt = 0;
+			InterCodes ir1 = translate_args(exp->gchild[2], arg_list, &arg_cnt);	//TODO();
+			if(!strcmp(name, "write")) {
+				InterCodes write_code = new_InterCodes(arg_list[0], NULL, NULL, WRITE);
+				ir1->next = write_code; write_code->prev = ir1;
+				return ir1;
+			}
+			InterCodes ir2 = (InterCodes)malloc(sizeof(struct InterCodes_));
+			for(int i = 0; i<arg_cnt; i++) {
+				InterCodes ir = new_InterCodes(arg_list[i], NULL, NULL, ARG);
+				InterCodes curr = ir2;
+				while(curr->next)
+					curr = curr->next;
+				curr->next = ir; ir->prev = curr;		
+			}
+			Operand f = new_Operand(exp->gchild[0], FUNCTION, -1, -1);
+			InterCodes call_f = new_InterCodes(place, f, NULL, CALL);
+			
+			ir1->next = ir2->next; ir2->next->prev = ir1;
+			InterCodes curr = ir1;
+			while(curr->next)
+				curr = curr->next;
+			curr->next = call_f; call_f->prev = curr;
+			free(ir2);
+			return ir1;
+		case Exp_IdLpRp:
+			char* name = exp->str;
+			if(!strcmp(name, "read"))
+				return new_InterCodes(place, NULL, NULL, READ);
+			Operand function = new_Operand(exp);
+			return new_InterCodes(place, function, NULL, CALL);
 		case Exp_ExpLbExpRb
 		case Exp_ExpDotId
 		case Exp_Id:

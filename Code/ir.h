@@ -13,6 +13,7 @@ struct Operand_ {
 		int tmp_no;
 		int value_int;
 		float value_float;
+		char f_name[60];
 	} u;
 	struct Operand_* next; //????????
 	//TODO();
