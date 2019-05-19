@@ -57,4 +57,10 @@ int get_relop(struct node* gnode);
 InterCodes translate_exp(struct node* exp, Operand place);
 InterCode translate_stmt(struct node* stmt);
 InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_faluse);
+InterCodes translate_args(struct node* args, Operand* arg_list);
+InterCodes translate_def(struct node* def);
+InterCodes translate_declist(struct node* declist, Type specifier);
+InterCOdes translate_dec(struct node* dec, Type specifier);
+int get_array_size(Type t);
+int get_struct_size(Type t);
 #endif

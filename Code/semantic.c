@@ -357,8 +357,10 @@ void F_Vardec_Id(struct node* n){
 	struct node* id = n->gchild[0];
 	char* name = id->str;
 
-	if(n->type)
+	if(n->type) {
 		id->type = n->type;
+		n->arr_dim = 0;
+	}
 	id->n_type = _VAR_;
 	if(top == -1) {	
 		Symbol sym = find_symbol(name);
@@ -368,6 +370,7 @@ void F_Vardec_Id(struct node* n){
 			int ret = add_symbol(id, name);
 			if(ret)
 				printf("add to symbol table error!\n");
+			strcpy(n->str, name);	//new add
 		}
 		;	
 	}
@@ -420,6 +423,8 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 	Vardec->type->u.array.size = size;	//大小不知道怎么测
 	semantic_analysis(Vardec);
 	n->type = Vardec->type;
+	n->arr_dim = Vardec->arr_dim + 1;
+	strcpy(n->str, vardec->str);
 	return;
 }
 void F_Fundec_IdLpVarlistRp(struct node* n){
