@@ -5,12 +5,13 @@
 
 #define IR_DEBUG
 InterCodes IRhead;
+Operand ophead;
 static int lable_cnt;
 static int var_cnt;
 static int tmp_cnt;
 Operand imm_num0;
 Operand imm_num1;
-
+//////////////////////////////////////////////init/////////////////////////////////////////////////////
 void init_irlist()
 {
 	IRhead = (InterCodes)malloc(sizeof(struct InterCodes_));
@@ -22,7 +23,17 @@ void init_irlist()
 
 	return;
 }
-void init_operand()
+void init_oplist()
+{
+	ophead = (Operand)malloc(sizeof(struct Operand_));
+	if(ophead == NULL) {
+		printf("\033[47;31mERROR when malloc ophead\033[0m\n");
+		return;
+	}
+	ophead->next = NULL;
+	return;
+}
+void init_translate()
 {
 	int lable_cnt = 0;
 	int var_cnt = 0;
@@ -36,6 +47,7 @@ void init_operand()
 	
 	return;
 }
+///////////////////////////////////////Operation/////////////////////////////////////////////////
 int insert_ircode(InterCodes ir_code)
 {
 	InterCodes curr = IRhead;
@@ -48,7 +60,26 @@ int insert_ircode(InterCodes ir_code)
 		last = last->next;
 	last->next = NULL; 	//necessary????
 	
-	return;
+	return 0;
+}
+int insert_op(Operand op)
+{
+	Operand curr = ophead;
+	while(curr->next != NULL)
+		curr = curr->next;
+	curr->next = op;
+	op->next = NULL
+	
+	return 0;
+}
+Operand find_op(char* name) {
+	Operand curr = ophead;
+	while(curr!= NULL) {
+		if(!strcmp(name, curr->v_name))
+			return curr;
+		curr = curr->next;
+	}
+	return NULL;
 }
 void print_ir(InterCodes ir_list) 
 {
@@ -69,15 +100,18 @@ Operand new_Operand(struct node* gnode, int kind, float n, int if_float)
 		case VARIABLE:
 			op->kind = VARIABLE;
 			op->u.val_no = var_cnt++;
+			if(gnode)
+				strcpy(op->v_name, gnode->str);
 			break;
-		case CONSTANT
-		case ADDRESS
-		case LABEL
+		//case CONSTANT
+		case ADDRESS:
+			//TODO()
+		//case LABEL
 		case FUNCTION:
 			op->kind = FUNCTION;
 			strcpy(op->u.f_name, gnode->str);
 			break;
-		case TMP
+		//case TMP
 		case IMM_NUMBER:
 			op->kind = IMM_NUMBER;
 			if(gnode)
@@ -91,9 +125,10 @@ Operand new_Operand(struct node* gnode, int kind, float n, int if_float)
 				else
 					op->u.value_float = n;
 			break;
-		case ADDRESS_CONTENT
+		case ADDRESS_CONTENT:
+			//TODO();
 	}
-	
+	insert_op(op);
 	return op;
 }
 Operand new_temp()
@@ -101,6 +136,7 @@ Operand new_temp()
 	Operand temp = (Operand)malloc(sizeof(struct Operand_));
 	temp->kind = TMP;
 	temp->u.tmp_no = tmp_cnt++;
+	insert_op(temp);
 	return temp;
 }
 Operand new_label()
@@ -108,6 +144,7 @@ Operand new_label()
 	Operand label = (Operand)malloc(sizeof(struct Operand_));
 	label->kind = LABEL;
 	label->u.label_no = label_cnt++;
+	insert_op(label);
 	return label;
 }
 InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int op)
@@ -119,6 +156,9 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 			ir->u.label.x = op1;
 			break;
 		case D_FUNCTION:
+			ir->kind = D_FUNCTION;
+			ir->u.function.f = op1;
+			break;
 		case ASSIGN:
 			ir->kind = ASSIGN;
 			ir->u.assign.x = op1;
@@ -148,8 +188,16 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 			ir->u.arithmetic.y = op2;
 			ir->u.arithmetic.z = op3;
 			break;
-		case ASSIGN_ADDR
-		case ADDR_ASSIGNED
+		case ASSIGN_ADDR:
+			ir->kind = ASSIGN_ADDR;
+			ir->u.assign_address.x = op1;
+			ir->u.assign_address.y = op2;
+			break;
+		case ADDR_ASSIGNED:
+			ir->kind = ADDR_ASSIGNED;
+			ir->u.address_assigned.x = op1;
+			ir->u.address_assigned.y = op2;
+			break;
 		case JUMP:
 			ir->kind = JUMP;
 			ir->u.jump.x = op1;
@@ -179,7 +227,10 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 			ir->u.call.x = op1;
 			ir->u.call.f = op2;
 			break;
-		case PARA
+		case PARA:
+			ir->kind = PARA;
+			ir->u.para.x = po1;
+			break;
 		case READ:
 			ir->kind = READ;
 			ir->u.read.x = op1;
@@ -191,146 +242,204 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 	}
 	return ir;
 }
-InterCodes translate_exp(struct node* exp, Operand place)
+/////////////////////////////////////////helper//////////////////////////////////////////////////////////
+int get_array_size(Type t)
 {
-	switch(exp->rule) {
-		case Exp_ExpAssignopExp:
-			Operand variable = new_Operand(exp->gchild[0], VARIABLE, -1, -1);
-			Operand t1 = new_temp();
-			
-			InterCodes ir1 = translate_exp(exp->gchild[2], t1);
-			InterCodes ir2_1 = new_InterCodes(variable, t1, NULL, ASSIGN, -1);
-			InterCodes ir2_2 = new_InterCodes(place, variable, NULL, ASSIGN, -1);
-			
-			InterCodes ir2 = concat(ir2_1, ir2_2);
-			InterCodes ir = concat(ir1, ir2);
-			return ir;
-		case Exp_NotExp:
-		case Exp_ExpAndExp:
-		case Exp_ExpOrExp:
-		case Exp_ExpRelopExp:
-			Operand label1 = new_label();
-			Operand label2 = new_label();
-			
-			InterCodes ir0 = new_InterCodes(place, imm_num0, NULL, ASSIGN, -1);
-			InterCodes ir1 = translate_Cond(exp, label1, label2);
-			InterCodes ir2_1 = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
-			InterCodes ir2_2 = new_InterCodes(place, imm_num1, NULL, ASSIGN, -1);
-			InterCodes ir3 = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
-			
-			InterCodes ir = concat(ir0, ir1);
-			ir = concat(ir, ir2_1);
-			ir = concat(ir, ir2_2);
-			return ir;
-		case Exp_ExpPlusExp:
-			Operand t1 = new_temp();
-			Operand t2 = new_temp();
-			
-			InterCodes ir1 = translate_exp(exp->gchild[0], t1);
-			InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-			InterCodes ir3 = new_InterCodes(place, t1, t2, ADD, -1);
-			
-			InterCodes ir = concat(ir1, ir2);
-			ir = concat(ir, ir3);
-			return ir;
-		case Exp_ExpMinusExp:
-			Operand t1 = new_temp();
-			Operand t2 = new_temp();
-			
-			InterCodes ir1 = translate_exp(exp->gchild[0], t1);
-			InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-			InterCodes ir3 = new_InterCodes(place, t1, t2, SUB, -1);
-			
-			InterCodes ir = concat(ir1, ir2);
-			ir = concat(ir, ir3);
-			return ir;
-		case Exp_ExpStarExp:
-			Operand t1 = new_temp();
-			Operand t2 = new_temp();
-			
-			InterCodes ir1 = translate_exp(exp->gchild[0], t1);
-			InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-			InterCodes ir3 = new_InterCodes(place, t1, t2, MUL, -1);
-			
-			InterCodes ir = concat(ir1, ir2);
-			ir = concat(ir, ir3);
-			return ir;
-		case Exp_ExpDivExp:
-			Operand t1 = new_temp();
-			Operand t2 = new_temp();
-			
-			InterCodes ir1 = translate_exp(exp->gchild[0], t1);
-			InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-			InterCodes ir3 = new_InterCodes(place, t1, t2, DIV, -1);
-			
-			InterCodes ir = concat(ir1, ir2);
-			ir = concat(ir, ir3);
-			return ir;
-		case Exp_LpExpRp
-		case Exp_MinusExp:
-			Operand t1 = new_temp();
-			
-			InterCodes ir1 = translate_exp(exp->gchild[2], t1);
-			InterCodes ir2 = new_InterCodes(place, imm_num0, t1, -1);
+	if(t->kind == BASIC)
+		return 4;
+	int sub_size = get_array_size(t->u.array.elem);
+	return sub_size*t->u.array.size;
+}
+int get_struct_size(Type t)
+{
+	int size = 0;
+	FieldList curr = t->u.structre;
+	while(curr) {
+		switch(curr->type->kind) {
+			case BASIC:
+				size += 4;
+				break;
+			case ARRAY:
+				size += get_array_size(curr->type);
+				break;
+			case STRUCTURE:
+				size += get_struct_size(curr->type);
+				break;
+		}
+		curr = curr->tail;
+	}
+	return size;
+}
+/////////////////////////////////////////////translate////////////////////////////////////////////////////////
+InterCodes translate_program(struct node* program)
+{
+	InterCodes ir = translate_extdeflist(program->gchild[0]);
+	
+	return ir;
+}
+InterCodes translate_extdeflist(struct node* extdeflist)
+{
+	switch(extdeflist->rule) {
+		case Extdeflist_ExtdefExtdeflist:
+			InterCodes ir1 = translate_extdef(extdeflist->gchild[0]);
+			InterCodes ir2 = translate_extdeflist(extdeflist->gchild[1]);
 			
 			InterCodes ir = concat(ir1, ir2);
 			return ir;
-		case Exp_IdLpArgsRp:
-			char* name = exp->str;
-			Operand* arg_list = NULL;
-			int arg_cnt = 0;
-			InterCodes ir1 = translate_args(exp->gchild[2], arg_list, &arg_cnt);	//TODO();
-			if(!strcmp(name, "write")) {
-				InterCodes write_code = new_InterCodes(arg_list[0], NULL, NULL, WRITE);
-				ir1->next = write_code; write_code->prev = ir1;
-				return ir1;
+		case Extdeflist_Null:
+			return NULL;
+	}
+}
+InterCodes translate_extdef(struct node* extdef)
+{
+	switch(extdef->rule) {
+		case Extdef_SpecifierExtdeclistSemi:
+		case Extdef_SpecifierSemi:
+			return NULL;	//TODO()应该不用生成代码吧？？？？？
+		case Extdef_SpcifierFundecCompst:
+			InterCodes ir1 = translate_funcdec(extdef->gchild[1]);
+			InterCodes ir2 = translate_Compst(extdef->gchild[2]);
+			
+			InterCode ir = concat(ir1, ir2);
+			return ir;
+	}
+}
+InterCodes translate_funcdec(struct node* funcdec)
+{
+	switch(funcdec->rule) {
+		case Fundec_IdLpVarlistRp:
+			Operand func;
+			struct node* id = funcdec->gchild[0];
+			func = find_op(id->str);
+			if(!func) {
+				func = new_operand(id, FUNCTION, -1, -1);
 			}
-			InterCodes ir2 = (InterCodes)malloc(sizeof(struct InterCodes_));
-			for(int i = 0; i<arg_cnt; i++) {
-				InterCodes ir = new_InterCodes(arg_list[i], NULL, NULL, ARG);
-				InterCodes curr = ir2;
-				while(curr->next)
-					curr = curr->next;
-				curr->next = ir; ir->prev = curr;		
-			}
-			Operand f = new_Operand(exp->gchild[0], FUNCTION, -1, -1);
-			InterCodes call_f = new_InterCodes(place, f, NULL, CALL);
+			InterCodes ir1 = new_InterCodes(func, NULL, NULL, D_FUNCTION, -1);
+			InterCodes ir2 = translate_varlist(funcdec->gchild[2]);
 			
-			ir1->next = ir2->next; ir2->next->prev = ir1;
-			InterCodes curr = ir1;
-			while(curr->next)
-				curr = curr->next;
-			curr->next = call_f; call_f->prev = curr;
-			free(ir2);
-			//TODO():
+			InterCodes ir = concat(ir1, ir2);
+			return ir;
+		case Fundec_IdLpRp:
+			Operand func;
+			struct node* id = funcdec->gchlid[0];
+			func = find_op(id->str);
+			if(!func) {
+				func = new_operand(id, FUNCTION, -1, -1);
+			}
+			InterCodes ir = new_InterCodes(func, NULL, NULL, D_FUNCTION, -1);
+			return ir;
+	}
+}
+InterCodes translate_varlist(struct node* varlist)
+{
+	switch(varlist->rule) {
+		case Varlist_ParamdecCommaVarlist:	
+			InterCodes ir1 = translate_paradec(varlist->gchild[0]);
+			InterCodes ir2 = translate_varlist(varlist->gchild[2]);
+			
+			InterCodes ir = concat(ir1, ir2);
+			return ir;
+		case Varlist_Paramdec:
+			InterCodes ir = translate_paradec(varlist->gchild[0]);
+			return ir;
+	}
+}
+InterCodes translate_paradec(struct node* paradec)
+{
+	vardec = paradec->gchild[1];
+	Operand para;
+	para = find_op(vardec->str);
+	if(!para)
+		para = new_operand(vardec, VARIABLE, -1, -1);
+	InterCodes ir = new_InterCodes(para, NULL, NULL, PARA, -1);
+	return ir;
+}
+InterCodes translate_compst(struct node* compst)
+{	
+	InterCodes ir1 = translate_deflist(compst->gchild[1]);
+	InterCodes ir2 = translate_stmtlist(compst->gchild[2]);
+	
+	InterCodes ir = concat(ir1, ir2);
+	return ir;
+}
+InterCodes translate_deflist(struct node* deflist)
+{
+	switch(deflist->rule) {
+		case Deflist_DefDeflist:
+			InterCodes ir1 = translate_def(deflist->gchild[0]);
+			InterCodes ir2 = translate_deflist(deflist->gchild[1]);
+			
+			InterCodes ir = concat(ir1, ir2);
+			return ir;
+		case Deflist_Null:
+			return NULL;
+	}
+}
+InterCodes translate_def(struct node* def)
+{
+	//def:= Specifier DecList SEMI
+	Type specifier = def->gchild[0]->type;
+	InterCodes ir = translate_declist(def->gchild[1], specifier);
+}
+InterCodes translate_declist(struct node* declist, Type specifier)
+{
+	switch(declist->rule) {
+		case Declist_Dec:
+			InterCodes ir = translate_dec(def->gchild[0], specifier);
+			return ir;
+		case Declist_DecCommaDeclist:
+			InterCodes ir1 = translate_dec(def->gchild[0], specifier);
+			InterCodes ir2 = translate_declist(def->gchild[2], specifier);
+			
+			InterCodes ir = concat(ir1, ir2);
+			return ir;
+	}
+}
+InterCOdes translate_dec(struct node* dec, Type specifier)
+{
+	switch(dec->rule) {
+		case Dec_Vardec:
+			struct node* vardec = dec->gchild[0];
+			switch(vardec->type->kind) {
+				case BASIC:
+					printf("!!!!!not need to dec!!!!!\n");
+					return NULL;
+				case ARRAY:
+					Symbol sym = find_symbol(vardec->str);
+					Type t = sym->type;
+					int size = get_array_size(t);
+					Operand v = new_Operand(NULL, VARIABLE, -1, -1);
+					InterCodes ir = new_InterCodes(v, NULL, NULL, DEC, size);
+					return ir;
+				case STRUCTURE:
+					Symbol sym = find_symbol(vardec->str);
+					Type t = sym->type;
+					int size = get_struct_size(t);
+					Operand v = new_Operand(NULL, VARIABLE, -1, -1);
+					InterCodes ir = new_InterCodes(v, NULL, NULL, DEC, size);
+					return ir;
+			}
+		case Dec_VardecAssignopExp:
+			Operand v = new_Operand(NULL, VARIABLE, -1, -1);
+			Operand t1 = new_temp();
+			InterCodes ir1 = translate_exp(n->gchild[2], t1);
+			InterCodes ir2 = new_InterCodes(v, t1, NULL, ASSIGN, -1);
+			ir1->next = ir2; ir2->prev = ir1;
 			return ir1;
-		case Exp_IdLpRp:
-			char* name = exp->str;
-			if(!strcmp(name, "read"))
-				return new_InterCodes(place, NULL, NULL, READ);
-			Operand function = new_Operand(exp);
-			return new_InterCodes(place, function, NULL, CALL);
-		case Exp_ExpLbExpRb
-		case Exp_ExpDotId
-		case Exp_Id:
-			char* name = exp->str;
-			Operand id = new_Operand(exp->gchild[0], VARIABLE, -1, 0);
-			
-			InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
+	}
+}
+InterCodes translate_stmtlist(struct node* stmtlist)
+{
+	switch(stmtlist->rule) {
+		case Stmtlist_StmtStmtlist:
+			InterCodes ir1 = translate_stmt(stmtlist->gchild[0]);
+			InterCodes ir2 = translate_stmtlist(stmtlist->gchild[1]);
+			 
+			InterCodes ir = concat(ir1, ir2);
 			return ir;
-		case Exp_Int:
-			int val = exp->type_int;
-			Operand value = new_Operand(exp, IMM_NUMBER, -1, 0);
-			
-			InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
-			return ir;			
-		case Exp_Float
-			float val = exp->type_float;
-			Operand value = new_Operand(exp, IMM_NUMBER, -1, 1);
-			
-			InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
-			return ir;
-	}	
+		case Stmtlist_Null:
+			return NULL;
+	}
 }
 InterCode translate_stmt(struct node* stmt)
 {
@@ -343,7 +452,7 @@ InterCode translate_stmt(struct node* stmt)
 			Operand t1 = new_temp();
 			
 			InterCodes ir1 = translate_exp(stmt->gchild[1], t1);
-			InterCodes ir2 = new_InterCodes(t1, NULL, NULL, RET);
+			InterCodes ir2 = new_InterCodes(t1, NULL, NULL, RET, -1);
 			
 			InterCodes ir = concat(ir1, ir2);
 			return ir;
@@ -352,9 +461,9 @@ InterCode translate_stmt(struct node* stmt)
 			Operand label2 = new_label();
 			
 			InterCodes ir1 = translate_cond(stmt->gchild[2], label1, label2);
-			InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL);
+			InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
 			InterCodes ir2 = translate_stmt(stmt->gchild[4]);
-			InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL);
+			InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
 			
 			InterCodes ir = concat(ir, label1_code);
 			ir = concat(ir, ir2);
@@ -366,12 +475,12 @@ InterCode translate_stmt(struct node* stmt)
 			Operand label3 = new_label();
 			
 			InterCodes ir1 = translate_cond(stmt->gchild[2], label1, label2);
-			InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL);
+			InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
 			InterCodes ir2 = translate_stmt(stmt->gchild[4]);
 			InterCodes goto3_code = new_InterCodes(label3, NULL, NULL, JUMP);
-			InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL);
+			InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
 			InterCodes ir3 = translate_stmt(stmt->gchild[6]);
-			InterCOdes label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL);
+			InterCOdes label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL, -1);
 			
 			InterCodes ir = concat(ir1, label1_code);
 			ir = concat(ir, ir2);
@@ -385,12 +494,12 @@ InterCode translate_stmt(struct node* stmt)
 			Operand label2 = new_label();
 			Operand label3 = new_label();
 			
-			InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL);
+			InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
 			InterCodes ir1 = translate_cond(stmt->gchild[2], label2, label3);
-			InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL);
+			InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
 			InterCodes ir2 = translate_stmt(stmt->gchild[4]);
-			InterCodes goto1_code = new_InterCodes(label1, NULL, NULL, JUMP);
-			InterCodes label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL);
+			InterCodes goto1_code = new_InterCodes(label1, NULL, NULL, JUMP, -1);
+			InterCodes label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL, -1);
 			
 			InterCodes ir = concat(label1_code, ir1);
 			ir = concat(ir, label2_code);
@@ -470,6 +579,150 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 			return ir;
 	}
 }
+InterCodes translate_exp(struct node* exp, Operand place)
+{
+	switch(exp->rule) {
+		case Exp_ExpAssignopExp:
+			Operand variable = new_Operand(exp->gchild[0], VARIABLE, -1, -1);
+			Operand t1 = new_temp();
+			
+			InterCodes ir1 = translate_exp(exp->gchild[2], t1);
+			InterCodes ir2_1 = new_InterCodes(variable, t1, NULL, ASSIGN, -1);
+			InterCodes ir2_2 = new_InterCodes(place, variable, NULL, ASSIGN, -1);
+			
+			InterCodes ir2 = concat(ir2_1, ir2_2);
+			InterCodes ir = concat(ir1, ir2);
+			return ir;
+		case Exp_NotExp:
+		case Exp_ExpAndExp:
+		case Exp_ExpOrExp:
+		case Exp_ExpRelopExp:
+			Operand label1 = new_label();
+			Operand label2 = new_label();
+			
+			InterCodes ir0 = new_InterCodes(place, imm_num0, NULL, ASSIGN, -1);
+			InterCodes ir1 = translate_Cond(exp, label1, label2);
+			InterCodes ir2_1 = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
+			InterCodes ir2_2 = new_InterCodes(place, imm_num1, NULL, ASSIGN, -1);
+			InterCodes ir3 = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
+			
+			InterCodes ir = concat(ir0, ir1);
+			ir = concat(ir, ir2_1);
+			ir = concat(ir, ir2_2);
+			return ir;
+		case Exp_ExpPlusExp:
+			Operand t1 = new_temp();
+			Operand t2 = new_temp();
+			
+			InterCodes ir1 = translate_exp(exp->gchild[0], t1);
+			InterCodes ir2 = translate_exp(exp->gchild[2], t2);
+			InterCodes ir3 = new_InterCodes(place, t1, t2, ADD, -1);
+			
+			InterCodes ir = concat(ir1, ir2);
+			ir = concat(ir, ir3);
+			return ir;
+		case Exp_ExpMinusExp:
+			Operand t1 = new_temp();
+			Operand t2 = new_temp();
+			
+			InterCodes ir1 = translate_exp(exp->gchild[0], t1);
+			InterCodes ir2 = translate_exp(exp->gchild[2], t2);
+			InterCodes ir3 = new_InterCodes(place, t1, t2, SUB, -1);
+			
+			InterCodes ir = concat(ir1, ir2);
+			ir = concat(ir, ir3);
+			return ir;
+		case Exp_ExpStarExp:
+			Operand t1 = new_temp();
+			Operand t2 = new_temp();
+			
+			InterCodes ir1 = translate_exp(exp->gchild[0], t1);
+			InterCodes ir2 = translate_exp(exp->gchild[2], t2);
+			InterCodes ir3 = new_InterCodes(place, t1, t2, MUL, -1);
+			
+			InterCodes ir = concat(ir1, ir2);
+			ir = concat(ir, ir3);
+			return ir;
+		case Exp_ExpDivExp:
+			Operand t1 = new_temp();
+			Operand t2 = new_temp();
+			
+			InterCodes ir1 = translate_exp(exp->gchild[0], t1);
+			InterCodes ir2 = translate_exp(exp->gchild[2], t2);
+			InterCodes ir3 = new_InterCodes(place, t1, t2, DIV, -1);
+			
+			InterCodes ir = concat(ir1, ir2);
+			ir = concat(ir, ir3);
+			return ir;
+		case Exp_LpExpRp:
+			//TODO();
+		case Exp_MinusExp:
+			Operand t1 = new_temp();
+			
+			InterCodes ir1 = translate_exp(exp->gchild[2], t1);
+			InterCodes ir2 = new_InterCodes(place, imm_num0, t1, SUB, -1);
+			
+			InterCodes ir = concat(ir1, ir2);
+			return ir;
+		case Exp_IdLpArgsRp:
+			char* name = exp->str;
+			Operand* arg_list = NULL;
+			int arg_cnt = 0;
+			InterCodes ir1 = translate_args(exp->gchild[2], arg_list, &arg_cnt);
+			if(!strcmp(name, "write")) {
+				InterCodes write_code = new_InterCodes(arg_list[0], NULL, NULL, WRITE, -1);
+				ir1->next = write_code; write_code->prev = ir1;
+				return ir1;
+			}
+			InterCodes ir2 = (InterCodes)malloc(sizeof(struct InterCodes_));
+			for(int i = 0; i<arg_cnt; i++) {
+				InterCodes ir = new_InterCodes(arg_list[i], NULL, NULL, ARG, -1);
+				InterCodes curr = ir2;
+				while(curr->next)
+					curr = curr->next;
+				curr->next = ir; ir->prev = curr;		
+			}
+			Operand f = new_Operand(exp->gchild[0], FUNCTION, -1, -1);
+			InterCodes call_f = new_InterCodes(place, f, NULL, CALL);
+			
+			ir1->next = ir2->next; ir2->next->prev = ir1;
+			InterCodes curr = ir1;
+			while(curr->next)
+				curr = curr->next;
+			curr->next = call_f; call_f->prev = curr;
+			free(ir2);
+			//TODO()??????
+			return ir1;
+		case Exp_IdLpRp:
+			char* name = exp->str;
+			if(!strcmp(name, "read"))
+				return new_InterCodes(place, NULL, NULL, READ);
+			Operand function = new_Operand(exp);
+			return new_InterCodes(place, function, NULL, CALL);
+		case Exp_ExpLbExpRb:
+			//TODO();
+		case Exp_ExpDotId:
+			//TODO();
+		case Exp_Id:
+			char* name = exp->str;
+			Operand id = new_Operand(exp->gchild[0], VARIABLE, -1, 0);
+			
+			InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
+			return ir;
+		case Exp_Int:
+			int val = exp->type_int;
+			Operand value = new_Operand(exp, IMM_NUMBER, -1, 0);
+			
+			InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
+			return ir;			
+		case Exp_Float:
+			float val = exp->type_float;
+			Operand value = new_Operand(exp, IMM_NUMBER, -1, 1);
+			
+			InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
+			return ir;
+	}	
+}
 InterCodes translate_args(struct node* args, InterCodes* arg_list, int* arg_cnt)
 {
 	switch(args->rule) {
@@ -488,80 +741,5 @@ InterCodes translate_args(struct node* args, InterCodes* arg_list, int* arg_cnt)
 			return ir1;
 	}
 }
-int get_array_size(Type t)
-{
-	if(t->kind == BASIC)
-		return 4;
-	int sub_size = get_array_size(t->u.array.elem);
-	return sub_size*t->u.array.size;
-}
-int get_struct_size(Type t)
-{
-	int size = 0;
-	FieldList curr = t->u.structre;
-	while(curr) {
-		switch(curr->type->kind) {
-			case BASIC:
-				size += 4;
-				break;
-			case ARRAY:
-				size += get_array_size(curr->type);
-				break;
-			case STRUCTURE:
-				size += get_struct_size(curr->type);
-				break;
-		}
-		curr = curr->tail;
-	}
-	return size;
-}
-InterCodes translate_def(struct node* def)
-{
-	//def:= Specifier DecList SEMI
-	Type specifier = def->gchild[0]->type;
-	InterCodes ir = translate_declist(def->gchild[1], specifier);
-}
-InterCodes translate_declist(struct node* declist, Type specifier)
-{
-	switch(declist->rule) {
-		case Declist_Dec:
-			InterCodes ir = translate_dec(def->gchild[0], specifier);
-			break;
-		case Declist_DecCommaDeclist:
-			InterCodes ir1 = translate_dec(def->gchild[0], specifier);
-			InterCodes ir2 = translate_dec
-	}
-}
-InterCOdes translate_dec(struct node* dec, Type specifier)
-{
-	switch(dec->rule) {
-		case Dec_Vardec:
-			struct node* vardec = dec->gchild[0];
-			switch(vardec->type->kind) {
-				case BASIC:
-					printf("!!!!!not need to dec!!!!!\n");
-					return NULL;
-				case ARRAY:
-					Symbol sym = find_symbol(vardec->str);
-					Type t = sym->type;
-					int size = get_array_size(t);
-					Operand v = new_Operand(NULL, VARIABLE, -1, -1);
-					InterCodes ir = new_InterCodes(v, NULL, NULL, DEC, size);
-					return ir;
-				case STRUCTURE:
-					Symbol sym = find_symbol(vardec->str);
-					Type t = sym->type;
-					int size = get_struct_size(t);
-					Operand v = new_Operand(NULL, VARIABLE, -1, -1);
-					InterCodes ir = new_InterCodes(v, NULL, NULL, DEC, size);
-					return ir;
-			}
-		case Dec_VardecAssignopExp:
-			Operand v = new_Operand(NULL, VARIABLE, -1, -1);
-			Operand t1 = new_temp();
-			InterCodes ir1 = translate_exp(n->gchild[2], t1);
-			InterCodes ir2 = new_InterCodes(v, t1, NULL, ASSIGN, -1);
-			ir1->next = ir2; ir2->prev = ir1;
-			return ir1;
-	}
-}
+
+
