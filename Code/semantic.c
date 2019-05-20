@@ -424,7 +424,7 @@ void F_Vardec_VardecLbIntRb(struct node* n){
 	semantic_analysis(Vardec);
 	n->type = Vardec->type;
 	n->arr_dim = Vardec->arr_dim + 1;
-	strcpy(n->str, vardec->str);
+	strcpy(n->str, Vardec->str);
 	return;
 }
 void F_Fundec_IdLpVarlistRp(struct node* n){
