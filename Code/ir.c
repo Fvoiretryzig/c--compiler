@@ -80,8 +80,9 @@ int insert_op(Operand op)
 Operand find_op(char* name) {
 	Operand curr = ophead;
 	while(curr!= NULL) {
-		if(!strcmp(name, curr->v_name))
+		if(curr->kind == VARIABLE && !strcmp(name, curr->v_name)) {
 			return curr;
+		}
 		curr = curr->next;
 	}
 	return NULL;
@@ -149,6 +150,25 @@ Operand new_temp()
 	insert_op(temp);
 	return temp;
 }
+/*Operand remove_temp(Operand op)
+{
+	Operand curr = op;
+	printf("op: %p\n", op);
+	while(curr) {
+		curr->u.tmp_no--;
+		curr = curr->next;
+	}
+	temp_cnt--;
+	curr = ophead;
+	while(curr->next != op)
+		curr = curr->next;
+	curr->next = op->next;
+	//op = NULL;
+	free(op);
+	op = NULL;
+	printf("op: %p\n", op);
+	return NULL; 
+}*/
 Operand new_label()
 {
 	Operand label = (Operand)malloc(sizeof(struct Operand_));
@@ -295,6 +315,8 @@ void print_op(Operand op)
 }
 void print_ir(InterCodes ir)
 {
+	if(!ir)
+		return;
 	if(ir->code.kind == D_LABEL) {
 		Operand label = ir->code.u.label.x;
 		if(!label)
@@ -734,17 +756,34 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpRelopExp) {
-		Operand	t1 = new_temp();
-		Operand t2 = new_temp();
-		
+		Operand t1 = NULL, t2 = NULL;
+		struct node* exp1 = exp->gchild[0];
+		struct node* exp2 = exp->gchild[2];
+		//不知道实现对不对,如果是一个变量判断之前是否已经存在了，不然就不判断了
+		/*if(!strcmp(exp1->gchild[0]->name, "ID"))			
+			t1 = find_op(exp->gchild[0]->str);
+		if(!t1)
+			t1 = new_temp();
+		if(!strcmp(exp2->gchild[0]->name, "ID"))
+			t2 = find_op(exp->gchild[2]->str);
+		if(!t2)
+			t2 = new_temp();*/
+		/////////////以上///////////////
+		t1 = new_temp();
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
+		printf("t1: %p t1->kind: %d\n", t1, t1->kind);
+		t2 = new_temp();
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
 		int op = get_relop(exp->gchild[1]);
 		InterCodes ir3 = new_InterCodes(t1, t2, label_true, IF_JUMP, op);
-		InterCodes ir4 = new_InterCodes(t1, NULL, NULL, JUMP, -1);
+		InterCodes ir4 = new_InterCodes(label_false, NULL, NULL, JUMP, -1);
 		
 		InterCodes ir = concat(ir1, ir2);
 		ir = concat(ir, ir3);
+		ir = concat(ir, ir4);
+		printf("in condddddddddddddd\n");
+		print_ir(ir1); print_ir(ir2); print_ir(ir3); print_ir(ir4);
+		printf("print overrrrrrrrrrrrrrrrrrr\n");
 		return ir;
 	}
 	else {
@@ -772,7 +811,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		
 		InterCodes ir2 = concat(ir2_1, ir2_2);
 		InterCodes ir = concat(ir1, ir2);
-
+		
 		return ir;
 	}
 	else if(exp->rule == Exp_NotExp || 
@@ -781,7 +820,6 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		exp->rule == Exp_ExpRelopExp) {	
 		Operand label1 = new_label();
 		Operand label2 = new_label();
-		
 		InterCodes ir0 = new_InterCodes(place, imm_num0, NULL, ASSIGN, -1);
 		InterCodes ir1 = translate_cond(exp, label1, label2);
 		InterCodes ir2_1 = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
@@ -791,6 +829,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		InterCodes ir = concat(ir0, ir1);
 		ir = concat(ir, ir2_1);
 		ir = concat(ir, ir2_2);
+		ir = concat(ir, ir3);
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpPlusExp) {
@@ -882,6 +921,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 			curr = curr->next;
 		curr->next = call_f; call_f->prev = curr;
 		free(ir2);
+		ir2 = NULL;
 		//TODO()??????
 		return ir1;
 	}
@@ -900,10 +940,20 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_Id) {
 		char* name = exp->str;
-		Operand id = new_Operand(exp->gchild[0], VARIABLE, -1, 0);
-		
-		InterCodes ir = new_InterCodes(place, id, NULL, ASSIGN, -1);
-		return ir;
+		Operand id;
+		id = find_op(name);//TODO TODO TODO TODO TODO TODO TODO !!!!!!!!!!!!!!!!!!
+		if(id) {
+			place->kind = id->kind;	//不能直接指，只能改,不清楚怎么释放，好浪费内存啊
+			place->u.var_no = id->u.var_no;
+			strcpy(place->v_name, id->v_name);
+			
+			return NULL;
+		}
+		else {
+			id = new_Operand(exp->gchild[0], VARIABLE, -1, 0);
+			InterCodes ir = new_InterCodes(place, id, NULL, ASSIGN, -1);
+			return ir;
+		}
 	}
 	else if(exp->rule == Exp_Int) {
 		int val = exp->type_int;

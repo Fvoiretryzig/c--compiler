@@ -60,6 +60,7 @@ Operand find_op(char* name);
 InterCodes concat(InterCodes ir1, InterCodes ir2);
 Operand new_Operand(struct node* gnode, int kind, float n, int if_float);
 Operand new_temp();
+//sOperand remove_temp(Operand op);
 Operand new_label();
 InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int op);
 
