@@ -81,9 +81,135 @@ Operand find_op(char* name) {
 	}
 	return NULL;
 }
-void print_ir(InterCodes ir_list) 
+void print(struct node* root) 
 {
-	//TODO();
+	InterCodes irlist = translate_program(root);
+	InterCodes curr = irlist;
+	while(curr) {
+		print_ir(curr);
+		curr = curr->next;
+	}
+	return;
+}
+void print_op(Operand op) 
+{
+	switch(op->kind) {
+		case VARIABLE:
+			printf("v%d", op->u.var_no);
+			break;
+		case ADDRESS:
+			//TODO();
+		case LABEL:
+			printf("label%d", op->u.label_no);
+			break;
+		case FUNCTION:
+			printf("%s", op->u.f_name);
+			break;
+		case TMP:
+			printf("t%d", op->u.tmp_no);
+			break;
+		case IMM_NUMBER:
+			printf("%d", op->u.value_int);
+			break;
+		case ADDRESS_CONTENT:
+			//TODO();
+	}
+}
+void print_ir(InterCodes ir)
+{
+	switch(ir->kind) {
+		case D_LABEL:
+			Operand label = ir->u.label.x;
+			printf("LABEL "); print_op(x); printf(" :\n");
+			break;
+		case D_FUNCTION:
+			Operand func = ir->u.function.f;
+			printf("FUNCTION "); print_op(f); printf(" :\n");
+			break;
+		case ASSIGN:
+			Operand x = ir->u.assign.x;
+			Operand y = ir->u.assign.y;
+			print_op(x); printf(" := "); print_op(y); printf("\n");
+			break;
+		case ADD:
+			Operand x = ir->u.arithmetic.x;
+			Operand y = ir->u.arithmetic.y;
+			Operand z = ir->u.arithmetic.z;
+			print_op(x); printf(" := "); print_op(y); printf(" + "); print_op(z); printf("\n");
+			break;
+		case SUB:
+			Operand x = ir->u.arithmetic.x;
+			Operand y = ir->u.arithmetic.y;
+			Operand z = ir->u.arithmetic.z;
+			print_op(x); printf(" := "); print_op(y); printf(" - "); print_op(z); printf("\n");
+			break;			
+		case MUL: 
+			Operand x = ir->u.arithmetic.x;
+			Operand y = ir->u.arithmetic.y;
+			Operand z = ir->u.arithmetic.z;
+			print_op(x); printf(" := "); print_op(y); printf(" * "); print_op(z); printf("\n");
+			break;		
+		case DIV:
+			Operand x = ir->u.arithmetic.x;
+			Operand y = ir->u.arithmetic.y;
+			Operand z = ir->u.arithmetic.z;
+			print_op(x); printf(" := "); print_op(y); printf(" / "); print_op(z); printf("\n");
+			break;		
+		case ASSIGN_ADDR:
+			//TODO();
+		case ADDR_ASSIGNED:
+			//TODO();
+		case JUMP:
+			Operand label = ir->u.jump.x;
+			printf("GOTO "); print_op(label); printf("\n");
+			break;
+		case IF_JUMP:
+			Operand x = ir->u.if_jump.x;
+			Operand y = ir->u.if_jump.y;
+			Opearnd z = ir->u.if_jump.z;
+			printf("IF "); print_op(x); 
+			switch(ir->u.if_jump.op) {
+				case 0:	printf(" > "); break;
+				case 1: printf(" < "); break;
+				case 2: printf(" >= "); break;
+				case 3: printf(" <= "); break;
+				case 4: printf(" == "); break;
+				case 5: printf(" != "); break;
+			}
+			print_op(y); printf(" GOTO "); print_op(z); printf("\n");
+			break;
+		case RET:
+			Opearnd x = ir->u.ret.x;
+			printf("RETURN "); print_op(x); printf("\n");
+			break;
+		case DEC:
+			Operand x = ir->u.dec.x;
+			int size = ir->u.dec.size;
+			printf("DEC "); print_op(x); printf(" %d\n", size);
+			break;
+		case ARG:
+			Operand x = ir->u.arg.x;
+			printf("ARG "); print_op(x); printf("\n");
+			break;
+		case CALL:
+			Operand x = ir->u.call.x;
+			Operand f = ir->u.call.f;
+			print_op(x); printf(" := CALL "); print_op(f); printf("\n");
+			break;
+		case PARA:
+			Operand x = ir->u.para.x;
+			printf("PARAM "); print_op(x); printf("\n");
+			break;
+		case READ:
+			Operand x = ir->u.read.x;
+			printf("READ "); print_op(x); printf("\n");
+			break;
+		case WRITE:
+			Operand x = ir->u.read.x;
+			printf("WRITE "); print_op(x); printf("\n")
+			break;
+	}
+	return;
 }
 InterCodes concat(InterCodes ir1, InterCodes ir2)
 {

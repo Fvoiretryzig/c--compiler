@@ -6,7 +6,7 @@
 typedef struct Operand_* Operand;
 typedef struct InterCodes_* InterCodes;
 struct Operand_ {
-	enum { VARIABLE, CONSTANT, ADDRESS, LABEL, FUNCTION, TMP, IMM_NUMBER, ADDRESS_CONTENT } kind;
+	enum { VARIABLE, ADDRESS, LABEL, FUNCTION, TMP, IMM_NUMBER, ADDRESS_CONTENT } kind;
 	union {
 		int var_no;
 		int label_no;
@@ -51,12 +51,15 @@ void init_translate();
 int insert_ircode(InterCodes ir_code);
 int insert_op(Operand op);
 Operand find_op(char* name)
-void print_ir(InterCodes ir_list);
 InterCodes concat(InterCodes ir1, InterCodes ir2);
 Operand new_Operand(struct node* gnode, int kind, int n, float f);
 Operand new_temp();
 Operand new_label();
 InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int op);
+
+void print(struct node* root);
+void print_op(Operand op) 
+void print_ir(InterCodes ir);
 
 int get_array_size(Type t);
 int get_struct_size(Type t);
