@@ -37,8 +37,8 @@ void init_translate()
 	int lable_cnt = 0;
 	int var_cnt = 0;
 	int temp_cnt = 0;
-	Operand imm_num0 = (Operand)malloc(sizeof(struct Operand_));	
-	Operand imm_num1 = (Operand)malloc(sizeof(struct Operand_));
+	imm_num0 = (Operand)malloc(sizeof(struct Operand_));	
+	imm_num1 = (Operand)malloc(sizeof(struct Operand_));
 	imm_num0->kind = IMM_NUMBER;
 	imm_num0->u.value_int = 0;
 	imm_num1->kind = IMM_NUMBER;
@@ -771,7 +771,6 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		/////////////以上///////////////
 		t1 = new_temp();
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
-		printf("t1: %p t1->kind: %d\n", t1, t1->kind);
 		t2 = new_temp();
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
 		int op = get_relop(exp->gchild[1]);
@@ -781,9 +780,6 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		InterCodes ir = concat(ir1, ir2);
 		ir = concat(ir, ir3);
 		ir = concat(ir, ir4);
-		printf("in condddddddddddddd\n");
-		print_ir(ir1); print_ir(ir2); print_ir(ir3); print_ir(ir4);
-		printf("print overrrrrrrrrrrrrrrrrrr\n");
 		return ir;
 	}
 	else {
@@ -889,6 +885,9 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		InterCodes ir1 = translate_exp(exp->gchild[1], t1);
 		InterCodes ir2 = new_InterCodes(place, imm_num0, t1, SUB, -1);
 		
+		//printf("in minusexppppppppppppp\n"); print_ir(ir1); 
+		//printf("place kind: %p imm_num0 kind: %p t1: %p\n", place, imm_num0, t1);
+		//print_ir(ir2); printf("minusexittttttttttt\n");
 		InterCodes ir = concat(ir1, ir2);
 		return ir;
 	}
@@ -901,6 +900,8 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		if(!strcmp(name, "write")) {
 			InterCodes write_code = new_InterCodes(arg_list[0], NULL, NULL, WRITE, -1);
 			//ir1->next = write_code; write_code->prev = ir1;
+			
+		//printf("hhhhhhhhhhhhhh\n"); print_ir(ir1); print_ir(write_code); printf("endddddd\n");
 			InterCodes ir = concat(ir1, write_code);
 			return ir;
 		}
@@ -946,6 +947,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 			place->kind = id->kind;	//不能直接指，只能改,不清楚怎么释放，好浪费内存啊
 			place->u.var_no = id->u.var_no;
 			strcpy(place->v_name, id->v_name);
+			temp_cnt--;
 			
 			return NULL;
 		}
@@ -960,6 +962,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		Operand value = new_Operand(exp, IMM_NUMBER, -1, 0);
 		
 		InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
+		//printf("xxxxxxxxxxxxxxxxx\n"); print_ir(ir); printf("int finish\n");
 		return ir;			
 	}
 	else if(exp->rule == Exp_Float) {
@@ -972,7 +975,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 }
 InterCodes translate_args(struct node* args, Operand* arg_list, int* arg_cnt)
 {
-	if(args->rule == Args_ExpCommaArgs)	{
+	if(args->rule == Args_ExpCommaArgs)	{	
 		Operand t1 = new_temp();
 		InterCodes ir1 = translate_exp(args->gchild[0], t1);
 		arg_list[*arg_cnt++] = t1;
