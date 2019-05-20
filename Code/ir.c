@@ -46,6 +46,12 @@ void init_translate()
 	
 	return;
 }
+void init_irtranslate()
+{
+	init_irlist();
+	init_oplist();
+	init_translate();
+}
 ///////////////////////////////////////Operation/////////////////////////////////////////////////
 int insert_ircode(InterCodes ir_code)
 {
@@ -82,6 +88,13 @@ Operand find_op(char* name) {
 }
 InterCodes concat(InterCodes ir1, InterCodes ir2)
 {
+	if(!ir1 && !ir2)
+		return NULL;
+	if(!ir1)
+		return ir2;
+	if(!ir2)
+		return ir1;
+		
 	InterCodes curr1 = ir1, curr2 = ir2;
 	while(curr1->next)
 		curr1 = curr1->next;
@@ -94,7 +107,7 @@ Operand new_Operand(struct node* gnode, int kind, float n, int if_float)
 	switch(kind) {
 		case VARIABLE:
 			op->kind = VARIABLE;
-			op->u.var_no = var_cnt++;
+			op->u.var_no = ++var_cnt;
 			if(gnode)
 				strcpy(op->v_name, gnode->str);
 			break;
@@ -132,7 +145,7 @@ Operand new_temp()
 {
 	Operand temp = (Operand)malloc(sizeof(struct Operand_));
 	temp->kind = TMP;
-	temp->u.tmp_no = temp_cnt++;
+	temp->u.tmp_no = ++temp_cnt;
 	insert_op(temp);
 	return temp;
 }
@@ -140,7 +153,7 @@ Operand new_label()
 {
 	Operand label = (Operand)malloc(sizeof(struct Operand_));
 	label->kind = LABEL;
-	label->u.label_no = lab_cnt++;
+	label->u.label_no = ++lab_cnt;
 	insert_op(label);
 	return label;
 }
@@ -245,6 +258,9 @@ void print(struct node* root)
 	InterCodes irlist = translate_program(root);
 	InterCodes curr = irlist;
 	while(curr) {
+		#ifdef IR_DEBUG
+		//printf("curr: %p kind: %d\n", curr, curr->code.kind);
+		#endif
 		print_ir(curr);
 		curr = curr->next;
 	}
@@ -269,7 +285,7 @@ void print_op(Operand op)
 			printf("t%d", op->u.tmp_no);
 			break;
 		case IMM_NUMBER:
-			printf("%d", op->u.value_int);
+			printf("#%d", op->u.value_int);
 			break;
 		case ADDRESS_CONTENT:
 			break;
@@ -281,38 +297,52 @@ void print_ir(InterCodes ir)
 {
 	if(ir->code.kind == D_LABEL) {
 		Operand label = ir->code.u.label.x;
+		if(!label)
+			return;
 		printf("LABEL "); print_op(label); printf(" :\n");
 	}
 	else if(ir->code.kind == D_FUNCTION) {
 		Operand func = ir->code.u.function.f;
+		if(!func)
+			return;
 		printf("FUNCTION "); print_op(func); printf(" :\n");
 	}
 	else if(ir->code.kind == ASSIGN) {
 		Operand x = ir->code.u.assign.x; Operand y = ir->code.u.assign.y;
+		if(!x || !y)
+			return;
 		print_op(x); printf(" := "); print_op(y); printf("\n");
 	}
 	else if(ir->code.kind == ADD) {
 		Operand x = ir->code.u.arithmetic.x;
 		Operand y = ir->code.u.arithmetic.y;
 		Operand z = ir->code.u.arithmetic.z;
+		if(!x || !y || !z)
+			return;
 		print_op(x); printf(" := "); print_op(y); printf(" + "); print_op(z); printf("\n");
 	}
 	else if(ir->code.kind == SUB) {
 		Operand x = ir->code.u.arithmetic.x;
 		Operand y = ir->code.u.arithmetic.y;
 		Operand z = ir->code.u.arithmetic.z;
+		if(!x || !y || !z)
+			return;
 		print_op(x); printf(" := "); print_op(y); printf(" - "); print_op(z); printf("\n");
 	}			
 	else if(ir->code.kind == MUL) { 
 		Operand x = ir->code.u.arithmetic.x;
 		Operand y = ir->code.u.arithmetic.y;
 		Operand z = ir->code.u.arithmetic.z;
+		if(!x || !y || !z)
+			return;
 		print_op(x); printf(" := "); print_op(y); printf(" * "); print_op(z); printf("\n");
 	}		
 	else if(ir->code.kind == IR_DIV) {
 		Operand x = ir->code.u.arithmetic.x;
 		Operand y = ir->code.u.arithmetic.y;
 		Operand z = ir->code.u.arithmetic.z;
+		if(!x || !y || !z)
+			return;
 		print_op(x); printf(" := "); print_op(y); printf(" / "); print_op(z); printf("\n");
 	}		
 	else if(ir->code.kind == ASSIGN_ADDR) {
@@ -323,12 +353,16 @@ void print_ir(InterCodes ir)
 	}
 	else if(ir->code.kind == JUMP) {
 		Operand label = ir->code.u.jump.x;
+		if(!label)
+			return;
 		printf("GOTO "); print_op(label); printf("\n");
 	}
 	else if(ir->code.kind == IF_JUMP) {
 		Operand x = ir->code.u.if_jump.x;
 		Operand y = ir->code.u.if_jump.y;
 		Operand z = ir->code.u.if_jump.z;
+		if(!x || !y || !z)
+			return;
 		printf("IF "); print_op(x); 
 		switch(ir->code.u.if_jump.op) {
 			case 0:	printf(" > "); break;
@@ -342,32 +376,46 @@ void print_ir(InterCodes ir)
 	}
 	else if(ir->code.kind == RET) {
 		Operand x = ir->code.u.ret.x;
+		if(!x)
+			return;
 		printf("RETURN "); print_op(x); printf("\n");
 	}
 	else if(ir->code.kind == DEC) {
 		Operand x = ir->code.u.dec.x;
 		int size = ir->code.u.dec.size;
+		if(!x)
+			return;
 		printf("DEC "); print_op(x); printf(" %d\n", size);
 	}
 	else if(ir->code.kind == ARG) {
 		Operand x = ir->code.u.arg.x;
+		if(!x)
+			return;
 		printf("ARG "); print_op(x); printf("\n");
 	}
 	else if(ir->code.kind == CALL) {
 		Operand x = ir->code.u.call.x;
 		Operand f = ir->code.u.call.f;
+		if(!x || !f)
+			return;
 		print_op(x); printf(" := CALL "); print_op(f); printf("\n");
 	}
 	else if(ir->code.kind == PARA) {
 		Operand x = ir->code.u.para.x;
+		if(!x)
+			return;
 		printf("PARAM "); print_op(x); printf("\n");
 	}
 	else if(ir->code.kind == READ) {
 		Operand x = ir->code.u.read.x;
+		if(!x)
+			return;
 		printf("READ "); print_op(x); printf("\n");
 	}
 	else if(ir->code.kind == WRITE) {
 		Operand x = ir->code.u.write.x;
+		if(!x)
+			return;
 		printf("WRITE "); print_op(x); printf("\n");
 	}
 	
@@ -482,7 +530,7 @@ InterCodes translate_paradec(struct node* paradec)
 }
 InterCodes translate_compst(struct node* compst)
 {	
-	InterCodes ir1 = translate_deflist(compst->gchild[1]);
+	InterCodes ir1 = translate_deflist(compst->gchild[1]); 
 	InterCodes ir2 = translate_stmtlist(compst->gchild[2]);
 	
 	InterCodes ir = concat(ir1, ir2);
@@ -524,7 +572,7 @@ InterCodes translate_dec(struct node* dec, Type specifier)
 	if(dec->rule == Dec_Vardec) {
 		struct node* vardec = dec->gchild[0];
 		if(vardec->type->kind == BASIC) {
-			printf("!!!!!not need to dec!!!!!\n");
+			//printf("!!!!!not need to dec!!!!!\n");
 			return NULL;
 		}
 		else if(vardec->type->kind == ARRAY) {
@@ -562,11 +610,13 @@ InterCodes translate_stmtlist(struct node* stmtlist)
 		InterCodes ir = concat(ir1, ir2);
 		return ir;
 	}
-	else if(stmtlist->rule == Stmtlist_Null) 
-			return NULL;
+	else if(stmtlist->rule == Stmtlist_Null) {
+		return NULL;
+	}
 }
 InterCodes translate_stmt(struct node* stmt)
 {
+	//printf("stmt->rule: %d\n", stmt->rule);
 	if(stmt->rule == Stmt_ExpSemi) {
 		return translate_exp(stmt->gchild[0], NULL);
 	}
@@ -600,6 +650,7 @@ InterCodes translate_stmt(struct node* stmt)
 		Operand label1 = new_label();
 		Operand label2 = new_label();
 		Operand label3 = new_label();
+		
 		
 		InterCodes ir1 = translate_cond(stmt->gchild[2], label1, label2);
 		InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
@@ -721,6 +772,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		
 		InterCodes ir2 = concat(ir2_1, ir2_2);
 		InterCodes ir = concat(ir1, ir2);
+
 		return ir;
 	}
 	else if(exp->rule == Exp_NotExp || 
@@ -795,7 +847,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	else if(exp->rule == Exp_MinusExp) {
 		Operand t1 = new_temp();
 	
-		InterCodes ir1 = translate_exp(exp->gchild[2], t1);
+		InterCodes ir1 = translate_exp(exp->gchild[1], t1);
 		InterCodes ir2 = new_InterCodes(place, imm_num0, t1, SUB, -1);
 		
 		InterCodes ir = concat(ir1, ir2);
@@ -803,13 +855,15 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_IdLpArgsRp) {
 		char* name = exp->str;
-		Operand* arg_list = NULL;
+		
+		Operand* arg_list = (Operand*)malloc(sizeof(Operand)*MAX_ARGC);
 		int arg_cnt = 0;
 		InterCodes ir1 = translate_args(exp->gchild[2], arg_list, &arg_cnt);
 		if(!strcmp(name, "write")) {
 			InterCodes write_code = new_InterCodes(arg_list[0], NULL, NULL, WRITE, -1);
-			ir1->next = write_code; write_code->prev = ir1;
-			return ir1;
+			//ir1->next = write_code; write_code->prev = ir1;
+			InterCodes ir = concat(ir1, write_code);
+			return ir;
 		}
 		InterCodes ir2 = (InterCodes)malloc(sizeof(struct InterCodes_));
 		for(int i = 0; i<arg_cnt; i++) {

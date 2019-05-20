@@ -50,7 +50,7 @@ Program		:	ExtDefList {
 					#endif
 					$$ = CreateGNode("Program", @$.first_line, _INIT_, Program_Extdeflist, 1, $1);
 					//if(!is_error)
-					//tran($$, 0);
+						tran($$, 0);
 					root = $$;
 				}
 			;

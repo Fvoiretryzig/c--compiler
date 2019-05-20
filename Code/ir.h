@@ -49,9 +49,10 @@ struct InterCodes_ {
 	struct InterCodes_ *prev, *next; 
 };
 
+void init_translate();
 void init_irlist();
 void init_oplist();
-void init_translate();
+void init_irtranslate();
 
 int insert_ircode(InterCodes ir_code);
 int insert_op(Operand op);

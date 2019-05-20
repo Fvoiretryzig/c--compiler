@@ -129,7 +129,7 @@ void F_Program_Extdeflist(struct node* n){
 	#endif
 
 	struct node* Extdeflist = n->gchild[0];
-	
+
 	semantic_analysis(Extdeflist);
 	
 	return;
@@ -186,6 +186,7 @@ void F_Extdef_SpcifierFundecCompst(struct node* n){
 	struct node* Compst = n->gchild[2];
 	
 	semantic_analysis(Specifier);
+	
 	if(Specifier)
 		Fundec->func.retType = Specifier->type;
 	semantic_analysis(Fundec);
@@ -562,7 +563,6 @@ void F_Stmtlist_StmtStmtlist(struct node* n){
 	if(Stmtlist != NULL) {
 		Stmtlist->func.retType = n->func.retType;
 		semantic_analysis(Stmtlist);
-		
 	}
 	return;
 }
@@ -644,7 +644,7 @@ void F_Stmt_IfLpExpRpStmtElseStmt(struct node* n){
 	struct node* Stmt2 = n->gchild[6];
 	
 	semantic_analysis(Exp);	
-	
+
 	if(Exp->type != NULL) {
 		if(Exp->type->kind != BASIC)
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
@@ -757,6 +757,7 @@ void F_Dec_VardecAssignopExp(struct node* n){
 	
 	if(n->type)
 		Vardec->type = n->type;
+		
 	semantic_analysis(Vardec);
 	semantic_analysis(Exp);
 	
@@ -783,6 +784,7 @@ void F_Exp_ExpAssignopExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
+	
 	//printf("lineno: %d E1->str: %s E2->str: %s E1->p: %p E2->p: %p\n", n->lineno, E1->str, E2->str, E1->type, E2->type);
 	if(E1->type  && E2->type) {
 		if(E1->type->kind != ARRAY && E2->type->kind != ARRAY) {
@@ -801,7 +803,6 @@ void F_Exp_ExpAssignopExp(struct node* n){
 		n->type = E1->type;
 	}
 	n->is_left = 0;
-		
 	return;
 }
 void F_Exp_ExpAndExp(struct node* n){
@@ -861,12 +862,14 @@ void F_Exp_ExpRelopExp(struct node* n){
 	
 	semantic_analysis(E1);
 	semantic_analysis(E2);
+	if(!n->type)
+		n->type = (Type)malloc(sizeof(struct Type_));
 	if(E1->type && E2->type){
 		if(E1->type->kind != BASIC || E2->type->kind != BASIC)
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
+		
 		n->type->kind = BASIC;
 		n->type->u.basic = 1;
-		//n->n_type = _BASIC_;
 	}
 	return;
 }

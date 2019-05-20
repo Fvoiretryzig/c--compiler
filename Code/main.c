@@ -28,8 +28,10 @@ int main(int argc, char** argv) {
 	yyparse();
 	//yylex();
 	//printf("this is the end\n");
+	
 	init_table();
 	semantic_analysis(root);
+	init_irtranslate();
 	print(root);
 	//printf("\033[43;37mafter semantic analysis\033[0m\n");
 	return 0;
