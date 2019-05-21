@@ -335,6 +335,10 @@ void print_ir(InterCodes ir)
 		Operand x = ir->code.u.assign.x; Operand y = ir->code.u.assign.y;
 		if(!x || !y)
 			return;
+		if(y->kind == IMM_NUMBER) {
+			x->kind = IMM_NUMBER; x->u.value_int = y->u.value_int;
+			return;
+		}
 		print_op(x); printf(" := "); print_op(y); printf("\n");
 	}
 	else if(ir->code.kind == ADD) {
@@ -555,6 +559,7 @@ InterCodes translate_paradec(struct node* paradec)
 }
 InterCodes translate_compst(struct node* compst)
 {	
+	//Compst_LcDeflistStmtlistRc
 	InterCodes ir1 = translate_deflist(compst->gchild[1]);
 	InterCodes ir2 = translate_stmtlist(compst->gchild[2]);
 	
@@ -643,7 +648,7 @@ InterCodes translate_stmt(struct node* stmt)
 {
 	//printf("stmt->rule: %d\n", stmt->rule);
 	if(stmt->rule == Stmt_ExpSemi) {
-		InterCodes ir = translate_exp(stmt->gchild[0], NULL);
+		InterCodes ir = translate_exp(stmt->gchild[0], NULL); 
 		return ir;
 	}
 	else if(stmt->rule == Stmt_Compst) {
@@ -651,7 +656,6 @@ InterCodes translate_stmt(struct node* stmt)
 	}
 	else if(stmt->rule == Stmt_ReturnExpSemi) {	
 		Operand t1 = new_temp();
-		
 		InterCodes ir1 = translate_exp(stmt->gchild[1], t1);
 		InterCodes ir2 = new_InterCodes(t1, NULL, NULL, RET, -1);
 		
@@ -675,23 +679,31 @@ InterCodes translate_stmt(struct node* stmt)
 	else if(stmt->rule == Stmt_IfLpExpRpStmtElseStmt) {
 		Operand label1 = new_label();
 		Operand label2 = new_label();
-		Operand label3 = new_label();
+		Operand label3 = NULL;
+		if(stmt->gchild[4]->rule != 27)
+			label3 = new_label();
 		
 		
+		InterCodes goto3_code = NULL;
+		InterCodes label3_code = NULL;
 		InterCodes ir1 = translate_cond(stmt->gchild[2], label1, label2); 
 		InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
 		InterCodes ir2 = translate_stmt(stmt->gchild[4]);
-		InterCodes goto3_code = new_InterCodes(label3, NULL, NULL, JUMP, -1);
+		if(label3)
+			goto3_code = new_InterCodes(label3, NULL, NULL, JUMP, -1);
 		InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
 		InterCodes ir3 = translate_stmt(stmt->gchild[6]);
-		InterCodes label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL, -1);
+		if(label3)
+			label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL, -1);
 		
 		InterCodes ir = concat(ir1, label1_code);
 		ir = concat(ir, ir2);
-		ir = concat(ir, goto3_code);
+		if(goto3_code)
+			ir = concat(ir, goto3_code);
 		ir = concat(ir, label2_code);
 		ir = concat(ir, ir3);
-		ir = concat(ir, label3_code);
+		if(label3_code)
+			ir = concat(ir, label3_code);
 		return ir;
 	}
 	else if(stmt->rule == Stmt_WhileLpExpRpStmt) {
@@ -802,9 +814,10 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 InterCodes translate_exp(struct node* exp, Operand place)
 {
 	if(exp->rule == Exp_ExpAssignopExp)	{
+	
+		//要不要判断已经存在的变量节约空间？？？？？？？？？？
 		Operand variable = new_Operand(exp->gchild[0], VARIABLE, -1, -1);
 		Operand t1 = new_temp();
-		
 		InterCodes ir1 = translate_exp(exp->gchild[2], t1);
 		InterCodes ir2_1 = new_InterCodes(variable, t1, NULL, ASSIGN, -1);
 		InterCodes ir2_2 = new_InterCodes(place, variable, NULL, ASSIGN, -1);
@@ -863,21 +876,6 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
 		InterCodes ir3 = new_InterCodes(place, t1, t2, MUL, -1);
 		
-		InterCodes curr = ir1; 
-		/*while(curr) {
-			printf("curr11111: %p\n", curr);
-			curr = curr->next;
-		}
-		curr = ir2;
-		while(curr) {
-			printf("curr22222222: %p\n", curr);
-			curr = curr->next;
-		}
-		curr = ir3;
-		while(curr) {
-			printf("curr33333333333: %p\n", curr);
-			curr = curr->next;
-		}*/
 		InterCodes irr = concat(ir1, ir2);
 		InterCodes ir = concat(irr, ir3);
 		
@@ -897,8 +895,8 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_LpExpRp) {
 		//TODO!!!!!!!!!!还不知道对不对
-		Operand t1 = new_temp();
-		InterCodes ir = translate_exp(exp->gchild[1], t1);
+		//Operand t1 = new_temp();
+		InterCodes ir = translate_exp(exp->gchild[1], place);
 		return ir;
 	}
 	else if(exp->rule == Exp_MinusExp) {
@@ -933,9 +931,14 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		Operand f = new_Operand(exp->gchild[0], FUNCTION, -1, -1);
 		InterCodes call_f = new_InterCodes(place, f, NULL, CALL, -1);
 		InterCodes curr = ir1;
-		while(curr->next)
-			curr = curr->next;
-		curr->next = ir2->next; ir2->next->prev = ir1;
+		if(ir1) {
+			while(curr->next)
+				curr = curr->next;
+		}
+		if(ir1 && ir2) {
+			curr->next = ir2->next; 
+			ir2->next->prev = ir1;
+		}
 		/*curr = ir1;
 		while(curr->next)
 			curr = curr->next;
@@ -986,11 +989,10 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	else if(exp->rule == Exp_Int) {
 		int val = exp->type_int;
 		Operand value = new_Operand(exp, IMM_NUMBER, -1, 0);
-		
 		InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
 		return ir;			
 	}
-	else if(exp->rule == Exp_Float) {
+	else if(exp->rule == Exp_Float) {	//will not be use
 		float val = exp->type_float;
 		Operand value = new_Operand(exp, IMM_NUMBER, -1, 1);
 		
