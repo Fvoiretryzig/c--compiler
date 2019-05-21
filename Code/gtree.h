@@ -28,27 +28,35 @@ struct FieldList_ {
 	FieldList tail; // 下一个域
 };
 typedef enum {
-	Program_Extdeflist,
-	Extdeflist_ExtdefExtdeflist, Extdeflist_Null,
-	Extdef_SpecifierExtdeclistSemi, Extdef_SpecifierSemi, Extdef_SpcifierFundecCompst,
-	Extdeclist_Vardec, Extdeclist_VardecCommaExtdeclist,
-	Specifier_Type, Specifier_Structspecifier, 
-	StructSpecifier_StructOpttagLcDeflistRc, StructSpecifier_StructTag,
-	Opttag_Id, Opttag_Null,
-	Tag_Id,
-	Vardec_Id, Vardec_VardecLbIntRb,
-	Fundec_IdLpVarlistRp, Fundec_IdLpRp,
-	Varlist_ParamdecCommaVarlist, Varlist_Paramdec,
-	Paramdec_SpecifierVardec,
-	Compst_LcDeflistStmtlistRc,
-	Stmtlist_StmtStmtlist, Stmtlist_Null,
+	Program_Extdeflist,	//1
+	Extdeflist_ExtdefExtdeflist, Extdeflist_Null,	//2, 3
+	Extdef_SpecifierExtdeclistSemi, Extdef_SpecifierSemi, Extdef_SpcifierFundecCompst,	//4, 5, 6
+	Extdeclist_Vardec, Extdeclist_VardecCommaExtdeclist,	//7, 8
+	Specifier_Type, Specifier_Structspecifier, 	//9, 10
+	StructSpecifier_StructOpttagLcDeflistRc, StructSpecifier_StructTag,	//11, 12
+	Opttag_Id, Opttag_Null,	//13, 14
+	Tag_Id,	//15
+	Vardec_Id, Vardec_VardecLbIntRb,	//16, 17
+	Fundec_IdLpVarlistRp, Fundec_IdLpRp,	//18, 19
+	Varlist_ParamdecCommaVarlist, Varlist_Paramdec,	//20, 21
+	Paramdec_SpecifierVardec,	//22
+	Compst_LcDeflistStmtlistRc,	//23
+	Stmtlist_StmtStmtlist, Stmtlist_Null,	//24, 25
 	Stmt_ExpSemi, Stmt_Compst, Stmt_ReturnExpSemi, Stmt_IfLpExpRpStmt, Stmt_IfLpExpRpStmtElseStmt, Stmt_WhileLpExpRpStmt,
-	Deflist_DefDeflist, Deflist_Null, 
-	Def_SpecifierDeclistSemi,
-	Declist_Dec, Declist_DecCommaDeclist,
-	Dec_Vardec, Dec_VardecAssignopExp,
-	Exp_ExpAssignopExp, Exp_ExpAndExp, Exp_ExpOrExp, Exp_ExpRelopExp, Exp_ExpPlusExp, Exp_ExpMinusExp, Exp_ExpStarExp, Exp_ExpDivExp, Exp_LpExpRp, Exp_MinusExp, Exp_NotExp, Exp_IdLpArgsRp, Exp_IdLpRp, Exp_ExpLbExpRb, Exp_ExpDotId, Exp_Id, Exp_Int, Exp_Float,
-	Args_ExpCommaArgs, Args_Exp,
+	//26, 27, 28, 29, 30, 31
+	Deflist_DefDeflist, Deflist_Null, 	//32, 33
+	Def_SpecifierDeclistSemi,	//34
+	Declist_Dec, Declist_DecCommaDeclist,	//35, 36
+	Dec_Vardec, Dec_VardecAssignopExp,	//37, 38
+	Exp_ExpAssignopExp, 	//39
+	Exp_ExpAndExp, Exp_ExpOrExp, Exp_ExpRelopExp, //40, 41, 42
+	Exp_ExpPlusExp, Exp_ExpMinusExp, Exp_ExpStarExp, Exp_ExpDivExp, //43, 44, 45, 46
+	Exp_LpExpRp, 	//47
+	Exp_MinusExp, Exp_NotExp, 	//48, 49
+	Exp_IdLpArgsRp, Exp_IdLpRp, 	//50, 51
+	Exp_ExpLbExpRb, Exp_ExpDotId,	//52, 53
+	Exp_Id, Exp_Int, Exp_Float,		//54, 55, 56
+	Args_ExpCommaArgs, Args_Exp,	//57, 58
 	Terminal
 } Rule;
 
