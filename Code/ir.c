@@ -617,6 +617,7 @@ InterCodes translate_dec(struct node* dec, Type specifier)
 		struct node* vardec = dec->gchild[0];
 		if(vardec->type->kind == BASIC) {
 			//printf("!!!!!not need to dec!!!!!\n");
+			Operand v = new_Operand(vardec, VARIABLE, -1, -1);
 			return NULL;
 		}
 		else if(vardec->type->kind == ARRAY) {
