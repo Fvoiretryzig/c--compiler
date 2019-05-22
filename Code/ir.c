@@ -901,7 +901,6 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpPlusExp) {
-		//也要判断有没有重复的变量嘛！！！！！！
 		Operand t1 = new_temp();
 		Operand t2 = new_temp();
 		
