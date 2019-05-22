@@ -504,13 +504,13 @@ InterCodes translate_extdef(struct node* extdef)
 		InterCodes ir1 = translate_funcdec(extdef->gchild[1]);
 		InterCodes ir2 = translate_compst(extdef->gchild[2]);
 		
-		//printf("\nthis is compst:::::::::::\n");
-		/*InterCodes curr = ir2;
+		/*printf("\nthis is compst:::::::::::\n");
+		InterCodes curr = ir2;
 		while(curr) {
 			print_ir(curr);
 			curr = curr->next;
-		}*/
-		printf("\n");
+		}
+		printf("\n");*/
 		InterCodes ir = concat(ir1, ir2);
 		return ir;
 	}	
@@ -574,7 +574,7 @@ InterCodes translate_paradec(struct node* paradec)
 InterCodes translate_compst(struct node* compst)
 {
 	//Compst_LcDeflistStmtlistRc
-	InterCodes ir1 = translate_deflist(compst->gchild[1]); 
+	InterCodes ir1 = translate_deflist(compst->gchild[1]);
 	InterCodes ir2 = translate_stmtlist(compst->gchild[2]);
 
 	InterCodes ir = concat(ir1, ir2);
@@ -637,12 +637,13 @@ InterCodes translate_dec(struct node* dec, Type specifier)
 		}
 	}
 	else if(dec->rule == Dec_VardecAssignopExp) {
-		Operand v = new_Operand(NULL, VARIABLE, -1, -1);
+		Operand v = new_Operand(dec->gchild[0], VARIABLE, -1, -1);
 		Operand t1 = new_temp();
 		InterCodes ir1 = translate_exp(dec->gchild[2], t1);
 		InterCodes ir2 = new_InterCodes(v, t1, NULL, ASSIGN, -1);
-		ir1->next = ir2; ir2->prev = ir1;
-		return ir1;
+		//printf("in vardecassign v: no: %d name: %s\n", v->u.var_no, v->v_name);
+		InterCodes ir = concat(ir1, ir2);
+		return ir;
 	}
 }
 InterCodes translate_stmtlist(struct node* stmtlist)
@@ -667,7 +668,8 @@ InterCodes translate_stmt(struct node* stmt)
 		return ir;
 	}
 	else if(stmt->rule == Stmt_Compst) {
-		//TODO()
+		InterCodes ir = translate_compst(stmt->gchild[0]);
+		return ir;
 	}
 	else if(stmt->rule == Stmt_ReturnExpSemi) {	
 		Operand t1 = new_temp();
@@ -723,20 +725,27 @@ InterCodes translate_stmt(struct node* stmt)
 	else if(stmt->rule == Stmt_WhileLpExpRpStmt) {
 		Operand label1 = new_label();
 		Operand label2 = new_label();
-		Operand label3 = new_label();
+		Operand label3 = NULL;
+		
+		if(stmt->gchild[4]->rule != 27)		//要不要考虑return情况呢
+			label3 = new_label();
 		
 		InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
 		InterCodes ir1 = translate_cond(stmt->gchild[2], label2, label3);
 		InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
 		InterCodes ir2 = translate_stmt(stmt->gchild[4]);
 		InterCodes goto1_code = new_InterCodes(label1, NULL, NULL, JUMP, -1);
-		InterCodes label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL, -1);
+		InterCodes label3_code = NULL;
+		if(label3)
+			label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL, -1);
 		
+		//printf("label1_code: %p, ir1: %p label2_code: %p ir2: %p goto1_code: %p label3_code: %p\n", label1_code, ir1, label2_code, ir2, goto1_code, label3_code);
 		InterCodes ir = concat(label1_code, ir1);
 		ir = concat(ir, label2_code);
 		ir = concat(ir, ir2);
 		ir = concat(ir, goto1_code);
-		ir = concat(ir, label3_code);
+		if(label3)
+			ir = concat(ir, label3_code);
 		return ir;
 	}
 }
@@ -833,33 +842,40 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		struct node* exp1 = exp->gchild[0];
 		struct node* exp2 = exp->gchild[2];
 		Operand variable = NULL;
+		InterCodes ir2_1 = NULL;
 		InterCodes ir2_2 = NULL;
 		int is_exist = 0;
 		//先暂时不考虑数组和结构体了
 		if(exp1->rule ==  Exp_Id) {
 			variable = find_op(exp1->str);
-			is_exist = 1;
-			Operand curr = ophead;
-			while(curr) {
-				if(curr->kind == TMP && curr->u.tmp_no == place->u.tmp_no)
-					break;
-				curr = curr->next;
+			if(variable) {
+				is_exist = 1;
+				Operand curr = ophead;
+				while(curr) {
+					if(curr->kind == TMP && curr->u.tmp_no == place->u.tmp_no)
+						break;
+					curr = curr->next;
+				}
+				while(curr) {
+					if(curr->kind == TMP)
+						curr->u.tmp_no--;
+					curr = curr->next;
+				}
+				place->kind = variable->kind; place->u.var_no = variable->u.var_no; strcpy(place->v_name, variable->v_name);
+				temp_cnt--;
 			}
-			while(curr) {
-				if(curr->kind == TMP)
-					curr->u.tmp_no--;
-				curr = curr->next;
-			}
-			temp_cnt--;
 		}
 		if(!variable)
 			variable = new_Operand(exp1, VARIABLE, -1, -1);
-		Operand t1 = new_temp();
-		InterCodes ir1 = translate_exp(exp2, t1);
-		InterCodes ir2_1 = new_InterCodes(variable, t1, NULL, ASSIGN, -1);
-		if(!is_exist)
+		//Operand t1 = new_temp();
+		InterCodes ir1 = translate_exp(exp2, variable);
+		
+		if(!is_exist) {
+			Operand t1 = new_temp();
+			ir2_1 = new_InterCodes(variable, t1, NULL, ASSIGN, -1);
 			ir2_2 = new_InterCodes(place, variable, NULL, ASSIGN, -1);
-		//printf("\n in assignop\n"); print_ir(ir1); print_ir(ir2_1);
+		}
+		//printf("in assignop ir1: %p ir2: %p ir2_2: %p\n", ir1, ir2_1, ir2_2); print_ir(ir1); print_ir(ir2_1); print_ir(ir2_2);
 		InterCodes ir2 = concat(ir2_1, ir2_2);
 		InterCodes ir = concat(ir1, ir2);
 		
@@ -884,9 +900,21 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpPlusExp) {
+		//也要判断有没有重复的变量嘛！！！！！！
 		Operand t1 = new_temp();
 		Operand t2 = new_temp();
 		
+		/*Operand t1 = NULL;
+		Operand t2 = NULL;
+		struct node* exp1 = exp->gchild[0];
+		struct node* exp2 = exp->gchild[2];
+		
+		if(exp1->rule ==  Exp_Id)
+			t1 = find_op(exp1->str);
+		if(exp2->rule == Exp_Id)
+			t2 = find_op(exp2->str);
+		if(!t1) t1 = new_temp();
+		if(!t2) t2 = new_temp();*/
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
 		InterCodes ir3 = new_InterCodes(place, t1, t2, ADD, -1);
@@ -946,7 +974,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_IdLpArgsRp) {
 		char* name = exp->str;
-		printf("func call name: %s\n", name);
+		//printf("func call name: %s\n", name);
 		Operand* arg_list = (Operand*)malloc(sizeof(Operand)*MAX_ARGC);
 		int arg_cnt = 0;
 		InterCodes ir1 = translate_args(exp->gchild[2], arg_list, &arg_cnt);
@@ -957,7 +985,6 @@ InterCodes translate_exp(struct node* exp, Operand place)
 			return ir;
 		}
 		InterCodes ir2 = (InterCodes)malloc(sizeof(struct InterCodes_));
-		printf("hahahaha\n");
 		for(int i = arg_cnt-1; i>=0; i--) {	//反着压参数
 			InterCodes ir_tmp = new_InterCodes(arg_list[i], NULL, NULL, ARG, -1);	
 			InterCodes curr = ir2;
@@ -1015,7 +1042,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_Id) {
 		char* name = exp->str;
-		printf("in exp id name: %s\n", name);
+		//printf("in exp id name: %s\n", name);
 		Operand id;
 		id = find_op(name);//TODO TODO TODO TODO TODO TODO TODO !!!!!!!!!!!!!!!!!!
 		if(id) {

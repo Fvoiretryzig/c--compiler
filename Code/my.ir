@@ -1,20 +1,31 @@
-FUNCTION main :
-READ t1
-v1 := t1
-IF v1 > #0 GOTO label1
+
+FUNCTION modulo :
+PARAM v1
+PARAM v2
+t3 := v1 / v2
+t2 := t3 * v2
+t1 := v1 - t2
+RETURN t1
+FUNCTION gcd :
+PARAM v3
+PARAM v4
+IF v3 == #0 GOTO label1
 GOTO label2
 LABEL label1 :
-WRITE #1
-GOTO label3
+RETURN v4
 LABEL label2 :
-IF v1 < #0 GOTO label4
-GOTO label5
-LABEL label4 :
-t2 := #0 - #1
-WRITE t2
-GOTO label6
-LABEL label5 :
-WRITE #0
-LABEL label6 :
-LABEL label3 :
+ARG v3
+ARG v4
+t5 := CALL modulo
+ARG v3
+ARG t5
+t4 := CALL gcd
+RETURN t4
+FUNCTION main :
+READ t8
+READ t9
+ARG t9
+ARG t8
+t7 := CALL gcd
+WRITE t7
 RETURN #0
