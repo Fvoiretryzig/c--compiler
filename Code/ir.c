@@ -489,24 +489,24 @@ InterCodes translate_extdeflist(struct node* extdeflist)
 	if(extdeflist->rule == Extdeflist_ExtdefExtdeflist) {
 		InterCodes ir1 = translate_extdef(extdeflist->gchild[0]);
 		InterCodes ir2 = translate_extdeflist(extdeflist->gchild[1]);
-			
+		
 		InterCodes ir = concat(ir1, ir2);
 		return ir;
 	}
 	else if(extdeflist->rule == Extdeflist_Null)
-			return NULL;
+		return NULL;
 }
 InterCodes translate_extdef(struct node* extdef)
 {
 	if(extdef->rule == Extdef_SpecifierExtdeclistSemi || extdef->rule == Extdef_SpecifierSemi)
 		return NULL;	//TODO()应该不用生成代码吧？？？？？
 	else if(extdef->rule == Extdef_SpcifierFundecCompst) {
-		InterCodes ir1 = translate_funcdec(extdef->gchild[1]); 
-		InterCodes ir2 = translate_compst(extdef->gchild[2]); 
-			
+		InterCodes ir1 = translate_funcdec(extdef->gchild[1]);
+		InterCodes ir2 = translate_compst(extdef->gchild[2]);
+		
 		InterCodes ir = concat(ir1, ir2);
 		return ir;
-	}
+	}	
 }
 InterCodes translate_funcdec(struct node* funcdec)
 {
@@ -558,11 +558,11 @@ InterCodes translate_paradec(struct node* paradec)
 	return ir;
 }
 InterCodes translate_compst(struct node* compst)
-{	
+{
 	//Compst_LcDeflistStmtlistRc
-	InterCodes ir1 = translate_deflist(compst->gchild[1]);
+	InterCodes ir1 = translate_deflist(compst->gchild[1]); 
 	InterCodes ir2 = translate_stmtlist(compst->gchild[2]);
-	
+
 	InterCodes ir = concat(ir1, ir2);
 	return ir;
 }
@@ -648,7 +648,8 @@ InterCodes translate_stmt(struct node* stmt)
 {
 	//printf("stmt->rule: %d\n", stmt->rule);
 	if(stmt->rule == Stmt_ExpSemi) {
-		InterCodes ir = translate_exp(stmt->gchild[0], NULL); 
+		Operand t1 = new_temp();
+		InterCodes ir = translate_exp(stmt->gchild[0], t1); 
 		return ir;
 	}
 	else if(stmt->rule == Stmt_Compst) {
@@ -670,8 +671,7 @@ InterCodes translate_stmt(struct node* stmt)
 		InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
 		InterCodes ir2 = translate_stmt(stmt->gchild[4]);
 		InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
-		
-		InterCodes ir = concat(ir, label1_code);
+		InterCodes ir = concat(ir1, label1_code);
 		ir = concat(ir, ir2);
 		ir = concat(ir, label2_code);
 		return ir;
@@ -804,7 +804,7 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		InterCodes ir1 = translate_exp(exp, t1);
 		int op = 5;
 		InterCodes ir2 = new_InterCodes(t1, imm_num0, label_true, IF_JUMP, op);
-		InterCodes label_code = new_InterCodes(label_false, NULL, NULL, D_LABEL, -1);
+		InterCodes label_code = new_InterCodes(label_false, NULL, NULL, JUMP, -1);
 		
 		InterCodes ir = concat(ir1, ir2);
 		ir = concat(ir, label_code);
@@ -914,7 +914,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_IdLpArgsRp) {
 		char* name = exp->str;
-			
+	
 		Operand* arg_list = (Operand*)malloc(sizeof(Operand)*MAX_ARGC);
 		int arg_cnt = 0;
 		InterCodes ir1 = translate_args(exp->gchild[2], arg_list, &arg_cnt); 
@@ -934,6 +934,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		}
 		Operand f = new_Operand(exp->gchild[0], FUNCTION, -1, -1);
 		InterCodes call_f = new_InterCodes(place, f, NULL, CALL, -1);
+		
 		InterCodes curr = ir1;
 		if(ir1) {
 			while(curr->next)
@@ -969,7 +970,9 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		if(!strcmp(name, "read"))
 			return new_InterCodes(place, NULL, NULL, READ, -1);
 		Operand function = new_Operand(exp, FUNCTION, -1, -1);
-		return new_InterCodes(place, function, NULL, CALL, -1);
+		InterCodes ir = new_InterCodes(place, function, NULL, CALL, -1);
+
+		return ir;
 	}
 	else if(exp->rule == Exp_ExpLbExpRb) {	
 		//TODO();

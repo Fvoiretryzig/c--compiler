@@ -129,7 +129,7 @@ void F_Program_Extdeflist(struct node* n){
 	#endif
 
 	struct node* Extdeflist = n->gchild[0];
-
+	
 	semantic_analysis(Extdeflist);
 	
 	return;
@@ -144,8 +144,7 @@ void F_Extdeflist_ExtdefExtdeflist(struct node* n){
 	
 	semantic_analysis(Extdef);
 	semantic_analysis(Extdeflist);
-	
-	
+
 	return;
 }
 void F_Extdeflist_Null(struct node* n){
