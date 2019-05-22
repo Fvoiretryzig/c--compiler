@@ -501,8 +501,14 @@ InterCodes translate_extdef(struct node* extdef)
 	if(extdef->rule == Extdef_SpecifierExtdeclistSemi || extdef->rule == Extdef_SpecifierSemi)
 		return NULL;	//TODO()应该不用生成代码吧？？？？？
 	else if(extdef->rule == Extdef_SpcifierFundecCompst) {
-		InterCodes ir1 = translate_funcdec(extdef->gchild[1]);
+		InterCodes ir1 = translate_funcdec(extdef->gchild[1]); print_ir(ir1);
 		InterCodes ir2 = translate_compst(extdef->gchild[2]);
+		
+		InterCodes curr = ir2;
+		while(curr) {
+			print_ir(curr);
+			curr = curr->next;
+		}
 		
 		InterCodes ir = concat(ir1, ir2);
 		return ir;
@@ -813,6 +819,7 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 }
 InterCodes translate_exp(struct node* exp, Operand place)
 {
+	//printf("exp rule: %d\n", exp->rule);
 	if(exp->rule == Exp_ExpAssignopExp)	{
 		//要不要判断已经存在的变量节约空间？？？？？？？？？？好像要的
 		struct node* exp1 = exp->gchild[0];
@@ -890,13 +897,13 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	else if(exp->rule == Exp_ExpDivExp) {
 		Operand t1 = new_temp();
 		Operand t2 = new_temp();
-		
+		//printf("in expdivexppppppppppppp: \n");
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-		InterCodes ir3 = new_InterCodes(place, t1, t2, DIV, -1);
-		
+		InterCodes ir3 = new_InterCodes(place, t1, t2, IR_DIV, -1);
 		InterCodes ir = concat(ir1, ir2);
 		ir = concat(ir, ir3);
+		//printf("left divvvvvvvvvvvv\n");
 		return ir;
 	}
 	else if(exp->rule == Exp_LpExpRp) {
@@ -914,7 +921,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_IdLpArgsRp) {
 		char* name = exp->str;
-	
+		printf("func call name: %s\n", name);
 		Operand* arg_list = (Operand*)malloc(sizeof(Operand)*MAX_ARGC);
 		int arg_cnt = 0;
 		InterCodes ir1 = translate_args(exp->gchild[2], arg_list, &arg_cnt); 
@@ -925,7 +932,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 			return ir;
 		}
 		InterCodes ir2 = (InterCodes)malloc(sizeof(struct InterCodes_));
-		for(int i = 0; i<arg_cnt; i++) {
+		for(int i = arg_cnt-1; i>=0; i++) {	//反着压参数
 			InterCodes ir_tmp = new_InterCodes(arg_list[i], NULL, NULL, ARG, -1);	
 			InterCodes curr = ir2;
 			while(curr->next)
@@ -982,6 +989,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_Id) {
 		char* name = exp->str;
+		printf("in exp id name: %s\n", name);
 		Operand id;
 		id = find_op(name);//TODO TODO TODO TODO TODO TODO TODO !!!!!!!!!!!!!!!!!!
 		if(id) {
