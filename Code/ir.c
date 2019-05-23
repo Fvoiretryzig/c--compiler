@@ -350,12 +350,12 @@ void print_ir(InterCodes ir)
 		if(!x || !y || !z)
 			return;
 		print_op(x); printf(" := "); print_op(y); 
-		if(x->kind == TMP && x->is_address == 1) {
+		/*if(x->kind == TMP && x->is_address == 1) {
 			if(z->kind == IMM_NUMBER && z->u.value_int == 0) {
 				printf("\n");
 				return;
 			}
-		}
+		}*/
 		printf(" + "); print_op(z); printf("\n");
 	}
 	else if(ir->code.kind == SUB) {
@@ -365,12 +365,12 @@ void print_ir(InterCodes ir)
 		if(!x || !y || !z)
 			return;
 		print_op(x); printf(" := "); print_op(y); 
-		if(x->kind == TMP && x->is_address == 1) {
+		/*if(x->kind == TMP && x->is_address == 1) {
 			if(z->kind == IMM_NUMBER && z->u.value_int == 0) {
 				printf("\n");
 				return;
 			}
-		}
+		}*/
 		printf(" - "); print_op(z); printf("\n");
 	}			
 	else if(ir->code.kind == MUL) { 
@@ -459,7 +459,10 @@ void print_ir(InterCodes ir)
 		Operand x = ir->code.u.ret.x;
 		if(!x)
 			return;
-		printf("RETURN "); print_op(x); printf("\n");
+		printf("RETURN "); 
+		if(x->is_address == 1)
+			printf("*");
+		print_op(x); printf("\n");
 	}
 	else if(ir->code.kind == DEC) {
 		Operand x = ir->code.u.dec.x;
@@ -780,7 +783,7 @@ InterCodes translate_stmt(struct node* stmt)
 		return ir;
 	}
 	else if(stmt->rule == Stmt_IfLpExpRpStmtElseStmt) {
-		printf("\nhahahaha\n");
+		//printf("\nhahahaha\n");
 		Operand label1 = (Operand)malloc(sizeof(struct Operand_));
 		label1->kind = LABEL; label1->u.label_no = -1;	//b.true = fall;
 		Operand label2 = new_label();
@@ -809,7 +812,7 @@ InterCodes translate_stmt(struct node* stmt)
 		ir = concat(ir, ir3);
 		if(label3_code)
 			ir = concat(ir, label3_code);
-		printf("\n");
+		//printf("\n");
 		return ir;
 	}
 	else if(stmt->rule == Stmt_WhileLpExpRpStmt) {
@@ -854,15 +857,14 @@ int get_relop(struct node* gnode)
 	else if(!strcmp(gnode->relop, "=="))
 		ret = 4;
 	else if(!strcmp(gnode->relop, "!="))
-		ret = 5;
-	else 
-		printf("get relop fault!!!!!!!\n");
+		ret = 5; 
+		//printf("get relop fault!!!!!!!\n");
 	return ret;
 }
 InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_false)
 {
 	if(exp->rule == Exp_NotExp) {
-		printf("this is expnotexp label_true: %d label_false: %d rule: %d\n", label_true->u.label_no, label_false->u.label_no, exp->gchild[1]->rule);
+		//printf("this is expnotexp label_true: %d label_false: %d rule: %d\n", label_true->u.label_no, label_false->u.label_no, exp->gchild[1]->rule);
 		InterCodes ir = translate_cond(exp->gchild[1], label_false, label_true);
 		return ir;
 	}
@@ -871,7 +873,7 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpAndExp) {
-		printf("this is expandexp\n");
+		//printf("this is expandexp\n");
 		Operand label_b1T = NULL; Operand label_b1F = NULL;
 		Operand label_b2T = NULL; Operand label_b2F = NULL;
 		InterCodes ir1 = NULL; InterCodes ir2 = NULL; InterCodes label_code = NULL;
@@ -885,29 +887,20 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		label_b2T = label_true;
 		label_b2F = label_false;
 		
-		printf("in expandexp label1T: %d label1F: %d\n", label_b1T->u.label_no, label_b1F->u.label_no);
+		//printf("in expandexp label1T: %d label1F: %d\n", label_b1T->u.label_no, label_b1F->u.label_no);
 		ir1 = translate_cond(exp->gchild[0], label_b1T, label_b1F);	
-		printf("in expandexp ir1: \n");
-		InterCodes curr = ir1;
-		while(curr) {
-			print_ir(curr); curr = curr->next;
-		}
-		printf("in expandexp label2T: %d label2F: %d\n", label_b2T->u.label_no, label_b2F->u.label_no);
+		
+		//printf("in expandexp label2T: %d label2F: %d\n", label_b2T->u.label_no, label_b2F->u.label_no);
 		ir2 = translate_cond(exp->gchild[2], label_b2T, label_b2F);
-		printf("in expandexp ir2: \n");
-		curr = ir2;
-		while(curr) {
-			print_ir(curr); curr = curr->next;
-		}
-		//if(label_false->u.label_no == -1)
+		
 		if(label_b1F->u.label_no != -1 && label_b1F->u.label_no != label_b2F->u.label_no)
 			label_code = new_InterCodes(label_b1F, NULL, NULL, D_LABEL, -1);
-		InterCodes ir = concat(ir1, ir2); printf("\n");
+		InterCodes ir = concat(ir1, ir2); //printf("\n");
 		ir = concat(ir, label_code);
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpOrExp) {
-		printf("this is exporexp label true: %d label false: %d\n", label_true->u.label_no, label_false->u.label_no);
+		//printf("this is exporexp label true: %d label false: %d\n", label_true->u.label_no, label_false->u.label_no);
 		Operand label_b1T = NULL; Operand label_b1F = NULL;
 		Operand label_b2T = NULL; Operand label_b2F = NULL;
 		InterCodes ir1 = NULL; InterCodes label_code = NULL; InterCodes ir2 = NULL;
@@ -920,16 +913,16 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		label_b1F->kind = LABEL; label_b1F->u.label_no = -1;	//b1.false = fall;
 		label_b2T = label_true; label_b2F = label_false;
 		
-		printf("in exporexp label_b1T: no: %d\n", label_b1T->u.label_no);
+		//printf("in exporexp label_b1T: no: %d\n", label_b1T->u.label_no);
 		ir1 = translate_cond(exp->gchild[0], label_b1T, label_b1F);	
-		printf("in exporexp label_b2T: no: %d b2F: %d\n", label_b2T->u.label_no, label_b2F->u.label_no);
+		//printf("in exporexp label_b2T: no: %d b2F: %d\n", label_b2T->u.label_no, label_b2F->u.label_no);
 		ir2 = translate_cond(exp->gchild[2], label_b2T, label_b2F);
 		if(label_b1T->u.label_no != -1 && label_b2T->u.label_no != label_b1T->u.label_no) {	//不知道这样改对不对
 			label_code = new_InterCodes(label_b1T, NULL, NULL, D_LABEL, -1);
 		}
 		InterCodes ir = concat(ir1, ir2);
 		ir = concat(ir, label_code);
-		printf("\n");
+		//printf("\n");
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpRelopExp) {
@@ -973,7 +966,7 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		int op = 5;
 		if(label_true->u.label_no != -1) {
 			ir2 = new_InterCodes(t1, imm_num0, label_true, IF_JUMP, op);  
-			printf("in default label_true not -1\n");print_ir(ir2);printf("endlala\n");
+			//printf("in default label_true not -1\n");print_ir(ir2);printf("endlala\n");
 			if(label_false->u.label_no != -1) {
 				label_code = new_InterCodes(label_false, NULL, NULL, JUMP, -1);
 			}
@@ -983,7 +976,7 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 			ir2 = new_InterCodes(t1, imm_num0, label_false, IF_JUMP, op);
 		}
 		//InterCodes label_code = new_InterCodes(label_false, NULL, NULL, JUMP, -1); 
-		printf("in default print label_code\n"); print_ir(label_code);printf("endxixixixi\n");
+		//printf("in default print label_code\n"); print_ir(label_code);printf("endxixixixi\n");
 		
 		InterCodes ir = concat(ir1, ir2);
 		ir = concat(ir, label_code);
@@ -1022,9 +1015,11 @@ InterCodes translate_exp(struct node* exp, Operand place)
 				place->kind = variable->kind; place->u.var_no = variable->u.var_no; strcpy(place->v_name, variable->v_name);
 				temp_cnt--;
 			}
+			
+		
 			if(!variable)
-				variable = new_Operand(exp1, VARIABLE, -1, -1);
-			InterCodes ir1 = translate_exp(exp2, variable);
+					variable = new_Operand(exp1, VARIABLE, -1, -1);
+			ir1 = translate_exp(exp2, variable);
 			if(!is_exist) {
 				Operand t1 = new_temp();
 				ir2_1 = new_InterCodes(variable, t1, NULL, ASSIGN, -1);
@@ -1299,38 +1294,34 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		else {
 			Symbol sym = find_symbol(exp1->str);
 			int size;
-			if(sym->type->kind == BASIC)
+			if(sym->type->u.array.elem->kind == BASIC)
 				size = 4;
-			else if(sym->type->kind == STRUCTURE)
+			else if(sym->type->u.array.elem->kind == STRUCTURE)
 				size = get_struct_size(sym->type);
 			int number = exp2->type_int;
 			int offset = size*number;
-			Operand t1 = new_temp(); t1->is_address = 1;
-			InterCodes ir1 = translate_exp(exp1, t1);
+			Operand t1 = find_op(exp1->str);
+			InterCodes ir1 = NULL;
+			if(!t1) {
+				t1 = new_temp(); 
+				t1->is_address = 1;
+				InterCodes ir1 = translate_exp(exp1, t1);
+			}
+			
 			Operand offset_op = new_Operand(NULL, IMM_NUMBER, offset, -1);
 			place->is_address = 1;
-			InterCodes ir2 = new_InterCodes(place, t1, offset_op, ADD, -1);
+			InterCodes ir2 = NULL;
+			if(offset != 0)
+				ir2 = new_InterCodes(place, t1, offset_op, ADD, -1);
+			else
+				place->u.tmp_no = t1->u.tmp_no;
 			
 			InterCodes ir = concat(ir1, ir2);
 			return ir;
 		}
-		/* Operand t1 = new_temp(); t1->is_address = 1;
-		InterCodes ir1 = translate_exp(exp1, t1);	//上一个偏移的 
-		int num = exp2->type_int;	
-		int size= get_array_size(exp1->type->u.array.elem);
-		int offset = num*size;
-		//printf("number: %d size: %d offset: %d arr_dim: %d exp: %d\n", num, size, offset, exp1->arr_dim, exp->arr_dim);
-		
-		
-		Operand offset_op = new_Operand(NULL, IMM_NUMBER, offset, -1);
-		place->is_address = 1;
-		InterCodes ir2 = new_InterCodes(place, t1, offset_op, ADD, -1);
-		
-		InterCodes ir = concat(ir1, ir2);
-		return ir;*/ 
 	}
 	else if(exp->rule == Exp_ExpDotId) {
-		struct node* exp1 = exp->gchild[0];
+		/*struct node* exp1 = exp->gchild[0];
 		struct node* id = exp->gchild[2];
 		int offset = 0;
 		char* name = exp1->str;
@@ -1345,8 +1336,13 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		InterCodes ir2 = NULL;
 		if(offset != 0)
 			ir2 = new_InterCodes(place, t1, offset_op, ADD, -1);
+		else
+			place->u.tmp_no = t1->u.tmp_no;
 		InterCodes ir = concat(ir1, ir2);
-		return ir;
+		return ir;*/
+		printf("Cannot translate: Code contains variables or parameters of structure type.\n");
+		exit(0);
+		
 	}
 	else if(exp->rule == Exp_Id) {
 		char* name = exp->str;

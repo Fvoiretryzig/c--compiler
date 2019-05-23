@@ -1,5 +1,5 @@
 int f(int a, int b, int c) {
-/*if(a > b)
+if(a > b)
 		return 1;		
 	else
 		return 0;
@@ -8,19 +8,19 @@ int f(int a, int b, int c) {
 	if(a || b)
 		return 6;
 	else 
-		return 9;*/
+		return 9;
 	if(!(a||b) && c) {
 		a = 4;
 		return b;		
 	}
-	/*else {
+	else {
 		c = 6;
 		return c;		
 	} 
-	while((!a||b) && c) {
+	while((!a&&b) || c) {
 		a = a + 1;
 		c = c-1;
-	}*/
+	}
 	return 0;
 }
 int main()
