@@ -1,0 +1,28 @@
+FUNCTION modulo :
+PARAM v1
+PARAM v2
+t3 := v1 / v2
+t2 := t3 * v2
+t1 := v1 - t2
+RETURN t1
+FUNCTION gcd :
+PARAM v3
+PARAM v4
+IF v3 != #0 GOTO label1
+RETURN v4
+LABEL label1 :
+ARG v3
+ARG v4
+t5 := CALL modulo
+ARG v3
+ARG t5
+t4 := CALL gcd
+RETURN t4
+FUNCTION main :
+READ t8
+READ t9
+ARG t9
+ARG t8
+t7 := CALL gcd
+WRITE t7
+RETURN #0

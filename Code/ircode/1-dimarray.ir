@@ -1,0 +1,6 @@
+FUNCTION main :
+DEC v1 32
+t2 := &v1 + #20
+*t2 := #6
+t3 := &v1 + #20
+RETURN *t3

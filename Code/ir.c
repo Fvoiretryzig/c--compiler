@@ -943,12 +943,12 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		}
 		else if(label_false->u.label_no != -1) {
 			switch(op) {
-				case 0: op = 1; break;
-				case 1: op = 0; break;
-				case 2: op = 3; break;
-				case 3: op = 2; break;
-				case 4: op = 5; break;
-				case 5: op = 4; break;
+				case 0: op = 3; break; //>
+				case 1: op = 2; break;	//<
+				case 2: op = 1; break;	//>=
+				case 3: op = 0; break;	//<=
+				case 4: op = 5; break;	//==
+				case 5: op = 4; break;	//!=
 			}
 			ir3 = new_InterCodes(t1, t2, label_false, IF_JUMP, op);
 		}

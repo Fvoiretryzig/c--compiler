@@ -1,0 +1,61 @@
+FUNCTION exact_divide :
+PARAM v1
+PARAM v2
+v3 := #1
+LABEL label1 :
+IF v3 > v1 GOTO label2
+t1 := v3 * v2
+IF t1 != v1 GOTO label3
+RETURN #1
+LABEL label3 :
+v3 := v3 + #1
+GOTO label1
+LABEL label2 :
+RETURN #0
+FUNCTION is_prime :
+PARAM v4
+IF v4 >= #2 GOTO label4
+RETURN #0
+LABEL label4 :
+v5 := #2
+LABEL label5 :
+IF v5 >= v4 GOTO label6
+ARG v5
+ARG v4
+t2 := CALL exact_divide
+IF t2 == #0 GOTO label7
+RETURN #0
+LABEL label7 :
+v5 := v5 + #1
+GOTO label5
+LABEL label6 :
+RETURN #1
+FUNCTION goldbach :
+PARAM v6
+v7 := #2
+LABEL label8 :
+IF v7 >= v6 GOTO label9
+ARG v7
+t3 := CALL is_prime
+IF t3 == #0 GOTO label10
+t5 := v6 - v7
+ARG t5
+t4 := CALL is_prime
+IF t4 == #0 GOTO label10
+RETURN #1
+LABEL label10 :
+v7 := v7 + #1
+GOTO label8
+LABEL label9 :
+RETURN #0
+FUNCTION main :
+v8 := #4
+LABEL label11 :
+IF v8 > #30 GOTO label12
+ARG v8
+t7 := CALL goldbach
+WRITE t7
+v8 := v8 + #2
+GOTO label11
+LABEL label12 :
+RETURN #0

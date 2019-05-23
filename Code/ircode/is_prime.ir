@@ -1,0 +1,36 @@
+FUNCTION modulo :
+PARAM v1
+PARAM v2
+t3 := v1 / v2
+t2 := t3 * v2
+t1 := v1 - t2
+RETURN t1
+FUNCTION is_prime :
+PARAM v3
+v4 := #2
+LABEL label1 :
+t4 := v4 * v4
+IF t4 > v3 GOTO label2
+ARG v4
+ARG v3
+t5 := CALL modulo
+IF t5 != #0 GOTO label3
+RETURN #0
+LABEL label3 :
+v4 := v4 + #1
+GOTO label1
+LABEL label2 :
+RETURN #1
+FUNCTION main :
+v5 := #2
+LABEL label4 :
+IF v5 > #100 GOTO label5
+ARG v5
+t6 := CALL is_prime
+IF t6 == #0 GOTO label6
+WRITE v5
+LABEL label6 :
+v5 := v5 + #1
+GOTO label4
+LABEL label5 :
+RETURN #0

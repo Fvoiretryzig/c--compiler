@@ -1,0 +1,43 @@
+FUNCTION f :
+PARAM v1
+PARAM v2
+PARAM v3
+IF v1 <= v2 GOTO label1
+RETURN #1
+LABEL label1 :
+RETURN #0
+IF v1 == #0 GOTO label2
+IF v2 == #0 GOTO label2
+RETURN #1
+LABEL label2 :
+IF v1 != #0 GOTO label4
+IF v2 == #0 GOTO label3
+LABEL label4 :
+RETURN #6
+LABEL label3 :
+RETURN #9
+IF v1 != #0 GOTO label5
+IF v2 != #0 GOTO label5
+IF v3 == #0 GOTO label5
+v1 := #4
+RETURN v2
+LABEL label5 :
+v3 := #6
+RETURN v3
+LABEL label7 :
+IF v1 != #0 GOTO label10
+IF v2 != #0 GOTO label9
+LABEL label10 :
+IF v3 == #0 GOTO label8
+LABEL label9 :
+v1 := v1 + #1
+v3 := v3 - #1
+GOTO label7
+LABEL label8 :
+RETURN #0
+FUNCTION main :
+ARG #7
+ARG #6
+ARG #5
+t1 := CALL f
+RETURN #0
