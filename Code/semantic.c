@@ -887,8 +887,8 @@ void F_Exp_ExpPlusExp(struct node* n){
 		if(E1->type->kind == BASIC && E2->type->kind == BASIC) {
 			if(E1->type->u.basic != E2->type->u.basic) {
 				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-			}
-			n->type = E1->type;
+			} 
+			n->type = E1->type;  n->type_int = E1->type_int + E2->type_int;
 			//n->n_type = _BASIC_;
 		}
 		else
@@ -912,7 +912,7 @@ void F_Exp_ExpMinusExp(struct node* n){
 			if(E1->type->u.basic != E2->type->u.basic) {
 				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			}
-			n->type = E1->type;
+			n->type = E1->type;  n->type_int = E1->type_int - E2->type_int;
 			//n->n_type = _BASIC_;
 		}
 		else
@@ -938,7 +938,7 @@ void F_Exp_ExpStarExp(struct node* n){
 			if(E1->type->u.basic != E2->type->u.basic) {
 				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			}
-			n->type = E1->type;
+			n->type = E1->type; n->type_int = E1->type_int * E2->type_int;
 			//n->n_type = _BASIC_;
 		}
 		else
@@ -963,7 +963,7 @@ void F_Exp_ExpDivExp(struct node* n){
 			if(E1->type->u.basic != E2->type->u.basic) {
 				printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 			}
-			n->type = E1->type;
+			n->type = E1->type; n->type_int = E1->type_int / E2->type_int;
 			//n->n_type = _BASIC_;
 		}
 		else
@@ -979,8 +979,10 @@ void F_Exp_LpExpRp(struct node* n){
 	struct node* E1 = n->gchild[1];
 	
 	semantic_analysis(E1);
-	if(E1->type)
+	if(E1->type) {
 		n->type = E1->type;
+		n->type_int = E1->type_int;
+	}
 	n->is_left = 0;
 	
 	return;
@@ -996,9 +998,10 @@ void F_Exp_MinusExp(struct node* n){
 	if(E1->type){
 		if(E1->type->kind != BASIC)
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-		n->type = E1->type;
+		n->type = E1->type;	n->type_int = -E1->type_int;
 	}
 	//n->n_type = _BASIC_;
+
 	n->is_left = 0;
 	
 	return;
@@ -1016,9 +1019,10 @@ void F_Exp_NotExp(struct node* n){
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
 		else if(E1->type->u.basic != 1)
 			printf("Error type 7 at Line %d: Type mismatched for operands.\n", n->lineno);
-		n->type = E1->type;
+		n->type = E1->type; n->type_int = !E1->type_int;
 	}
 	//n->n_type = _BASIC_;
+	
 	strcpy(n->str, E1->str);
 	n->is_left = 0;
 	

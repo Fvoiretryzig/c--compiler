@@ -80,7 +80,7 @@ int insert_op(Operand op)
 Operand find_op(char* name) {
 	Operand curr = ophead;
 	while(curr!= NULL) {
-		if(curr->kind == VARIABLE && !strcmp(name, curr->v_name)) {
+		if((curr->kind == VARIABLE || curr->kind == ADDRESS) && !strcmp(name, curr->v_name)) {
 			return curr;
 		}
 		curr = curr->next;
@@ -116,6 +116,10 @@ Operand new_Operand(struct node* gnode, int kind, float n, int if_float)
 			break;
 		//case CONSTANT
 		case ADDRESS:
+			op->kind = ADDRESS;
+			op->u.var_no = ++var_cnt;
+			if(gnode)
+				strcpy(op->v_name, gnode->str);
 			break;
 			//TODO()
 		//case LABEL
@@ -126,18 +130,24 @@ Operand new_Operand(struct node* gnode, int kind, float n, int if_float)
 		//case TMP
 		case IMM_NUMBER:
 			op->kind = IMM_NUMBER;
-			if(gnode)
-				if(!if_float)
+			if(gnode) {
+				if(!if_float) 
 					op->u.value_int = gnode->type_int;
 				else
 					op->u.value_float = gnode->type_float;
-			else
-				if(!if_float)
+			}
+			else{
+				if(if_float != 1)
 					op->u.value_int = (int)n;
 				else
 					op->u.value_float = n;
+			}
 			break;
 		case ADDRESS_CONTENT:
+			op->kind = ADDRESS_CONTENT;
+			op->u.var_no = ++var_cnt;
+			if(gnode)
+				strcpy(op->v_name, gnode->str);
 			break;
 			//TODO();
 	}
@@ -149,28 +159,11 @@ Operand new_temp()
 	Operand temp = (Operand)malloc(sizeof(struct Operand_));
 	temp->kind = TMP;
 	temp->u.tmp_no = ++temp_cnt;
+	temp->is_address = -1;
 	insert_op(temp);
 	return temp;
 }
-/*Operand remove_temp(Operand op)
-{
-	Operand curr = op;
-	printf("op: %p\n", op);
-	while(curr) {
-		curr->u.tmp_no--;
-		curr = curr->next;
-	}
-	temp_cnt--;
-	curr = ophead;
-	while(curr->next != op)
-		curr = curr->next;
-	curr->next = op->next;
-	//op = NULL;
-	free(op);
-	op = NULL;
-	printf("op: %p\n", op);
-	return NULL; 
-}*/
+
 Operand new_label()
 {
 	Operand label = (Operand)malloc(sizeof(struct Operand_));
@@ -225,10 +218,15 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 			ir->code.u.assign_address.x = op1;
 			ir->code.u.assign_address.y = op2;
 			break;
-		case ADDR_ASSIGNED:
-			ir->code.kind = ADDR_ASSIGNED;
-			ir->code.u.address_assigned.x = op1;
-			ir->code.u.address_assigned.y = op2;
+		case ASSIGN_CONTENT:
+			ir->code.kind = ASSIGN_CONTENT;
+			ir->code.u.assign_content.x = op1;
+			ir->code.u.assign_content.y = op2;
+			break;
+		case CONTENT_ASSIGNED:
+			ir->code.kind = CONTENT_ASSIGNED;
+			ir->code.u.content_assigned.x = op1;
+			ir->code.u.content_assigned.y = op2;
 			break;
 		case JUMP:
 			ir->code.kind = JUMP;
@@ -295,6 +293,7 @@ void print_op(Operand op)
 			printf("v%d", op->u.var_no);
 			break;
 		case ADDRESS:
+			printf("&v%d", op->u.var_no);
 			break;
 			//TODO();
 		case LABEL:
@@ -350,7 +349,14 @@ void print_ir(InterCodes ir)
 		Operand z = ir->code.u.arithmetic.z;
 		if(!x || !y || !z)
 			return;
-		print_op(x); printf(" := "); print_op(y); printf(" + "); print_op(z); printf("\n");
+		print_op(x); printf(" := "); print_op(y); 
+		if(x->kind == TMP && x->is_address == 1) {
+			if(z->kind == IMM_NUMBER && z->u.value_int == 0) {
+				printf("\n");
+				return;
+			}
+		}
+		printf(" + "); print_op(z); printf("\n");
 	}
 	else if(ir->code.kind == SUB) {
 		Operand x = ir->code.u.arithmetic.x;
@@ -358,7 +364,14 @@ void print_ir(InterCodes ir)
 		Operand z = ir->code.u.arithmetic.z;
 		if(!x || !y || !z)
 			return;
-		print_op(x); printf(" := "); print_op(y); printf(" - "); print_op(z); printf("\n");
+		print_op(x); printf(" := "); print_op(y); 
+		if(x->kind == TMP && x->is_address == 1) {
+			if(z->kind == IMM_NUMBER && z->u.value_int == 0) {
+				printf("\n");
+				return;
+			}
+		}
+		printf(" - "); print_op(z); printf("\n");
 	}			
 	else if(ir->code.kind == MUL) { 
 		Operand x = ir->code.u.arithmetic.x;
@@ -377,10 +390,36 @@ void print_ir(InterCodes ir)
 		print_op(x); printf(" := "); print_op(y); printf(" / "); print_op(z); printf("\n");
 	}		
 	else if(ir->code.kind == ASSIGN_ADDR) {
+		Operand x = ir->code.u.assign_address.x;
+		Operand y = ir->code.u.assign_address.y;
+		if(!x || !y)
+			return;
+		print_op(x); printf(" := "); print_op(y); printf("\n");
 		//TODO();
+		return;
 	}
-	else if(ir->code.kind == ADDR_ASSIGNED) {
+	else if(ir->code.kind == ASSIGN_CONTENT) {
+		Operand x = ir->code.u.assign_content.x;
+		Operand y = ir->code.u.assign_content.y;
+		if(!x || !y)
+			return;
+		Operand yy = (Operand)malloc(sizeof(struct Operand_));
+		yy->kind = VARIABLE; yy->u.var_no = y->u.var_no;
+		
+		print_op(x); printf(" := *"); print_op(yy); printf("\n");
 		//TODO();
+		return;
+	}
+	else if(ir->code.kind == CONTENT_ASSIGNED) {
+		Operand x = ir->code.u.content_assigned.x;
+		Operand y = ir->code.u.content_assigned.y;
+		if(!x || !y)
+			return;
+		Operand xx = (Operand)malloc(sizeof(struct Operand_));
+		xx->kind = VARIABLE; xx->u.var_no = y->u.var_no;
+		
+		printf("*"); print_op(x); printf(" := "); print_op(y); printf("\n");
+		return;
 	}
 	else if(ir->code.kind == JUMP) {
 		Operand label = ir->code.u.jump.x;
@@ -427,7 +466,9 @@ void print_ir(InterCodes ir)
 		int size = ir->code.u.dec.size;
 		if(!x)
 			return;
-		printf("DEC "); print_op(x); printf(" %d\n", size);
+		Operand xx = (Operand)malloc(sizeof(struct Operand_));
+		xx->kind = VARIABLE; xx->u.var_no = x->u.var_no;
+		printf("DEC "); print_op(xx); printf(" %d\n", size);
 	}
 	else if(ir->code.kind == ARG) {
 		Operand x = ir->code.u.arg.x;
@@ -468,8 +509,11 @@ int get_array_size(Type t)
 {
 	if(t->kind == BASIC)
 		return 4;
+	//printf("size: %d\n", t->u.array.size);
 	int sub_size = get_array_size(t->u.array.elem);
-	return sub_size*t->u.array.size;
+	int ret = sub_size*t->u.array.size;
+	
+	return ret;
 }
 int get_struct_size(Type t)
 {
@@ -490,6 +534,30 @@ int get_struct_size(Type t)
 		curr = curr->tail;
 	}
 	return size;
+}
+int get_struct_offset(Type t, char* name)
+{
+	int offset = 0;
+	FieldList curr = t->u.structure;
+	while(curr) {
+		if(!strcmp(curr->name, name))
+			return offset;
+		else {
+			switch(curr->type->kind) {
+				case BASIC:
+					offset += 4;
+					break;
+				case ARRAY:
+					offset += get_array_size(curr->type);
+					break;
+				case STRUCTURE:
+					offset += get_struct_size(curr->type);
+					break;
+			}
+			curr = curr->tail;
+		}
+	}	
+	return offset;	//这里应该就是没找到吧？
 }
 /////////////////////////////////////////////translate////////////////////////////////////////////////////////
 InterCodes translate_program(struct node* program)
@@ -535,8 +603,6 @@ InterCodes translate_funcdec(struct node* funcdec)
 		
 		Operand func;
 		struct node* id = funcdec->gchild[0];
-		//func = find_op(id->str);
-		//if(func == NULL)
 		func = new_Operand(id, FUNCTION, -1, -1);
 		InterCodes ir1 = new_InterCodes(func, NULL, NULL, D_FUNCTION, -1);
 		InterCodes ir2 = translate_varlist(funcdec->gchild[2]);
@@ -580,8 +646,12 @@ InterCodes translate_paradec(struct node* paradec)
 	struct node* vardec = paradec->gchild[1];
 	Operand para;
 	para = find_op(vardec->str);
-	if(!para)
-		para = new_Operand(vardec, VARIABLE, -1, -1);
+	if(!para) {
+		if(vardec->type->kind != BASIC)		//结构体和数组作为参数传的是地址
+			para = new_Operand(vardec, ADDRESS, -1, -1);
+		else
+			para = new_Operand(vardec, VARIABLE, -1, -1);
+	}
 	InterCodes ir = new_InterCodes(para, NULL, NULL, PARA, -1);
 	return ir;
 }
@@ -638,7 +708,7 @@ InterCodes translate_dec(struct node* dec, Type specifier)
 			Symbol sym = find_symbol(vardec->str);
 			Type t = sym->type;
 			int size = get_array_size(t);
-			Operand v = new_Operand(NULL, VARIABLE, -1, -1);
+			Operand v = new_Operand(vardec, ADDRESS, -1, -1);
 			InterCodes ir = new_InterCodes(v, NULL, NULL, DEC, size);
 			return ir;
 		}
@@ -646,7 +716,7 @@ InterCodes translate_dec(struct node* dec, Type specifier)
 			Symbol sym = find_symbol(vardec->str);
 			Type t = sym->type;
 			int size = get_struct_size(t);
-			Operand v = new_Operand(NULL, VARIABLE, -1, -1);
+			Operand v = new_Operand(vardec, ADDRESS, -1, -1);
 			InterCodes ir = new_InterCodes(v, NULL, NULL, DEC, size);
 			return ir;
 		}
@@ -928,6 +998,8 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		struct node* exp1 = exp->gchild[0];
 		struct node* exp2 = exp->gchild[2];
 		Operand variable = NULL;
+		Operand t_address = NULL;
+		InterCodes ir1 = NULL;
 		InterCodes ir2_1 = NULL;
 		InterCodes ir2_2 = NULL;
 		int is_exist = 0;
@@ -950,20 +1022,31 @@ InterCodes translate_exp(struct node* exp, Operand place)
 				place->kind = variable->kind; place->u.var_no = variable->u.var_no; strcpy(place->v_name, variable->v_name);
 				temp_cnt--;
 			}
+			if(!variable)
+				variable = new_Operand(exp1, VARIABLE, -1, -1);
+			InterCodes ir1 = translate_exp(exp2, variable);
+			if(!is_exist) {
+				Operand t1 = new_temp();
+				ir2_1 = new_InterCodes(variable, t1, NULL, ASSIGN, -1);
+				ir2_2 = new_InterCodes(place, variable, NULL, ASSIGN, -1);
+			}
 		}
-		if(!variable)
-			variable = new_Operand(exp1, VARIABLE, -1, -1);
-		//Operand t1 = new_temp();
-		InterCodes ir1 = translate_exp(exp2, variable);
-		
-		if(!is_exist) {
+		if(exp1->rule == Exp_ExpLbExpRb || exp1->rule == Exp_ExpDotId) {
+			t_address = new_temp(); t_address->is_address = 1;
+			ir1 = translate_exp(exp1, t_address);	
 			Operand t1 = new_temp();
-			ir2_1 = new_InterCodes(variable, t1, NULL, ASSIGN, -1);
-			ir2_2 = new_InterCodes(place, variable, NULL, ASSIGN, -1);
+			ir2_1 = translate_exp(exp2, t1);
+			ir2_2 = new_InterCodes(t_address, t1, NULL, CONTENT_ASSIGNED, -1);
 		}
+		
+		//Operand t1 = new_temp();
+		
+		
 		//printf("in assignop ir1: %p ir2: %p ir2_2: %p\n", ir1, ir2_1, ir2_2); print_ir(ir1); print_ir(ir2_1); print_ir(ir2_2);
-		InterCodes ir2 = concat(ir2_1, ir2_2);
-		InterCodes ir = concat(ir1, ir2);
+		//InterCodes ir2 = concat(ir2_1, ir2_2);
+		//InterCodes ir = concat(ir1, ir2);
+		InterCodes ir = concat(ir1, ir2_1);
+		ir = concat(ir, ir2_2);
 		
 		return ir;
 	}
@@ -990,23 +1073,32 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	else if(exp->rule == Exp_ExpPlusExp) {
 		Operand t1 = new_temp();
 		Operand t2 = new_temp();
+		InterCodes ir11 = NULL;
+		InterCodes ir22 = NULL;
+		InterCodes ir3 = NULL;
 		
-		/*Operand t1 = NULL;
-		Operand t2 = NULL;
-		struct node* exp1 = exp->gchild[0];
-		struct node* exp2 = exp->gchild[2];
-		
-		if(exp1->rule ==  Exp_Id)
-			t1 = find_op(exp1->str);
-		if(exp2->rule == Exp_Id)
-			t2 = find_op(exp2->str);
-		if(!t1) t1 = new_temp();
-		if(!t2) t2 = new_temp();*/
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-		InterCodes ir3 = new_InterCodes(place, t1, t2, ADD, -1);
+		Operand t11 = NULL; Operand t22 = NULL;
+		if(t1->is_address == 1) {
+			t11 = new_temp();
+			ir11 = new_InterCodes(t11, t1, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(t2->is_address == 1) {
+			t2 = new_temp();
+			ir22 = new_InterCodes(t22, t2, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(t11 && t22)
+			ir3 = new_InterCodes(place, t11, t22, ADD, -1);
+		else if(!t11 && t22)
+			ir3 = new_InterCodes(place, t1, t22, ADD, -1);
+		else if(!t22 && t11)
+			ir3 = new_InterCodes(place, t11, t22, ADD, -1);
+		else
+			ir3 =  new_InterCodes(place, t1, t2, ADD, -1);
 		
-		InterCodes ir = concat(ir1, ir2);
+		InterCodes ir = concat(ir1, ir11);
+		ir = concat(ir, ir2); ir = concat(ir, ir22);
 		ir = concat(ir, ir3);
 		return ir;
 	}
@@ -1014,23 +1106,65 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		Operand t1 = new_temp();
 		Operand t2 = new_temp();
 		
+		InterCodes ir11 = NULL;
+		InterCodes ir22 = NULL;
+		InterCodes ir3 = NULL;
+		
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-		InterCodes ir3 = new_InterCodes(place, t1, t2, SUB, -1);
+		Operand t11 = NULL; Operand t22 = NULL;
+		if(t1->is_address == 1) {
+			t11 = new_temp();
+			ir11 = new_InterCodes(t11, t1, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(t2->is_address == 1) {
+			t2 = new_temp();
+			ir22 = new_InterCodes(t22, t2, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(t11 && t22)
+			ir3 = new_InterCodes(place, t11, t22, SUB, -1);
+		else if(!t11 && t22)
+			ir3 = new_InterCodes(place, t1, t22, SUB, -1);
+		else if(!t22 && t11)
+			ir3 = new_InterCodes(place, t11, t22, SUB, -1);
+		else
+			ir3 =  new_InterCodes(place, t1, t2, SUB, -1);
 		
-		InterCodes ir = concat(ir1, ir2);
+		InterCodes ir = concat(ir1, ir11);
+		ir = concat(ir, ir2); ir = concat(ir, ir22);
 		ir = concat(ir, ir3);
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpStarExp) {
 		Operand t1 = new_temp();
 		Operand t2 = new_temp();
+		InterCodes ir11 = NULL;
+		InterCodes ir22 = NULL;
+		InterCodes ir3 = NULL;
+		
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-		InterCodes ir3 = new_InterCodes(place, t1, t2, MUL, -1);
+		Operand t11 = NULL; Operand t22 = NULL;
+		if(t1->is_address == 1) {
+			t11 = new_temp();
+			ir11 = new_InterCodes(t11, t1, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(t2->is_address == 1) {
+			t2 = new_temp();
+			ir22 = new_InterCodes(t22, t2, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(t11 && t22)
+			ir3 = new_InterCodes(place, t11, t22, MUL, -1);
+		else if(!t11 && t22)
+			ir3 = new_InterCodes(place, t1, t22, MUL, -1);
+		else if(!t22 && t11)
+			ir3 = new_InterCodes(place, t11, t22, MUL, -1);
+		else
+			ir3 =  new_InterCodes(place, t1, t2, MUL, -1);
 		
-		InterCodes irr = concat(ir1, ir2);
-		InterCodes ir = concat(irr, ir3);
+		InterCodes ir = concat(ir1, ir11);
+		ir = concat(ir, ir2); ir = concat(ir, ir22);
+		ir = concat(ir, ir3);
 		
 		return ir;
 	}
@@ -1038,10 +1172,32 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		Operand t1 = new_temp();
 		Operand t2 = new_temp();
 		//printf("in expdivexppppppppppppp: \n");
+		InterCodes ir11 = NULL;
+		InterCodes ir22 = NULL;
+		InterCodes ir3 = NULL;
+		
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
 		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
-		InterCodes ir3 = new_InterCodes(place, t1, t2, IR_DIV, -1);
-		InterCodes ir = concat(ir1, ir2);
+		Operand t11 = NULL; Operand t22 = NULL;
+		if(t1->is_address == 1) {
+			t11 = new_temp();
+			ir11 = new_InterCodes(t11, t1, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(t2->is_address == 1) {
+			t2 = new_temp();
+			ir22 = new_InterCodes(t22, t2, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(t11 && t22)
+			ir3 = new_InterCodes(place, t11, t22, IR_DIV, -1);
+		else if(!t11 && t22)
+			ir3 = new_InterCodes(place, t1, t22, IR_DIV, -1);
+		else if(!t22 && t11)
+			ir3 = new_InterCodes(place, t11, t22, IR_DIV, -1);
+		else
+			ir3 =  new_InterCodes(place, t1, t2, IR_DIV, -1);
+		
+		InterCodes ir = concat(ir1, ir11);
+		ir = concat(ir, ir2); ir = concat(ir, ir22);
 		ir = concat(ir, ir3);
 		//printf("left divvvvvvvvvvvv\n");
 		return ir;
@@ -1053,10 +1209,21 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_MinusExp) {
 		Operand t1 = new_temp();
+		Operand t11 = NULL;
 		InterCodes ir1 = translate_exp(exp->gchild[1], t1);
-		InterCodes ir2 = new_InterCodes(place, imm_num0, t1, SUB, -1);
+		InterCodes ir11 = NULL;
+		InterCodes ir2 = NULL;
+		if(t1->is_address == 1) {
+			t11 = new_temp();
+			ir11 = new_InterCodes(t11, t1, NULL, ASSIGN_CONTENT, -1);
+		}
+		if(ir11)
+			ir2 = new_InterCodes(place, imm_num0, t11, SUB, -1);
+		else
+			ir2 = new_InterCodes(place, imm_num0, t1, SUB, -1);
 		
-		InterCodes ir = concat(ir1, ir2);
+		InterCodes ir = concat(ir1, ir11);
+		ir = concat(ir, ir2);
 		return ir;
 	}
 	else if(exp->rule == Exp_IdLpArgsRp) {
@@ -1122,10 +1289,64 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		return ir;
 	}
 	else if(exp->rule == Exp_ExpLbExpRb) {	
-		//TODO();
+		struct node* exp1 = exp->gchild[0];
+		struct node* exp2 = exp->gchild[2];
+		
+		if(exp1->rule != Exp_Id) {
+			printf("Cannot translate: Code contains variables of multi-dimensional array type or parameters of array type.\n");
+			exit(0);
+		}
+		else {
+			Symbol sym = find_symbol(exp1->str);
+			int size;
+			if(sym->type->kind == BASIC)
+				size = 4;
+			else if(sym->type->kind == STRUCTURE)
+				size = get_struct_size(sym->type);
+			int number = exp2->type_int;
+			int offset = size*number;
+			Operand t1 = new_temp(); t1->is_address = 1;
+			InterCodes ir1 = translate_exp(exp1, t1);
+			Operand offset_op = new_Operand(NULL, IMM_NUMBER, offset, -1);
+			place->is_address = 1;
+			InterCodes ir2 = new_InterCodes(place, t1, offset_op, ADD, -1);
+			
+			InterCodes ir = concat(ir1, ir2);
+			return ir;
+		}
+		/* Operand t1 = new_temp(); t1->is_address = 1;
+		InterCodes ir1 = translate_exp(exp1, t1);	//上一个偏移的 
+		int num = exp2->type_int;	
+		int size= get_array_size(exp1->type->u.array.elem);
+		int offset = num*size;
+		//printf("number: %d size: %d offset: %d arr_dim: %d exp: %d\n", num, size, offset, exp1->arr_dim, exp->arr_dim);
+		
+		
+		Operand offset_op = new_Operand(NULL, IMM_NUMBER, offset, -1);
+		place->is_address = 1;
+		InterCodes ir2 = new_InterCodes(place, t1, offset_op, ADD, -1);
+		
+		InterCodes ir = concat(ir1, ir2);
+		return ir;*/ 
 	}
 	else if(exp->rule == Exp_ExpDotId) {
-		//TODO();
+		struct node* exp1 = exp->gchild[0];
+		struct node* id = exp->gchild[2];
+		int offset = 0;
+		char* name = exp1->str;
+		
+		Operand t1 = new_temp(); t1->is_address = 1;
+		InterCodes ir1 = translate_exp(exp1, t1);
+		//printf("\n"); print_ir(ir1); printf("\n");
+		Symbol sym = find_symbol(name);
+		offset = get_struct_offset(sym->type, id->str);
+		Operand offset_op = new_Operand(NULL, IMM_NUMBER, offset, -1);
+		place->is_address = 1;
+		InterCodes ir2 = NULL;
+		if(offset != 0)
+			ir2 = new_InterCodes(place, t1, offset_op, ADD, -1);
+		InterCodes ir = concat(ir1, ir2);
+		return ir;
 	}
 	else if(exp->rule == Exp_Id) {
 		char* name = exp->str;
@@ -1133,6 +1354,13 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		Operand id;
 		id = find_op(name);//TODO TODO TODO TODO TODO TODO TODO !!!!!!!!!!!!!!!!!!
 		if(id) {
+			Symbol sym = find_symbol(name);
+			if(sym->type->kind != BASIC) {
+				InterCodes ir = NULL;
+				if(place->is_address == 1) ir = new_InterCodes(place, id, NULL, ASSIGN_ADDR, -1);
+				else ir = new_InterCodes(place, id, NULL, CONTENT_ASSIGNED, -1);
+				return ir;
+			}
 			Operand curr = ophead;
 			while(curr) {
 				if(curr->kind == TMP && curr->u.tmp_no == place->u.tmp_no)
@@ -1165,6 +1393,14 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		if(place->kind != TMP) {
 			InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
 			return ir;	
+		}
+		else if(place->is_address == 1) {
+			InterCodes ir = new_InterCodes(place, value, NULL, CONTENT_ASSIGNED, -1);
+			return ir;
+		}
+		else if(!place->is_address) {	//会存在吗？？？？
+			InterCodes ir = new_InterCodes(place, value, NULL, ASSIGN, -1);
+			return ir;
 		}
 		else {
 			//把这个tmp后面所有tmp的no都前进一位

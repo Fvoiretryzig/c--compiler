@@ -8,7 +8,7 @@ typedef enum {
 	VARIABLE, ADDRESS, LABEL, FUNCTION, TMP, IMM_NUMBER, ADDRESS_CONTENT
 }op_kind;
 typedef enum {
-	D_LABEL, D_FUNCTION, ASSIGN, ADD, SUB, MUL, IR_DIV, ASSIGN_ADDR, ADDR_ASSIGNED, JUMP, IF_JUMP, RET, DEC, ARG, CALL, PARA, READ, WRITE
+	D_LABEL, D_FUNCTION, ASSIGN, ADD, SUB, MUL, IR_DIV, ASSIGN_ADDR/*x=&y*/, ASSIGN_CONTENT/*x=*y*/, CONTENT_ASSIGNED/**x=y*/, JUMP, IF_JUMP, RET, DEC, ARG, CALL, PARA, READ, WRITE
 }ir_kind;
 struct Operand_ {
 	op_kind kind;
@@ -21,6 +21,7 @@ struct Operand_ {
 		char f_name[60];
 	} u; 
 	char v_name[60];
+	int is_address; 	//for tmp -1: nothing 0: address_content 1: address
 	struct Operand_* next; //????????
 	//TODO();
 };
@@ -32,7 +33,8 @@ struct InterCode {
 		struct {Operand x, y;} assign;
 		struct {Operand x, y, z;} arithmetic;
 		struct {Operand x, y;} assign_address;
-		struct {Operand x, y;} address_assigned;
+		struct {Operand x, y;} assign_content;
+		struct {Operand x, y;} content_assigned;
 		struct {Operand x;} jump;
 		struct {Operand x, y, z; int op;} if_jump;
 		struct {Operand x;} ret;
@@ -70,6 +72,7 @@ void print_ir(InterCodes ir);
 
 int get_array_size(Type t);
 int get_struct_size(Type t);
+int get_struct_offset(Type t, char* name);
 
 int get_relop(struct node* gnode);
 InterCodes translate_program(struct node* program);
