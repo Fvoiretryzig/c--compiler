@@ -337,10 +337,6 @@ void print_ir(InterCodes ir)
 		Operand x = ir->code.u.assign.x; Operand y = ir->code.u.assign.y;
 		if(!x || !y)
 			return;
-		/*if(y->kind == IMM_NUMBER) {
-			x->kind = IMM_NUMBER; x->u.value_int = y->u.value_int;
-			return;
-		}*/
 		print_op(x); printf(" := "); print_op(y); printf("\n");
 	}
 	else if(ir->code.kind == ADD) {
