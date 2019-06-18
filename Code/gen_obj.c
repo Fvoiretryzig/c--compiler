@@ -6,6 +6,7 @@ FILE* fp;
 block BlkHead;
 localList localHead;	//在函数的时候初始化
 int stack_offset = 0;
+int para_cnt = 0;
 
 void init_gen()	//read write函数还没有写
 {
@@ -18,7 +19,7 @@ void init_gen()	//read write函数还没有写
 	}
 	
 	localList = (localList)malloc(sizeof(struct localList_));
-	localList->next = NULL; localList->offset = 0;
+	localList->next = NULL; localList->offset = 0; localList->op = NULL;
 	
 	return;
 }
@@ -32,39 +33,51 @@ Reg ensure(Operand x) {
 	int is_find = 0;
 	localList curr = localHead;
 	
-	for(int i = 8; i<24; i++) {
-		if(reg[i]->op == x) {
+	for(int i = 8; i<26; i++) {
+		if(reg[i].op == x) {
 			is_find = 1;
 			result = reg[i];
 			break;
 		}
 	}
-	if(!is_find) {
+	if(x->kind == IMM_NUMBER) {	//对立即数特判
+		char tmp[32]; memset(tmp, 0, 32);
+		if(is_find) {
+			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, " %d\n", x->u.value_int);
+			fputs(tmp, fp);
+		}
+		else {
+			result = allocate(x);
+			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, " %d\n", x->u.value_int);
+			fputs(tmp, fp);
+		}
+	}
+	if(!is_find) {	//立即数应该就不用放内存了8？
 		localList curr_before = NULL;
 		while(curr) {
 			curr_before = curr;
 			curr = curr->next;
-			if(x->kind == IMM_NUMBER && curr->op->kind == IMM_NUMBER) {	//对立即数特判，立即数相同的存一次就好了
-				if(x->u.value_int == curr->op->u.value_int)
-					break;
-			}
 			if(curr->op == x) 
 				break;
 		}
-		if(!curr && (x->kind == TMP || x->kind == VARIABLE || x->kind == IMM_NUMBER)) {	//临时变量和变量为了除法乘法跳转还有立即数
-																						//（其他应该不用吧）还未分配在栈上的位置
-			offset += 4;
-			localList tmp = (localList)malloc(sizeof(localList_));
-			tmp->offset = offset;
-			tmp->op = x;
-			curr_before->next = tmp;
-			curr = tmp;	//复用一下curr
-			tmp->next = NULL;
+		if(!curr && (x->kind == TMP || x->kind == VARIABLE)) {	//临时变量和变量为了除法乘法跳转还有立即数
+																//（其他应该不用吧）还未分配在栈上的位置
+			stack_offset += 4;
+			fputs("\taddi $sp, $sp, -4\n", fp);	//sp扩大4
+			localList tmp_locallist = (localList)malloc(sizeof(localList_));
+			tmp_locallist->offset = stack_offset;
+			tmp_locallist->op = x;
+			curr_before->next = tmp_locallist;
+			curr = tmp_locallist;	//复用一下curr
+			tmp_locallist->next = NULL;
 		}
 		result = allocate(x);
 		if(curr->offset > 0) {	//在栈中有位置了
 			//lw reg(x), offset($fp);
-			fprintf(fp, "lw "); print_reg(result); fprintf(fp, ", %d($fp)\n", curr->offset);
+			char tmp[32];
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tlw "); print_reg(tmp, result); sprintf(tmp, ", -%d($fp)\n", curr->offset);
+			fputs(tmp, fp);
 		}
 	}
 	return result;
@@ -73,13 +86,13 @@ Reg allocate(Operand x)
 {
 	Reg result = NULL;
 	int is_find = 0;
-	for(int i = 8; i<24; i++) {
+	for(int i = 8; i<26; i++) {
 		if(!reg[i].is_used) {
 			if(!is_find) {
 				is_find = 1;
 				result = reg[i];
 				reg[i].op = x;
-				reg[i],is_used = 1;
+				reg[i].is_used = 1;
 				break;
 			}
 		}
@@ -89,7 +102,7 @@ Reg allocate(Operand x)
 	if(!result) {
 		int reg_no = -1;
 		int farthest = 0;
-		for(int i = 8; i<24; i++) {
+		for(int i = 8; i<26; i++) {
 			if(farthest < reg[i].farthest_nouse) {
 				farthest = reg[i].farthest_nouse;
 				reg_no = i;
@@ -104,76 +117,159 @@ Reg allocate(Operand x)
 }
 void spill(Reg r)
 {
-	Operand op = r.op;
-	if(x->offset > 0) {	//spill的时候不会还没在内存（栈）中，前面ensure要分配的
-		fprintf(fp, "sw ");
-		print_reg(r);
-		fprintf(fp, ", %d($fp)\n", op->offset);
+	Operand op = 0;
+	curr = localHead;
+	while(curr) {
+		if(curr->op == r.op)
+			break;
+		curr = curr->next;
+	}
+	if(curr->offset > 0) {	//spill的时候不会还没在内存（栈）中，前面ensure要分配的
+		char tmp[32];
+		memset(tmp, 0, 32);
+		sprintf(tmp, "sw "); print_reg(tmp, r); sprintf(", -%d($fp)\n", curr->offset);
+		fputs(tmp, fp);
 	}
 }
-void print_reg(Reg r)
+void print_reg(char* dest, Reg r)
 {
-	switch(r->kind) {
-		case zero: fprintf(fp, "$zero"); break;
-		case at: fprintf(fp, "$at"); break;
-		case v0: fprintf(fp, "$v0"); break;
-		case v1: fprintf(fp, "$v1"); break;
-		case a0: fprintf(fp, "$a0"); break;
-		case a1: fprintf(fp, "$a1"); break;
-		case a2: fprintf(fp, "$a2"); break;
-		case a3: fprintf(fp, "$a3"); break;
-		case t0: fprintf(fp, "$t0"); break;
-		case t1: fprintf(fp, "$t1"); break;
-		case t2: fprintf(fp, "$t2"); break;
-		case t3: fprintf(fp, "$t3"); break;
-		case t4: fprintf(fp, "$t4"); break;
-		case t5: fprintf(fp, "$t5"); break;
-		case t6: fprintf(fp, "$t6"); break;
-		case t7: fprintf(fp, "$t7"); break;
-		case s0: fprintf(fp, "$s0"); break;
-		case s1: fprintf(fp, "$s1"); break;
-		case s2: fprintf(fp, "$s2"); break;
-		case s3: fprintf(fp, "$s3"); break;
-		case s4: fprintf(fp, "$s4"); break;
-		case s5: fprintf(fp, "$s5"); break;
-		case s6: fprintf(fp, "$s6"); break;
-		case s7: fprintf(fp, "$s7"); break;
-		case k0: fprintf(fp, "$k0"); break;
-		case k1: fprintf(fp, "$k1"); break;
-		case gp: fprintf(fp, "$gp"); break;
-		case sp: fprintf(fp, "$sp"); break;
-		case fp: fprintf(fp, "$fp"); break;
-		case ra: fprintf(fp, "$ra"); break;
+	switch(r.kind) {
+		case zero: sprintf(dest, "$zero"); break;
+		case at: sprintf(dest, "$at"); break;
+		case v0: sprintf(dest, "$v0"); break;
+		case v1: sprintf(dest, "$v1"); break;
+		case a0: sprintf(dest, "$a0"); break;
+		case a1: sprintf(dest, "$a1"); break;
+		case a2: sprintf(dest, "$a2"); break;
+		case a3: sprintf(dest, "$a3"); break;
+		case t0: sprintf(dest, "$t0"); break;
+		case t1: sprintf(dest, "$t1"); break;
+		case t2: sprintf(dest, "$t2"); break;
+		case t3: sprintf(dest, "$t3"); break;
+		case t4: sprintf(dest, "$t4"); break;
+		case t5: sprintf(dest, "$t5"); break;
+		case t6: sprintf(dest, "$t6"); break;
+		case t7: sprintf(dest, "$t7"); break;
+		case s0: sprintf(dest, "$s0"); break;
+		case s1: sprintf(dest, "$s1"); break;
+		case s2: sprintf(dest, "$s2"); break;
+		case s3: sprintf(dest, "$s3"); break;
+		case s4: sprintf(dest, "$s4"); break;
+		case s5: sprintf(dest, "$s5"); break;
+		case s6: sprintf(dest, "$s6"); break;
+		case s7: sprintf(dest, "$s7"); break;
+		case k0: sprintf(dest, "$k0"); break;
+		case k1: sprintf(dest, "$k1"); break;
+		case gp: sprintf(dest, "$gp"); break;
+		case sp: sprintf(dest, "$sp"); break;
+		case fp: sprintf(dest, "$fp"); break;
+		case ra: sprintf(dest, "$ra"); break;
 	}
 }
 void choose_instr(InterCodes ir) {
-
-	if(ir->kind == D_LABEL) {
-		fprintf(fp, "label%d:\n", ir->u.label.x->u.label_no);
+	if(ir->kind == D_LABEL) {	//基本块开始，需要把寄存器都存回内存去吧(jump的跳转)
+		char tmp[32];
+		memset(tmp, 0, 32);
+		sprintf(tmp, "label%d:\n", ir->u.label.x->u.label_no);
+		fputs(tmp, fp);
+		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
+			if(reg[i]->is_used) {
+				spill(reg[i]);
+				reg[i]->is_used = 0;
+				reg[i]->op = NULL;
+				reg[i]->farthest_nouse = 0;
+			}
+		}
 		return;
 	}
-	else if(ir->kind == D_FUNCTION) {
-		fprintf(fp, "%s:\n", ir->u.function.f->u.f_name);
+	else if(ir->kind == D_FUNCTION) {	//新的函数新的栈所有都清空，局部变量也是
+		char tmp[32];
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\n%s:\n", ir->u.function.f->u.f_name);
+		fputs(tmp, fp);
+		curr = localHead;
+		while(curr) {		//全部释放完再重新分配，不知道释放得有没有问题……一直踩free的坑
+			localHead = localHead->next;
+			free(curr);
+			curr = localHead;
+		}
+		localHead = (localList)malloc(sizeof(struct localList_));
+		localHead->next = NULL; localHead->op = NULL; localHead->offset = 0;
+		para_cnt = 0;
+		// offset = 0;	是在call设置还是这里啊
 		return;
 	}
 	else if(ir->kind == ASSIGN) {
 		Operand left = ir->u.assign.x; Operand right = ir->u.assign.y;
 		Reg left_r = choose_reg(ir);
-		if(right->kind == IMM_NUMBER)  {
-			
+		if(right->kind == IMM_NUMBER) {
+			Reg reg_left = ensure(left);
+			char tmp[32];
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tli "); print_reg(tmp, reg_left); sprintf(tmp, ", %d\n", right->u.value_int);
+			fputs(tmp, fp);
+		}
+		else if(right->kind == TMP || right->kind == VARIABLE)  {
+			Reg reg_left = ensure(left); Reg reg_rigt = ensure(right);
+			char tmp[32];
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tmove "); print_reg(tmp, reg_left); sprintf(tmp, ", "); print_reg(tmp, reg_right); sprintf("\n");
+			fputs(tmp, fp);
 		}
 	}
 	else if(ir->kind == ADD) {
-	
+		Operand x = ir->u.arithmetic.x; Operand y = ir->u.arithmetic.y; Operand z = ir->u.arithmetic.z;
+		if(z->kind == IMM_NUMBER) {
+			Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+			int k = z->u.value_int;
+			char tmp[32];
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\taddi "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_x); sprintf(tmp, ", %d\n", k);
+			fputs(tmp, fp);
+		}
+		else if(z->kind == TMP || z->kind == VARIABLE) {
+			Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
+			char tmp[32];
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\add "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+			fputs(tmp, fp);
+		}
 	}
 	else if(ir->kind == SUB) {
-	
+		Operand x = ir->u.arithmetic.x; Operand y = ir->u.arithmetic.y; Operand z = ir->u.arithmetic.z;
+		if(z->kind == IMM_NUMBER) {
+			Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+			int k = z->u.value_int;
+			char tmp[32];
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\taddi "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_x); sprintf(tmp, ", -%d\n", k);
+			fputs(tmp, fp);
+		}
+		else if(z->kind == TMP || z->kind == VARIABLE) {
+			Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
+			char tmp[32];
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tsub "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+			fputs(tmp, fp);
+		}
 	}
 	else if(ir->kind == MUL) {
-	
+		Operand x = ir->u.arithmetic.x; Operand y = ir->u.arithmetic.y; Operand z = ir->u.arithmetic.z;
+		Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
+		char tmp[32];
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tmul "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+		fputs(tmp, fp);
 	}
 	else if(ir->kind == IR_DIV) {
-	
+		Operand x = ir->u.arithmetic.x; Operand y = ir->u.arithmetic.y; Operand z = ir->u.arithmetic.z;
+		Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
+		char tmp[32];
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tdiv "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+		fputs(tmp, fp);
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tmflo "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
 	}
 	else if(ir->kind == ASSIGN_ADDR) {
 	

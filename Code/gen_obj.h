@@ -6,6 +6,7 @@ typedef enum {
 	a0, a1, a2, a3, 
 	t0, t1, t2, t3, t4, t5, t6, t7, 
 	s0, s1, s2, s3, s4, s5, s6, s7,
+	t8, t9,
 	k0, k1,
 	gp,
 	sp, fp, 
@@ -25,7 +26,7 @@ struct localList_ {
 	struct localList_* next;
 }
 void init_gen();	//还要初始化文件
-void print_reg(Reg r);
+void print_reg(char* dest, Reg r)
 void choose_instr(InterCodes ir);
 //void choose_reg(InterCodes ir);	//感觉这个函数作用怪怪的，不如直接生成代码
 Register ensure(Operand x);
