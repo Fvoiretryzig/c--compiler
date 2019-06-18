@@ -4,7 +4,8 @@
 Reg reg[32];
 FILE* fp;
 block BlkHead;
-localList localHead;	//在函数的时候初始化
+localList localHead[210];	//在函数的时候初始化,最多支持200个函数嵌套
+int func_in = 0;	//记录当前是第几个局部变量
 int stack_offset = 0;
 int para_cnt = 0;
 
@@ -31,7 +32,7 @@ void init_gen()	//read write函数还没有写
 Reg ensure(Operand x) {
 	Reg result = NULL;
 	int is_find = 0;
-	localList curr = localHead;
+	localList curr = localHead[func_int];
 	
 	for(int i = 8; i<26; i++) {
 		if(reg[i].op == x) {
@@ -271,26 +272,66 @@ void choose_instr(InterCodes ir) {
 		memset(tmp, 0, 32);
 		sprintf(tmp, "\tmflo "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
 	}
-	else if(ir->kind == ASSIGN_ADDR) {
-	
+	else if(ir->kind == JUMP) {	//代码块的结束，下一个指令就是新的开始了
+		Operand label = ir->code.u.jump.x;
+		if(!label) {
+			printf("ERROR when jump!!!!\n");
+			return;
+		}
+		char tmp[32]; memset(tmp, 0. 32);
+		sprintf(tmp, "\tj label%d\n", label->u.label_no);
+		fputs(tmp, fp);
+		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
+			if(reg[i]->is_used) {
+				spill(reg[i]);
+				reg[i]->is_used = 0;
+				reg[i]->op = NULL;
+				reg[i]->farthest_nouse = 0;
+			}
+		}
 	}
-	else if(ir->kind == ASSIGN_CONTENT) {
-	
-	}
-	else if(ir->kind == CONTENT_ASSIGNED) {
-	
-	}
-	else if(ir->kind == JUMP) {
-	
-	}
-	else if(ir->kind == IF_JUMP) {
-	
+	else if(ir->kind == IF_JUMP) { //代码块的结束，下一个指令就是新的开始了
+		Operand x = ir->code.u.if_jump.x; Operand y = ir->code.u.if_jump.y;
+		Operand label = ir->code.u.if_jump.z;
+		int op = ir->code.u.if_jump.op;
+		/*case 0:	printf(" > "); break;
+			case 1: printf(" < "); break;
+			case 2: printf(" >= "); break;
+			case 3: printf(" <= "); break;
+			case 4: printf(" == "); break;
+			case 5: printf(" != "); break;*/
+		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+		char tmp[32]; memset(tmp, 0, 32);
+		if(op == 0) 
+			sprintf(tmp, "\tbeq ");
+		else if(op == 1)
+			sprintf(tmp, "\tbne ");
+		else if(op == 2)
+			sprintf(tmp, "\tbgt ");
+		else if(op == 3) 
+			sprintf(tmp, "\tblt ");
+		else if(op == 4)
+			sprintf(tmp, "\tbge ");
+		else if(op == 5)
+			sprintf(tmp, "\tble ");
+		print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", label%d\n", label->u.label_no); 
+		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
+			if(reg[i]->is_used) {
+				spill(reg[i]);
+				reg[i]->is_used = 0;
+				reg[i]->op = NULL;
+				reg[i]->farthest_nouse = 0;
+			}
+		}
 	}
 	else if(ir->kind == RET) {
-	
-	}
-	else if(ir->kind == DEC) {
-	
+		//后续处理恢复
+		Operand x = ir->code.u.ret.x;
+		Reg reg_x = ensure(x);
+		char tmp[32]; memset(tmp, 0, 32);
+		sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
+		
+		
 	}
 	else if(ir->kind == ARG) {
 	
@@ -301,6 +342,19 @@ void choose_instr(InterCodes ir) {
 	else if(ir->kind == PARA) {
 	
 	}
+	else if(ir->kind == ASSIGN_ADDR) {
+		//好像上次实验都没怎么用到，写不写也没关系？
+	}
+	else if(ir->kind == ASSIGN_CONTENT) {
 	
+	
+		//数组先不写
+	}
+	else if(ir->kind == CONTENT_ASSIGNED) {
+		//TODO();
+	}
+	else if(ir->kind == DEC) {
+	
+	}
 	return;
 }
