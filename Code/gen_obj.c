@@ -5,9 +5,12 @@ Reg reg[32];
 FILE* fp;
 block BlkHead;
 localList localHead[210];	//在函数的时候初始化,最多支持200个函数嵌套
-int func_in = 0;	//记录当前是第几个局部变量
+int func_in = -1;	//记录当前是第几个局部变量
 int stack_offset = 0;
 int para_cnt = 0;
+int stack_size = 1024;
+InterCodes curr_ir;
+Operand argList[100];
 
 void init_gen()	//read write函数还没有写
 {
@@ -19,20 +22,16 @@ void init_gen()	//read write函数还没有写
 		reg.farthest_nouse = 0;
 	}
 	
-	localList = (localList)malloc(sizeof(struct localList_));
-	localList->next = NULL; localList->offset = 0; localList->op = NULL;
+	
 	
 	return;
 }
 
-/* d choose_reg(InterCodes ir)
-{
-	
-}*/
+/*把a0 a1 a2 a3要加到局部变量判断里面去*/
 Reg ensure(Operand x) {
 	Reg result = NULL;
 	int is_find = 0;
-	localList curr = localHead[func_int];
+	localList curr = localHead[func_in];
 	
 	for(int i = 8; i<26; i++) {
 		if(reg[i].op == x) {
@@ -40,6 +39,10 @@ Reg ensure(Operand x) {
 			result = reg[i];
 			break;
 		}
+	}
+	for(int i = 4; i<8; i++) {
+		if(reg[i].op == x) 
+			return reg[i];
 	}
 	if(x->kind == IMM_NUMBER) {	//对立即数特判
 		char tmp[32]; memset(tmp, 0, 32);
@@ -119,7 +122,7 @@ Reg allocate(Operand x)
 void spill(Reg r)
 {
 	Operand op = 0;
-	curr = localHead;
+	curr = localHead[func_in];
 	while(curr) {
 		if(curr->op == r.op)
 			break;
@@ -174,30 +177,13 @@ void choose_instr(InterCodes ir) {
 		sprintf(tmp, "label%d:\n", ir->u.label.x->u.label_no);
 		fputs(tmp, fp);
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
-			if(reg[i]->is_used) {
+			if(reg[i].is_used) {
 				spill(reg[i]);
-				reg[i]->is_used = 0;
-				reg[i]->op = NULL;
-				reg[i]->farthest_nouse = 0;
+				reg[i].is_used = 0;
+				reg[i].op = NULL;
+				reg[i].farthest_nouse = 0;
 			}
 		}
-		return;
-	}
-	else if(ir->kind == D_FUNCTION) {	//新的函数新的栈所有都清空，局部变量也是
-		char tmp[32];
-		memset(tmp, 0, 32);
-		sprintf(tmp, "\n%s:\n", ir->u.function.f->u.f_name);
-		fputs(tmp, fp);
-		curr = localHead;
-		while(curr) {		//全部释放完再重新分配，不知道释放得有没有问题……一直踩free的坑
-			localHead = localHead->next;
-			free(curr);
-			curr = localHead;
-		}
-		localHead = (localList)malloc(sizeof(struct localList_));
-		localHead->next = NULL; localHead->op = NULL; localHead->offset = 0;
-		para_cnt = 0;
-		// offset = 0;	是在call设置还是这里啊
 		return;
 	}
 	else if(ir->kind == ASSIGN) {
@@ -282,11 +268,11 @@ void choose_instr(InterCodes ir) {
 		sprintf(tmp, "\tj label%d\n", label->u.label_no);
 		fputs(tmp, fp);
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
-			if(reg[i]->is_used) {
+			if(reg[i].is_used) {
 				spill(reg[i]);
-				reg[i]->is_used = 0;
-				reg[i]->op = NULL;
-				reg[i]->farthest_nouse = 0;
+				reg[i].is_used = 0;
+				reg[i].op = NULL;
+				reg[i].farthest_nouse = 0;
 			}
 		}
 	}
@@ -316,31 +302,166 @@ void choose_instr(InterCodes ir) {
 			sprintf(tmp, "\tble ");
 		print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", label%d\n", label->u.label_no); 
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
-			if(reg[i]->is_used) {
+			if(reg[i].is_used) {
 				spill(reg[i]);
-				reg[i]->is_used = 0;
-				reg[i]->op = NULL;
-				reg[i]->farthest_nouse = 0;
+				reg[i].is_used = 0;
+				reg[i].op = NULL;
+				reg[i].farthest_nouse = 0;
 			}
 		}
 	}
-	else if(ir->kind == RET) {
-		//后续处理恢复
-		Operand x = ir->code.u.ret.x;
-		Reg reg_x = ensure(x);
-		char tmp[32]; memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
+	else if(ir->kind == D_FUNCTION) {	//新的函数新的栈所有都清空，局部变量也是
+		char tmp[32];
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\n%s:\n", ir->u.function.f->u.f_name);
+		fputs(tmp, fp);
+		func_in++;	//return的时候释放
+		localHead[func_in] = (localList)malloc(sizeof(struct localList_));
+		localHead[func_in]->next = NULL; localHead[func_in]->offset = 0; localHead[func_in]->op = NULL;
+		stack_offset = 0;
 		
+		fputs("\tsubu $sp, $sp, %d\n", stack_size);
+		fputs("\tsw $ra, %d($sp)\n", stack_size-4);
+		offset += 4;
+		fputs("\tsw $fp, %d($sp)\n", stack_size-8);
+		fputs("\taddi $fp, $sp, %d\n", stack_size);
+		//======================lw para========================
+		ir_curr = ir->next;
+		for(int i = 0; i<para_cnt-4; i++) {
+			Operand x = ir_curr->code.para.x;
+			Reg tmp_reg = ensure(x);
+			memset(tmp, 0, 32);
+			sprintf(tmp, "lw "); print_ret(tmp_ret); sprintf(tmp, ", %d($fp)", 4*(para_cnt-i-5)); //和讲义上反的，好奇怪啊讲义上的，arg和para是反的啊
+			ir_curr = ir->next;
+		}
+		//对剩下的处理
+		for(int i = 0; i<4; i+) {
+			Operand x = ir_curr->code.para.x;
+			reg[4+i].op = x;
+		}
+		offset += 8;
+		/*其他寄存器有必要保存吗？*/
+		//剩下的给param做吧
 		
+		return;
 	}
-	else if(ir->kind == ARG) {
-	
+	else if(ir->kind == RET) {
+		Operand x = ir->code.u.ret.x;
+		char tmp[32]; memset(tmp, 0, 32);
+		
+		if(x->kind == IMM_NUMBER) {
+			sprintf(tmp, "\tmove $v0, %d\n", x->u.value_int);
+			fputs(tmp, fp);
+		}
+		else {
+			Reg reg_x = ensure(x);		
+			sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
+			fputs(tmp, fp);
+		}
+		
+		localList curr = localHead[func_in];
+		while(curr) {
+			localHead[func_int] = localHead[func_in]->next;
+			free(curr);
+			curr = localHead[func_in];
+		}
+		func_in--;
+		fputs("\tlw $ra, %d($sp)\n", stack_size-4);
+		fputs("\tlw $fp, %d($sp)\n", stack_size-8);
+		fputs("\taddi $sp, $sp, %d\n", stack_size);
+		fputs("\tjr $ra\n", fp);	
+		
 	}
 	else if(ir->kind == CALL) {
-	
+		Operand x = ir->u.call.x; Operand f = ir->u.call.f;
+		int t_offset[10];
+		memset(t_offset, -1, sizeof(t_offset));
+		//-------------------------保存活跃变量, 我用fp寻址应该不会影响吧！！---------------------------//
+		for(int i = 8; i<16; i++) {		//把里面有东西的寄存器全部存回去
+			if(reg[i]->is_used) {
+				Operand op = reg[i]->op;
+				curr = localHead[func_in];
+				while(curr) {
+					if(curr->op == op) {
+						t_offset[i] = curr->offset;
+						break;
+					}
+				}
+				spill(reg[i]);
+				reg[i].is_used = 0;
+				reg[i].op = NULL;
+				reg[i].farthest_nouse = 0;
+			}
+		}
+		if(reg[24]->is_used) {
+			Operand op = reg[24]->op;
+			curr = localHead[func_in];
+			while(curr) {
+				if(curr->op == op) {
+					t_offset[8] = curr->offset;
+					break;
+				}
+			}
+			spill(reg[24]);
+			reg[24]->is_used = 0; reg[24]->op = NULL; reg[24]->farthest_nouse = 0;
+		}
+		if(reg[25]->is_used) {
+			Operand op = reg[25]->op;
+			curr = localHead[func_in];
+			while(curr) {
+				if(curr->op == op) {
+					t_offset[9] = curr->offset;
+					break;
+				}
+			}
+			spill(reg[25]);
+			reg[25]->is_used = 0; reg[25]->op = NULL; reg[25]->farthest_nouse = 0;
+		}
+		//-------------------------------传参------------------------------//
+		char tmp[32]; memset(tmp, 0, 32);
+		for(int i = 0; i<para_cnt && i<4; i++) {
+			Reg tmp_reg = ensure(argList[i]);
+			sprintf(tmp, "\tmove $a%d, ", i); print_reg(tmp, tmp_reg); sprintf(tmp, "\n");
+			//把a0 a1 a2 a3要加到局部变量判断里面去
+			fputs(tmp, fp);
+			memset(tmp, 0, 32);
+		}
+		if(para_cnt > 4) {
+			if(4*(n-5) != 0) {
+				sprintf(tmp, "\tsubu $sp, $sp, %d\n", 4*(n-5));
+				fputs(tmp);
+			}
+			memset(tmp, 0, 32);
+			for(int i = 4; i<para_cnt; i++) {
+				Reg tmp_reg = ensure(argList[i]);
+				sprintf(tmp, "\tsw "); print_reg(reg_x); sprintf(tmp, ", %d($sp)\n", 4*(n-5));
+				fputs(tmp);
+			}
+		}
+		
+		Reg reg_x = ensure(x);
+		sprintf(tmp, "\tjal %s\n", f->u.f_name);
+		fputs(tmp, fp);
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, ", $v0\n");
+		fputs(tmp, fp);
+		
+		if(para_cnt > 4)//应该没判断错吧
+			fputs("\taddi $sp, $sp, %d\n", 4*(para_cnt-5));
+		for(int i = 0; i<10; i++) {
+			if(t_offset[i] != -1) {
+				memset(tmp, 0, 32);
+				sprintf(tmp, "\tlw t%d, -%d($fp)\n", i, t_offset[i]);
+				fputs(tmp, fp);
+			}
+		}
+		para_cnt = 0;
+	}
+	else if(ir->kind == ARG) {
+		argList[para_cnt++] = ir->u.arg.x;
 	}
 	else if(ir->kind == PARA) {
-	
+		/*好像放在func也可以*/
 	}
 	else if(ir->kind == ASSIGN_ADDR) {
 		//好像上次实验都没怎么用到，写不写也没关系？

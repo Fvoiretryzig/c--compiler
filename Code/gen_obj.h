@@ -12,6 +12,7 @@ typedef enum {
 	sp, fp, 
 	ra
 }reg_kind;
+/*这个结构真是丑爆了*/
 typedef struct Register Reg ;
 struct Register {
 	reg_kind kind;
