@@ -28,7 +28,8 @@ void init_gen()	//read write函数还没有写
 }
 
 /*把a0 a1 a2 a3要加到局部变量判断里面去*/
-Reg ensure(Operand x) {
+Reg ensure(Operand x)
+{
 	Reg result = NULL;
 	int is_find = 0;
 	localList curr = localHead[func_in];
@@ -40,7 +41,7 @@ Reg ensure(Operand x) {
 			break;
 		}
 	}
-	for(int i = 4; i<8; i++) {
+	for(int i = 4; i<8; i++) {	//给参数用的
 		if(reg[i].op == x) 
 			return reg[i];
 	}
@@ -56,6 +57,7 @@ Reg ensure(Operand x) {
 			fputs(tmp, fp);
 		}
 	}
+	
 	if(!is_find) {	//立即数应该就不用放内存了8？
 		localList curr_before = NULL;
 		while(curr) {
@@ -67,16 +69,29 @@ Reg ensure(Operand x) {
 		if(!curr && (x->kind == TMP || x->kind == VARIABLE)) {	//临时变量和变量为了除法乘法跳转还有立即数
 																//（其他应该不用吧）还未分配在栈上的位置
 			stack_offset += 4;
-			fputs("\taddi $sp, $sp, -4\n", fp);	//sp扩大4
+			fputs("\tsubu $sp, $sp, 4\n", fp);	//sp扩大4
 			localList tmp_locallist = (localList)malloc(sizeof(localList_));
 			tmp_locallist->offset = stack_offset;
 			tmp_locallist->op = x;
+			tmp_locallist->next = NULL;
 			curr_before->next = tmp_locallist;
 			curr = tmp_locallist;	//复用一下curr
-			tmp_locallist->next = NULL;
+		}
+		else if(!curr) {
+			printf("error when find op in ensure\n");
+			return NULL;
 		}
 		result = allocate(x);
-		if(curr->offset > 0) {	//在栈中有位置了
+		if(x->kind == ADDRESS) {	//对地址特殊处理，存地址的位置
+			int ofs = curr->offset;
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsubu $v1, $fp, %d\n", ofs);
+			fputs(tmp, fp);
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tmove "); print_reg(tmp, result); sprintf(tmp, ", $v1\n");
+			fputs(tmp, fp);
+		}
+		else if(curr->offset > 0) {	//在栈中有位置了
 			//lw reg(x), offset($fp);
 			char tmp[32];
 			memset(tmp, 0, 32);
@@ -455,6 +470,9 @@ void choose_instr(InterCodes ir) {
 				fputs(tmp, fp);
 			}
 		}
+		for(int i = 0; i<para_cnt; i++) {
+			argList[i] = NULL;
+		}
 		para_cnt = 0;
 	}
 	else if(ir->kind == ARG) {
@@ -464,18 +482,46 @@ void choose_instr(InterCodes ir) {
 		/*好像放在func也可以*/
 	}
 	else if(ir->kind == ASSIGN_ADDR) {
-		//好像上次实验都没怎么用到，写不写也没关系？
+		//x=&y
+		Operand x = ir->code.u.assign_address.x; Operand y = ir->code.u.assign_address.y;
+		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+		
+		char tmp[32]; memset(tmp, 0, 32);
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "\t, "); print_reg(tmp, reg_y); sprintf(tmp, "\n");
+		fputs(tmp, fp);
 	}
 	else if(ir->kind == ASSIGN_CONTENT) {
-	
-	
+		//x=*y,不记得这两边的变量是什么了，先暂时默认是tmp直接分配寄存器吧。。。
+		OPerand x = ir->code.u.assign_content.x; Operand y = ir->code.u.assign_content.y;
+		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+		
+		char tmp[32]; memset(tmp, 0, 32);
+		sprintf(tmp, "\tlw "); print_reg(tmp, reg_x); sprintf(tmp, ", 0("); print_reg(tmp, reg_y); sprintf(tmp, ")\n");
+		fputs(tmp, fp);
 		//数组先不写
 	}
 	else if(ir->kind == CONTENT_ASSIGNED) {
-		//TODO();
+		//也不知道对不对，好像前面就不支持数组在左侧
+		OPerand x = ir->code.u.assign_content.x; Operand y = ir->code.u.assign_content.y;
+		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+		
+		char tmp[32]; memset(tmp, 0, 32);
+		sprintf(tmp, "\tsw "); print_reg(tmp, reg_y); sprintf(tmp, ", 0("); print_reg(tmp, reg_x); sprintf(tmp, ")\n");
+		fputs(tmp, fp);
 	}
 	else if(ir->kind == DEC) {
-	
+		Operand x = ir->code.u.dec.x;
+		int size = ir->code.u.dec.size;
+		
+		stack_offset -= size;	//应该存一个变量就好了吧
+		localList curr = localHead[func_in];
+		while(curr->next)
+			curr = curr->next;
+		localList tmp_locallist = (localList)malloc(sizeof(localList_));
+		tmp_locallist->offset = stack_offset;
+		tmp_locallist->op = x;
+		tmp_locallist->next = NULL;
+		curr->next = tmp_locallist;
 	}
 	return;
 }
