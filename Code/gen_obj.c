@@ -11,7 +11,7 @@ localList localHead[210];	//在函数的时候初始化,最多支持200个函数
 int func_in = -1;	//记录当前是第几个局部变量
 int stack_offset = 0;
 int para_cnt = 0;
-int stack_size = 1024;
+int stack_size = 2048;
 InterCodes curr_ir;
 Operand argList[100];
 extern InterCodes irlist;
@@ -54,6 +54,7 @@ void init_gen()	//read write函数还没有写
 }
 void gen_obj()
 {
+	printf("\n");
 	curr_ir = irlist;
 	while(curr_ir) {
 		printf("ir kind: %d\n", curr_ir->code.kind);
@@ -110,12 +111,12 @@ Reg ensure(Operand x)
 	if(x->kind == IMM_NUMBER) {	//对立即数特判
 		char tmp[32]; memset(tmp, 0, 32); 
 		if(is_find) {
-			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, "%s %d\n", tmp, x->u.value_int);
+			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, "%s, %d\n", tmp, x->u.value_int);
 			fputs(tmp, objFile);
 		}
 		else {
 			result = allocate(x);
-			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, "%s %d\n", tmp, x->u.value_int);
+			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, "%s, %d\n", tmp, x->u.value_int);
 			fputs(tmp, objFile);
 		}
 	}
@@ -345,7 +346,7 @@ void choose_instr(InterCodes ir) {
 			printf("ERROR when jump!!!!\n");
 			return;
 		}
-		char tmp[32]; memset(tmp, 0, 32);
+		char tmp[32]; memset(tmp, 0, 32);printf("xiixixixixx\n");
 		sprintf(tmp, "\tj label%d\n", label->u.label_no);
 		fputs(tmp, objFile);
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
@@ -667,7 +668,6 @@ void choose_instr(InterCodes ir) {
 		sprintf(tmp, "\tlw $ra, -%d($fp)\n", stack_offset);
 		fputs(tmp, objFile);
 		stack_offset -=4;
-		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
 		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "%s, $v0\n", tmp);
 		fputs(tmp, objFile);
