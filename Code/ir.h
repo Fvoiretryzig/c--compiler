@@ -1,7 +1,9 @@
+
+
+#ifndef IR_H
 #define IR_H
-
-#ifdef IR_H
-
+#include "gtree.h"
+#include "semantic.h"
 typedef struct Operand_* Operand;
 typedef struct InterCodes_* InterCodes;
 typedef enum {

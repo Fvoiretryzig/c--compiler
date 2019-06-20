@@ -1,3 +1,7 @@
+
+#ifndef GEN_OBJ_H
+#define GEN_OBJ_H
+
 #include "ir.h"
 typedef enum {
 	zero, 
@@ -20,19 +24,18 @@ struct Register {
 	int farthest_nouse;	//选择最久没有使用的
 	Operand op;	//reg存的是哪个变量
 };
-typedef struct localList_ localList
+typedef struct localList_* localList;
 struct localList_ {
 	Operand op;
 	int offset;
 	struct localList_* next;
-}
+};
 void init_gen();	//还要初始化文件
-void print_reg(char* dest, Reg r)
+void print_reg(char* dest, Reg r);
 void choose_instr(InterCodes ir);
-//void choose_reg(InterCodes ir);	//感觉这个函数作用怪怪的，不如直接生成代码
-Register ensure(Operand x);
-Register allocate(Operand x);
+Reg ensure(Operand x);
+Reg allocate(Operand x);
 void spill(Reg r);
 void gen_obj();
-
+#endif
 

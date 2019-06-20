@@ -1,9 +1,8 @@
-#include "symbol_table.h"
 
+
+#ifndef SEMANTIC_H
 #define SEMANTIC_H
-
-#ifdef SEMANTIC_H
-
+#include "symbol_table.h"
 #define MAX_ARGC 40
 
 void semantic_analysis(struct node* n);

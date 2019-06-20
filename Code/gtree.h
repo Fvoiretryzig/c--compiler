@@ -1,3 +1,6 @@
+
+#ifndef GTREE_H
+#define GTREE_H
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -98,3 +101,5 @@ int tran(struct node* r, int layer);
 
 int OcttoDec(char* s);
 int HextoDec(char* s);
+
+#endif

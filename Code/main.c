@@ -2,7 +2,8 @@
 
 #include "syntax.tab.h"
 #include "semantic.h"
-#include "ir.h"
+#include "gen_obj.h"
+
 //#define DEBUG
 extern FILE* yyin;
 extern int yydebug;
@@ -32,6 +33,10 @@ int main(int argc, char** argv) {
 	semantic_analysis(root); 
 	init_irtranslate();
 	print(root); 
+	printf("hahaha after printir\n");
+	init_gen();
+	printf("after init_gen\n");
+	gen_obj();
 	//printf("\033[43;37mafter semantic analysis\033[0m\n");
 	return 0;
 }

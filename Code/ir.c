@@ -1,4 +1,4 @@
-#include "semantic.h"
+
 #include "ir.h"
 
 #define IR_DEBUG

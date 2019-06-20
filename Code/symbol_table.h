@@ -1,11 +1,11 @@
+#ifndef SYMBOL_TABLE_H
+#define SYMBOL_TABLE_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "syntax.tab.h"
 #include "gtree.h"
-
-#define SYMBOL_TABLE_H
-#ifdef SYMBOL_TABLE_H
 
 typedef enum {_VAR, _STRUCT} IDkind;
 
