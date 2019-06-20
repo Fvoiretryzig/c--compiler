@@ -34,7 +34,7 @@ void init_gen();	//还要初始化文件
 void print_reg(char* dest, Reg r);
 void choose_instr(InterCodes ir);
 Reg ensure(Operand x);
-Reg allocate(Operand x);
+int allocate(Operand x);
 void spill(Reg r);
 void gen_obj();
 int op_equal(Operand a, Operand b);

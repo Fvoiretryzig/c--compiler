@@ -54,12 +54,13 @@ void init_gen()	//read write函数还没有写
 }
 void gen_obj()
 {
-	printf("\n");
+	printf("\n\n");
 	curr_ir = irlist;
 	while(curr_ir) {
 		printf("ir kind: %d\n", curr_ir->code.kind);
 		choose_instr(curr_ir);
 		curr_ir = curr_ir->next;
+		printf("\n");
 	}
 }
 
@@ -89,36 +90,40 @@ int op_equal(Operand a, Operand b)
 Reg ensure(Operand x)
 {
 	Reg result;
+	int pos = -1;
 	result.kind = -1; result.is_used = 0; result.farthest_nouse = 0;result.op = NULL;
 	int is_find = 0;
 	localList curr = localHead[func_in];
 	
+	printf("x->kind: %d\n", x->kind);
 	if(x->kind == IMM_NUMBER) {
-		if(!x->u.value_int)
+		if(!x->u.value_int) {
+			printf("ensure return zero\n");
 			return reg[0];
+		}
 	}
 	for(int i = 8; i<26; i++) {
 		if(op_equal(reg[i].op, x)) {
 			is_find = 1;
-			result = reg[i];
-			break;
+			pos = i;
+			printf("in ensure exist: %d\n", pos);
+			return reg[pos];
 		}
 	}
 	for(int i = 4; i<8; i++) {	//给参数用的
-		if(op_equal(reg[i].op, x)) 
+		if(op_equal(reg[i].op, x)) {
+			printf("arg reg: %d\n", i);
 			return reg[i];
+		}
 	}
 	if(x->kind == IMM_NUMBER) {	//对立即数特判
 		char tmp[32]; memset(tmp, 0, 32); 
-		if(is_find) {
-			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, "%s, %d\n", tmp, x->u.value_int);
-			fputs(tmp, objFile);
-		}
-		else {
-			result = allocate(x);
-			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, "%s, %d\n", tmp, x->u.value_int);
-			fputs(tmp, objFile);
-		}
+		pos = allocate(x);
+		sprintf(tmp, "\tli "); print_reg(tmp, reg[pos]); sprintf(tmp, "%s, %d\n", tmp, x->u.value_int);
+		fputs(tmp, objFile);
+		printf("in ensure imm: %d\n", pos);
+		return reg[pos];
+		//}
 	}
 	
 	if(!is_find) {	//立即数应该就不用放内存了8？
@@ -142,48 +147,49 @@ Reg ensure(Operand x)
 			curr = tmp_locallist;	//复用一下curr
 			alloc_mem = 1;
 		}
-		else if(!curr) {
-			printf("error when find op in ensure\n");
+		else if(!curr) {	//这里的情况还存在什么啊
+			printf("xkind: %d error when find op in ensure\n", x->kind);
 			return result;
 		}
-		result = allocate(x);
+		pos = allocate(x); 
 		if(x->kind == ADDRESS) {	//对地址特殊处理，存地址的位置
 			int ofs = curr->offset;
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tsubu $v1, $fp, %d\n", ofs);
 			fputs(tmp, objFile);
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tmove "); print_reg(tmp, result); sprintf(tmp, "%s, $v1\n", tmp);
+			sprintf(tmp, "\tmove "); print_reg(tmp, reg[pos]); sprintf(tmp, "%s, $v1\n", tmp);
 			fputs(tmp, objFile);
 		}
 		else if(curr->offset > 0 && !alloc_mem) {	//在栈中有位置了
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tlw "); print_reg(tmp, result); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+			sprintf(tmp, "\tlw "); print_reg(tmp, reg[pos]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 			fputs(tmp, objFile);
 		}
 	}
-	return result;
+	printf("in ensure: return reg: %d\n", pos);
+	return reg[pos];
 }
-Reg allocate(Operand x)
+int allocate(Operand x)
 {
-	Reg result;
-	result.kind = -1; result.is_used = 0; result.farthest_nouse = 0;result.op = NULL;
+	int pos = -1;
 	int is_find = 0;
 	for(int i = 8; i<26; i++) {
 		if(!reg[i].is_used) {
 			if(!is_find) {
 				is_find = 1;
-				result = reg[i];
+				pos = i;
 				reg[i].op = x;
 				reg[i].is_used = 1;
-				break;
+				reg[i].farthest_nouse = 0;
+				//break;
 			}
 		}
 		else 
 			reg[i].farthest_nouse++;
 	}
-	if(result.kind == -1) {
+	if(!is_find) {
 		int reg_no = -1;
 		int farthest = 0;
 		for(int i = 8; i<26; i++) {
@@ -193,25 +199,31 @@ Reg allocate(Operand x)
 			}
 		}
 		spill(reg[reg_no]);
-		result = reg[reg_no];
+		//result = reg[reg_no];
+		pos = reg_no;
 		reg[reg_no].op = x;
 		reg[reg_no].farthest_nouse = 0;
 	}
-	return result;
+	return pos;
 }
 void spill(Reg r)
 {
 	Operand op = 0;
 	localList curr = localHead[func_in];
+	if(r.op->kind == IMM_NUMBER) {	//还不知道有没有没考虑到的情况
+		printf("IMM_NUMBER spill\n");
+		return;
+	}
 	while(curr) {
-		if(op_equal(curr->op, r.op))
+		int flag = op_equal(curr->op, r.op);
+		if(flag)
 			break;
 		curr = curr->next;
 	}
 	if(curr->offset > 0) {	//spill的时候不会还没在内存（栈）中，前面ensure要分配的
 		char tmp[32];
 		memset(tmp, 0, 32);
-		sprintf(tmp, "sw "); print_reg(tmp, r); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+		sprintf(tmp, "\tsw "); print_reg(tmp, r); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 		fputs(tmp, objFile);
 	}
 }
@@ -346,11 +358,12 @@ void choose_instr(InterCodes ir) {
 			printf("ERROR when jump!!!!\n");
 			return;
 		}
-		char tmp[32]; memset(tmp, 0, 32);printf("xiixixixixx\n");
+		char tmp[32]; memset(tmp, 0, 32);
 		sprintf(tmp, "\tj label%d\n", label->u.label_no);
 		fputs(tmp, objFile);
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
 			if(reg[i].is_used) {
+				printf("reg: %d\n", i);
 				spill(reg[i]);
 				reg[i].is_used = 0;
 				reg[i].op = NULL;
@@ -366,27 +379,21 @@ void choose_instr(InterCodes ir) {
 		char tmp[32]; memset(tmp, 0, 32);
 		if(op == 0) { 
 			sprintf(tmp, "\tbeq ");
-			fputs(tmp, objFile);
 		}
 		else if(op == 1) {
 			sprintf(tmp, "\tbne ");
-			fputs(tmp, objFile);
 		}
 		else if(op == 2) {
 			sprintf(tmp, "\tbgt ");
-			fputs(tmp, objFile);
 		}
 		else if(op == 3) {
 			sprintf(tmp, "\tblt ");
-			fputs(tmp, objFile);
 		}
 		else if(op == 4) {
 			sprintf(tmp, "\tbge ");
-			fputs(tmp, objFile);
 		}
 		else if(op == 5) {
 			sprintf(tmp, "\tble ");
-			fputs(tmp, objFile);
 		}
 		print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, label%d\n", tmp, label->u.label_no); 
 		fputs(tmp, objFile);
