@@ -781,7 +781,7 @@ InterCodes translate_stmt(struct node* stmt)
 	}
 	else if(stmt->rule == Stmt_IfLpExpRpStmtElseStmt) {
 		//printf("\nhahahaha\n");
-		/*Operand label1 = (Operand)malloc(sizeof(struct Operand_));
+		Operand label1 = (Operand)malloc(sizeof(struct Operand_));
 		label1->kind = LABEL; label1->u.label_no = -1;	//b.true = fall;
 		Operand label2 = new_label();
 		Operand label3 = NULL;
@@ -810,8 +810,8 @@ InterCodes translate_stmt(struct node* stmt)
 		if(label3_code)
 			ir = concat(ir, label3_code);
 		//printf("\n");
-		return ir;*/
-		Operand label1 = new_label();
+		return ir;
+		/*Operand label1 = new_label();
 		Operand label2 = new_label();
 		Operand label3 = NULL;
 		if(stmt->gchild[4]->rule != 27)
@@ -837,10 +837,10 @@ InterCodes translate_stmt(struct node* stmt)
 		ir = concat(ir, ir3);
 		if(label3_code)
 			ir = concat(ir, label3_code);
-		return ir;
+		return ir;*/
 	}
 	else if(stmt->rule == Stmt_WhileLpExpRpStmt) {
-		/*Operand label1 = new_label();
+		Operand label1 = new_label();
 		Operand label2 = (Operand)malloc(sizeof(struct Operand_));//B.true = fall;
 		label2->kind = LABEL; label2->u.label_no = -1; 
 		Operand label3 = NULL;	//false = s.next
@@ -864,8 +864,8 @@ InterCodes translate_stmt(struct node* stmt)
 		ir = concat(ir, goto1_code);
 		if(label3)
 			ir = concat(ir, label3_code);
-		return ir;*/
-		Operand label1 = new_label();
+		return ir;
+		/*Operand label1 = new_label();
 		Operand label2 = new_label();
 		Operand label3 = NULL;
 		
@@ -888,7 +888,7 @@ InterCodes translate_stmt(struct node* stmt)
 		ir = concat(ir, goto1_code);
 		if(label3)
 			ir = concat(ir, label3_code);
-		return ir;
+		return ir;*/
 	}
 }
 int get_relop(struct node* gnode)
@@ -909,7 +909,7 @@ int get_relop(struct node* gnode)
 		//printf("get relop fault!!!!!!!\n");
 	return ret;
 }
-/*InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_false)
+InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_false)
 {
 	if(exp->rule == Exp_NotExp) {
 		//printf("this is expnotexp label_true: %d label_false: %d rule: %d\n", label_true->u.label_no, label_false->u.label_no, exp->gchild[1]->rule);
@@ -1030,8 +1030,8 @@ int get_relop(struct node* gnode)
 		ir = concat(ir, label_code);
 		return ir;
 	}
-}*/
-InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_false)
+}
+/*InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_false)
 {
 	if(exp->rule == Exp_NotExp)
 		return translate_cond(exp->gchild[1], label_false, label_true);
@@ -1062,14 +1062,7 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		struct node* exp1 = exp->gchild[0];
 		struct node* exp2 = exp->gchild[2];
 		//不知道实现对不对,如果是一个变量判断之前是否已经存在了，不然就不判断了
-		/*if(!strcmp(exp1->gchild[0]->name, "ID"))			
-			t1 = find_op(exp->gchild[0]->str);
-		if(!t1)
-			t1 = new_temp();
-		if(!strcmp(exp2->gchild[0]->name, "ID"))
-			t2 = find_op(exp->gchild[2]->str);
-		if(!t2)
-			t2 = new_temp();*/
+		
 		/////////////以上///////////////
 		t1 = new_temp();
 		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
@@ -1096,7 +1089,7 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		ir = concat(ir, label_code);
 		return ir;
 	}
-}
+}*/
 InterCodes translate_exp(struct node* exp, Operand place)
 {
 	//printf("exp rule: %d\n", exp->rule);

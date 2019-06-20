@@ -377,23 +377,24 @@ void choose_instr(InterCodes ir) {
 		int op = ir->code.u.if_jump.op;
 		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
 		char tmp[32]; memset(tmp, 0, 32);
+		printf("op: %d\n", op);
 		if(op == 0) { 
-			sprintf(tmp, "\tbeq ");
-		}
-		else if(op == 1) {
-			sprintf(tmp, "\tbne ");
-		}
-		else if(op == 2) {
 			sprintf(tmp, "\tbgt ");
 		}
-		else if(op == 3) {
+		else if(op == 1) {
 			sprintf(tmp, "\tblt ");
 		}
-		else if(op == 4) {
+		else if(op == 2) {
 			sprintf(tmp, "\tbge ");
 		}
-		else if(op == 5) {
+		else if(op == 3) {
 			sprintf(tmp, "\tble ");
+		}
+		else if(op == 4) {
+			sprintf(tmp, "\tbeq ");
+		}
+		else if(op == 5) {
+			sprintf(tmp, "\tbne ");
 		}
 		print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, label%d\n", tmp, label->u.label_no); 
 		fputs(tmp, objFile);

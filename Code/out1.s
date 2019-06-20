@@ -27,35 +27,31 @@ main:
 	jal read
 	lw $ra, -8($fp)
 	move $t0, $v0
-	beq $t0, $zero, label1
+	ble $t0, $zero, label1
 	sw $t0, -4($fp)
-	j label2
-label1:
 	li $t0, 1
 	sw $ra, -8($fp)
 	move $a0, $t0
 	jal write
 	lw $ra, -8($fp)
-	j label3
-label2:
+	j label2
+label1:
 	lw $t0, -4($fp)
-	bne $t0, $zero, label4
+	bge $t0, $zero, label3
 	sw $t0, -4($fp)
-	j label5
-label4:
 	addi $t0, $t0, -1
 	sw $ra, -12($fp)
 	move $a0, $t0
 	jal write
 	lw $ra, -12($fp)
-	j label6
+	j label4
 	sw $t0, -8($fp)
-label5:
+label3:
 	sw $ra, -12($fp)
 	move $a0, $zero
 	jal write
 	lw $ra, -12($fp)
-label6:
-label3:
+label4:
+label2:
 	move $v0, $0
 	jr $ra
