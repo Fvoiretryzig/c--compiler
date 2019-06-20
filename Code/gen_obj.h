@@ -29,14 +29,16 @@ struct localList_ {
 	Operand op;
 	int offset;
 	struct localList_* next;
+	int if_store;
 };
 void init_gen();	//还要初始化文件
 void print_reg(char* dest, Reg r);
 void choose_instr(InterCodes ir);
-Reg ensure(Operand x);
+int ensure(Operand x);
 int allocate(Operand x);
 void spill(Reg r);
 void gen_obj();
 int op_equal(Operand a, Operand b);
+localList if_inlocal(Operand x);
 #endif
 

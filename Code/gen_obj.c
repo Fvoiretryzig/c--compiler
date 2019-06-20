@@ -84,10 +84,19 @@ int op_equal(Operand a, Operand b)
 		}
 		return ret;
 	}
-	
+}
+localList if_inlocal(Operand x)
+{
+	localList curr = localHead[func_in];
+	while(curr) {
+		if(op_equal(curr->op, x))
+			return curr;
+		curr = curr->next;
+	}
+	return NULL;
 }
 /*把a0 a1 a2 a3要加到局部变量判断里面去*/
-Reg ensure(Operand x)
+int ensure(Operand x)
 {
 	Reg result;
 	int pos = -1;
@@ -99,7 +108,7 @@ Reg ensure(Operand x)
 	if(x->kind == IMM_NUMBER) {
 		if(!x->u.value_int) {
 			printf("ensure return zero\n");
-			return reg[0];
+			return 0;
 		}
 	}
 	for(int i = 8; i<26; i++) {
@@ -107,13 +116,13 @@ Reg ensure(Operand x)
 			is_find = 1;
 			pos = i;
 			printf("in ensure exist: %d\n", pos);
-			return reg[pos];
+			return pos;
 		}
 	}
 	for(int i = 4; i<8; i++) {	//给参数用的
 		if(op_equal(reg[i].op, x)) {
 			printf("arg reg: %d\n", i);
-			return reg[i];
+			return i;
 		}
 	}
 	if(x->kind == IMM_NUMBER) {	//对立即数特判
@@ -122,7 +131,7 @@ Reg ensure(Operand x)
 		sprintf(tmp, "\tli "); print_reg(tmp, reg[pos]); sprintf(tmp, "%s, %d\n", tmp, x->u.value_int);
 		fputs(tmp, objFile);
 		printf("in ensure imm: %d\n", pos);
-		return reg[pos];
+		return pos;
 		//}
 	}
 	
@@ -142,6 +151,7 @@ Reg ensure(Operand x)
 			localList tmp_locallist = (localList)malloc(sizeof(struct localList_));
 			tmp_locallist->offset = stack_offset;
 			tmp_locallist->op = x;
+			tmp_locallist->if_store = 0;
 			tmp_locallist->next = NULL;
 			curr_before->next = tmp_locallist;
 			curr = tmp_locallist;	//复用一下curr
@@ -149,7 +159,7 @@ Reg ensure(Operand x)
 		}
 		else if(!curr) {	//这里的情况还存在什么啊
 			printf("xkind: %d error when find op in ensure\n", x->kind);
-			return result;
+			return -1;
 		}
 		pos = allocate(x); 
 		if(x->kind == ADDRESS) {	//对地址特殊处理，存地址的位置
@@ -169,7 +179,7 @@ Reg ensure(Operand x)
 		}
 	}
 	printf("in ensure: return reg: %d\n", pos);
-	return reg[pos];
+	return pos;
 }
 int allocate(Operand x)
 {
@@ -281,76 +291,113 @@ void choose_instr(InterCodes ir) {
 	}
 	else if(ir->code.kind == ASSIGN) {
 		Operand left = ir->code.u.assign.x; Operand right = ir->code.u.assign.y;
+		int reg_left;
 		if(right->kind == IMM_NUMBER) {
-			Reg reg_left = ensure(left);
+			reg_left = ensure(left);
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tli "); print_reg(tmp, reg_left); sprintf(tmp, "%s, %d\n", tmp, right->u.value_int);
+			sprintf(tmp, "\tli "); print_reg(tmp, reg[reg_left]); sprintf(tmp, "%s, %d\n", tmp, right->u.value_int);
 			fputs(tmp, objFile);
 		}
 		else if(right->kind == TMP || right->kind == VARIABLE)  {
-			Reg reg_left = ensure(left); Reg reg_right = ensure(right);
+			reg_left = ensure(left); int reg_right = ensure(right);
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tmove "); print_reg(tmp, reg_left); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_right); sprintf(tmp, "%s\n", tmp);
+			sprintf(tmp, "\tmove "); print_reg(tmp, reg[reg_left]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_right]); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
+		}
+		localList curr = if_inlocal(left);
+		if(curr && !curr->if_store) {
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_left]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			curr->if_store = 1;
 		}
 	}
 	else if(ir->code.kind == ADD) {
 		Operand x = ir->code.u.arithmetic.x; Operand y = ir->code.u.arithmetic.y; Operand z = ir->code.u.arithmetic.z;
+		int reg_x;
 		if(z->kind == IMM_NUMBER) {
-			Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+			reg_x = ensure(x); int reg_y = ensure(y);
 			int k = z->u.value_int;
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\taddi "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_x); sprintf(tmp, "%s, %d\n", tmp, k);
+			sprintf(tmp, "\taddi "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, %d\n", tmp, k);
 			fputs(tmp, objFile);
 		}
 		else if(z->kind == TMP || z->kind == VARIABLE) {
-			Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
+			reg_x = ensure(x); int reg_y = ensure(y); int reg_z = ensure(z);
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tadd "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_z); sprintf(tmp, "%s\n", tmp);
+			sprintf(tmp, "\tadd "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_z]); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
+		}
+		
+		localList curr = if_inlocal(x);
+		if(curr && !curr->if_store) {
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			curr->if_store = 1;
 		}
 	}
 	else if(ir->code.kind == SUB) {
 		Operand x = ir->code.u.arithmetic.x; Operand y = ir->code.u.arithmetic.y; Operand z = ir->code.u.arithmetic.z;
+		int reg_x;
 		if(z->kind == IMM_NUMBER) {
-			Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+			reg_x = ensure(x); int reg_y = ensure(y);
 			int k = z->u.value_int;
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\taddi "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_x); sprintf(tmp, "%s, -%d\n", tmp, k);
+			sprintf(tmp, "\taddi "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d\n", tmp, k);
 			fputs(tmp, objFile);
 		}
 		else if(z->kind == TMP || z->kind == VARIABLE) {
-			Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
+			reg_x = ensure(x); int reg_y = ensure(y); int reg_z = ensure(z);
 			char tmp[32];
 			memset(tmp, 0, 32);
 			//sprintf(tmp, "\tsub "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
-			sprintf(tmp, "\tsub "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_z); sprintf(tmp, "%s\n", tmp);
+			sprintf(tmp, "\tsub "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_z]); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
+		}
+		
+		localList curr = if_inlocal(x);
+		if(curr && !curr->if_store) {
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			curr->if_store = 1;
 		}
 	}
 	else if(ir->code.kind == MUL) {
 		Operand x = ir->code.u.arithmetic.x; Operand y = ir->code.u.arithmetic.y; Operand z = ir->code.u.arithmetic.z;
-		Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
+		int reg_x = ensure(x); int reg_y = ensure(y); int reg_z = ensure(z);
 		char tmp[32];
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmul "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_z); sprintf(tmp, "%s\n", tmp);
+		sprintf(tmp, "\tmul "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_z]); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
+		
+		localList curr = if_inlocal(x);
+		if(curr && !curr->if_store) {
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			curr->if_store = 1;
+		}
 	}
 	else if(ir->code.kind == IR_DIV) {
 		Operand x = ir->code.u.arithmetic.x; Operand y = ir->code.u.arithmetic.y; Operand z = ir->code.u.arithmetic.z;
-		Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
+		int reg_x = ensure(x); int reg_y = ensure(y); int reg_z = ensure(z);
 		char tmp[32];
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tdiv "); print_reg(tmp, reg_y); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_z); sprintf(tmp, "%s\n", tmp);
+		sprintf(tmp, "\tdiv "); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_z]); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmflo "); print_reg(tmp, reg_x); sprintf(tmp, "%s\n", tmp);
+		sprintf(tmp, "\tmflo "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
+		
+		localList curr = if_inlocal(x);
+		if(curr && !curr->if_store) {
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			curr->if_store = 1;
+		}
 	}
 	else if(ir->code.kind == JUMP) {	//代码块的结束，下一个指令就是新的开始了
 		Operand label = ir->code.u.jump.x;
@@ -375,7 +422,7 @@ void choose_instr(InterCodes ir) {
 		Operand x = ir->code.u.if_jump.x; Operand y = ir->code.u.if_jump.y;
 		Operand label = ir->code.u.if_jump.z;
 		int op = ir->code.u.if_jump.op;
-		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+		int reg_x = ensure(x); int reg_y = ensure(y);
 		char tmp[32]; memset(tmp, 0, 32);
 		printf("op: %d\n", op);
 		if(op == 0) { 
@@ -396,7 +443,7 @@ void choose_instr(InterCodes ir) {
 		else if(op == 5) {
 			sprintf(tmp, "\tbne ");
 		}
-		print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, label%d\n", tmp, label->u.label_no); 
+		print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, label%d\n", tmp, label->u.label_no); 
 		fputs(tmp, objFile);
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
 			if(reg[i].is_used) {
@@ -417,6 +464,7 @@ void choose_instr(InterCodes ir) {
 		func_in++;	//return的时候释放
 		localHead[func_in] = (localList)malloc(sizeof(struct localList_));
 		localHead[func_in]->next = NULL; localHead[func_in]->offset = 0; localHead[func_in]->op = NULL;
+		localHead[func_in]->if_store = 0;
 		stack_offset = 0;
 		
 		memset(tmp, 0, 32);
@@ -437,9 +485,9 @@ void choose_instr(InterCodes ir) {
 			
 			for(int i = 0; i<para_cnt-4; i++) {
 				Operand x = curr_ir->code.u.para.x;
-				Reg tmp_reg = ensure(x);
+				int tmp_reg = ensure(x);
 				memset(tmp, 0, 32);
-				sprintf(tmp, "lw "); print_reg(tmp, tmp_reg); sprintf(tmp, "%s, %d($fp)\n", tmp, 4*(para_cnt-i-5)); //和讲义上反的，好奇怪啊讲义上的，arg和para是反的啊
+				sprintf(tmp, "lw "); print_reg(tmp, reg[tmp_reg]); sprintf(tmp, "%s, %d($fp)\n", tmp, 4*(para_cnt-i-5)); //和讲义上反的，好奇怪啊讲义上的，arg和para是反的啊
 				fputs(tmp, objFile);
 				curr_ir = curr_ir->next;
 			}
@@ -487,8 +535,8 @@ void choose_instr(InterCodes ir) {
 			fputs(tmp, objFile);
 		}
 		else {
-			Reg reg_x = ensure(x);		
-			sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg_x); sprintf(tmp, "%s\n", tmp);
+			int reg_x = ensure(x);		
+			sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
 		}
 		
@@ -570,8 +618,8 @@ void choose_instr(InterCodes ir) {
 		//-------------------------------传参------------------------------//
 		char tmp[32]; memset(tmp, 0, 32);
 		for(int i = 0; i<para_cnt && i<4; i++) {
-			Reg tmp_reg = ensure(argList[i]);
-			sprintf(tmp, "\tmove $a%d, ", i); print_reg(tmp, tmp_reg); sprintf(tmp, "%s\n", tmp);
+			int tmp_reg = ensure(argList[i]);
+			sprintf(tmp, "\tmove $a%d, ", i); print_reg(tmp, reg[tmp_reg]); sprintf(tmp, "%s\n", tmp);
 			//把a0 a1 a2 a3要加到局部变量判断里面去
 			fputs(tmp, objFile);
 			memset(tmp, 0, 32);
@@ -583,17 +631,17 @@ void choose_instr(InterCodes ir) {
 			}
 			memset(tmp, 0, 32);
 			for(int i = 4; i<para_cnt; i++) {
-				Reg tmp_reg = ensure(argList[i]);
-				sprintf(tmp, "\tsw "); print_reg(tmp, tmp_reg); sprintf(tmp, "%s, %d($sp)\n", tmp, 4*(para_cnt-5));
+				int tmp_reg = ensure(argList[i]);
+				sprintf(tmp, "\tsw "); print_reg(tmp, reg[tmp_reg]); sprintf(tmp, "%s, %d($sp)\n", tmp, 4*(para_cnt-5));
 				fputs(tmp, objFile);
 			}
 		}
 		
-		Reg reg_x = ensure(x);
+		int reg_x = ensure(x);
 		sprintf(tmp, "\tjal %s\n", f->u.f_name);
 		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "%s, $v0\n", tmp);
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, $v0\n", tmp);
 		fputs(tmp, objFile);
 		
 		if(para_cnt > 4) {//应该没判断错吧
@@ -622,30 +670,44 @@ void choose_instr(InterCodes ir) {
 	else if(ir->code.kind == ASSIGN_ADDR) {
 		//x=&y
 		Operand x = ir->code.u.assign_address.x; Operand y = ir->code.u.assign_address.y;
-		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+		int reg_x = ensure(x); int reg_y = ensure(y);
 		
 		char tmp[32]; memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s\n", tmp);
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
+		//不知道对不对 先放着吧
+		localList curr = if_inlocal(x);
+		if(curr && !curr->if_store) {
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			curr->if_store = 1;
+		}
 	}
 	else if(ir->code.kind == ASSIGN_CONTENT) {
 		//x=*y,不记得这两边的变量是什么了，先暂时默认是tmp直接分配寄存器吧。。。
 		Operand x = ir->code.u.assign_content.x; Operand y = ir->code.u.assign_content.y;
-		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+		int reg_x = ensure(x); int reg_y = ensure(y);
 		
 		char tmp[32]; memset(tmp, 0, 32);
-		sprintf(tmp, "\tlw "); print_reg(tmp, reg_x); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s)\n", tmp);
+		sprintf(tmp, "\tlw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s)\n", tmp);
 		fputs(tmp, objFile);
 		//数组先不写
+		localList curr = if_inlocal(x);
+		if(curr && !curr->if_store) {
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			curr->if_store = 1;
+		}
 	}
 	else if(ir->code.kind == CONTENT_ASSIGNED) {
 		//也不知道对不对，好像前面就不支持数组在左侧
 		Operand x = ir->code.u.assign_content.x; Operand y = ir->code.u.assign_content.y;
-		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
+		int reg_x = ensure(x); int reg_y = ensure(y);
 		
 		char tmp[32]; memset(tmp, 0, 32);
-		sprintf(tmp, "\tsw "); print_reg(tmp, reg_y); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg_x); sprintf(tmp, "%s)\n", tmp);
+		sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s)\n", tmp);
 		fputs(tmp, objFile);
+		
 	}
 	else if(ir->code.kind == DEC) {
 		Operand x = ir->code.u.dec.x;
@@ -656,6 +718,7 @@ void choose_instr(InterCodes ir) {
 		while(curr->next)
 			curr = curr->next;
 		localList tmp_locallist = (localList)malloc(sizeof(struct localList_));
+		tmp_locallist->if_store = 0;
 		tmp_locallist->offset = stack_offset;
 		tmp_locallist->op = x;
 		tmp_locallist->next = NULL;
@@ -663,7 +726,7 @@ void choose_instr(InterCodes ir) {
 	}
 	else if(ir->code.kind == READ) {
 		Operand x = ir->code.u.read.x;
-		Reg reg_x = ensure(x);
+		int reg_x = ensure(x);
 		
 		char tmp[32]; memset(tmp, 0, 32);
 		stack_offset += 4;
@@ -677,19 +740,19 @@ void choose_instr(InterCodes ir) {
 		fputs(tmp, objFile);
 		stack_offset -=4;
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "%s, $v0\n", tmp);
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, $v0\n", tmp);
 		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == WRITE) {
 		Operand x = ir->code.u.write.x;
-		Reg reg_x = ensure(x);
+		int reg_x = ensure(x);
 		
 		char tmp[32]; memset(tmp, 0, 32);
 		stack_offset += 4;
 		sprintf(tmp, "\tsw $ra, -%d($fp)\n", stack_offset);
 		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove $a0, "); print_reg(tmp, reg_x); sprintf(tmp, "%s\n", tmp);
+		sprintf(tmp, "\tmove $a0, "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
 		fputs("\tjal write\n", objFile);
 		memset(tmp, 0, 32);

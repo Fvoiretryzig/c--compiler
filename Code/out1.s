@@ -23,10 +23,7 @@ write:
 main:
 	subu $sp, $sp, 2048
 	addi $fp, $sp, 2048
-	sw $ra, -8($fp)
-	jal read
-	lw $ra, -8($fp)
-	move $t0, $v0
+	addi $t0, $t0, -9
 	ble $t0, $zero, label1
 	sw $t0, -4($fp)
 	li $t0, 1
