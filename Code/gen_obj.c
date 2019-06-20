@@ -22,11 +22,39 @@ void init_gen()	//read write函数还没有写
 		reg.farthest_nouse = 0;
 	}
 	
+	fputs(".data\n", fp);
+	fputs("_prompt: .asciiz \"Enter an interger:\"\n", fp);
+	fputs("_ret: .asciiz \"\\n\"\n", fp);
+	fputs(".globl main\n", fp);
+	fputs(".text\n", fp);
 	
+	fputs("read:\n", fp);
+	fputs("\tli $v0, 4\n", fp);
+	fput("\tla $a0, _prompt\n", fp);
+	fputs("\tsyscall\n", fp);
+	fputs("\tli $v0, 5\n", fp);
+	fputs("\tsyscall\n", fp);
+	fputs("\tjr $ra\n", fp);
+	fputs("\n\n", fp);
+	fputs("write:\n", fp);
+	fputs("\tli $v0, 1", fp);
+	fputs("\tsyscall\n", fp);
+	fputs("\tli $v0, 4", fp);
+	fputs("\tla $a0, _ret\n", fp);
+	fputs("\tsyscall\n", fp);
+	fputs("\tmove $v0, $0\n", fp);
+	fputs("\tjr $ra\n", fp);
 	
 	return;
 }
-
+void gen_obj()
+{
+	curr_ir = IRhead;
+	while(curr_ir->next) {
+		curr = curr->next;
+		choose_instr(curr_ir);
+	}
+}
 /*把a0 a1 a2 a3要加到局部变量判断里面去*/
 Reg ensure(Operand x)
 {
@@ -341,15 +369,16 @@ void choose_instr(InterCodes ir) {
 		fputs("\tsw $fp, %d($sp)\n", stack_size-8);
 		fputs("\taddi $fp, $sp, %d\n", stack_size);
 		//======================lw para========================
-		ir_curr = ir->next;
+		//curr_ir = ir->next;
 		for(int i = 0; i<para_cnt-4; i++) {
-			Operand x = ir_curr->code.para.x;
+			Operand x = curr_ir->code.para.x;
 			Reg tmp_reg = ensure(x);
 			memset(tmp, 0, 32);
 			sprintf(tmp, "lw "); print_ret(tmp_ret); sprintf(tmp, ", %d($fp)", 4*(para_cnt-i-5)); //和讲义上反的，好奇怪啊讲义上的，arg和para是反的啊
-			ir_curr = ir->next;
+			curr_ir = curr_ir->next;
 		}
-		//对剩下的处理
+		curr_ir = curr_ir->prev;	//回退一位，免得上面出错
+		//对剩下的处理a0, a1, a2, a3
 		for(int i = 0; i<4; i+) {
 			Operand x = ir_curr->code.para.x;
 			reg[4+i].op = x;
@@ -389,6 +418,7 @@ void choose_instr(InterCodes ir) {
 	}
 	else if(ir->kind == CALL) {
 		Operand x = ir->u.call.x; Operand f = ir->u.call.f;
+
 		int t_offset[10];
 		memset(t_offset, -1, sizeof(t_offset));
 		//-------------------------保存活跃变量, 我用fp寻址应该不会影响吧！！---------------------------//
@@ -522,6 +552,43 @@ void choose_instr(InterCodes ir) {
 		tmp_locallist->op = x;
 		tmp_locallist->next = NULL;
 		curr->next = tmp_locallist;
+	}
+	else if(ir->kind == read) {
+		Operand x = ir->code.read.x;
+		Reg reg_x = ensure(x);
+		
+		char tmp[32]; memset(tmp, 0, 32);
+		stack_offset -= 4;
+		sprintf(tmp, "\tsw $ra, -%d($fp)\n", stack_offset);
+		fputs(tmp, fp);
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tjal read\n");
+		fputs(tmp, fp);
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tlw $ra, -%d($fp)\n", stack_offset);
+		fputs(tmp, fp);
+		stack_offset +=4;
+		fputs(tmp, fp);
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, ", $v0\n");
+		fputs(tmp, fp);
+	}
+	else if(ir->kind == write) {
+		Operand x = ir->code.write.x;
+		Reg reg_x = ensure(x);
+		
+		char tmp[32]; memset(tmp, 0, 32);
+		stack_offset -= 4;
+		sprintf(tmp, "\tsw $ra, -%d($fp)\n", stack_offset);
+		fputs(tmp, fp);
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tmove $a0, "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
+		fputs(tmp, fp);
+		fputs("\tjal write")\n;
+		memset(tmp, 0, 32);
+		sprintf(tmp, "\tlw $ra, -%d($fp)\n", stack_offset);
+		memset(tmp, 0, 32);
+		
 	}
 	return;
 }

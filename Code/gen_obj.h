@@ -33,5 +33,6 @@ void choose_instr(InterCodes ir);
 Register ensure(Operand x);
 Register allocate(Operand x);
 void spill(Reg r);
+void gen_obj();
 
 
