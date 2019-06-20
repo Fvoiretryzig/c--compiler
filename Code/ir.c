@@ -781,7 +781,7 @@ InterCodes translate_stmt(struct node* stmt)
 	}
 	else if(stmt->rule == Stmt_IfLpExpRpStmtElseStmt) {
 		//printf("\nhahahaha\n");
-		Operand label1 = (Operand)malloc(sizeof(struct Operand_));
+		/*Operand label1 = (Operand)malloc(sizeof(struct Operand_));
 		label1->kind = LABEL; label1->u.label_no = -1;	//b.true = fall;
 		Operand label2 = new_label();
 		Operand label3 = NULL;
@@ -810,10 +810,37 @@ InterCodes translate_stmt(struct node* stmt)
 		if(label3_code)
 			ir = concat(ir, label3_code);
 		//printf("\n");
+		return ir;*/
+		Operand label1 = new_label();
+		Operand label2 = new_label();
+		Operand label3 = NULL;
+		if(stmt->gchild[4]->rule != 27)
+			label3 = new_label();
+		
+		InterCodes goto3_code = NULL;
+		InterCodes label3_code = NULL;
+		InterCodes ir1 = translate_cond(stmt->gchild[2], label1, label2); 
+		InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
+		InterCodes ir2 = translate_stmt(stmt->gchild[4]);
+		if(label3)
+			goto3_code = new_InterCodes(label3, NULL, NULL, JUMP, -1);
+		InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
+		InterCodes ir3 = translate_stmt(stmt->gchild[6]);
+		if(label3)
+			label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL, -1);
+		
+		InterCodes ir = concat(ir1, label1_code);
+		ir = concat(ir, ir2);
+		if(goto3_code)
+			ir = concat(ir, goto3_code);
+		ir = concat(ir, label2_code);
+		ir = concat(ir, ir3);
+		if(label3_code)
+			ir = concat(ir, label3_code);
 		return ir;
 	}
 	else if(stmt->rule == Stmt_WhileLpExpRpStmt) {
-		Operand label1 = new_label();
+		/*Operand label1 = new_label();
 		Operand label2 = (Operand)malloc(sizeof(struct Operand_));//B.true = fall;
 		label2->kind = LABEL; label2->u.label_no = -1; 
 		Operand label3 = NULL;	//false = s.next
@@ -833,6 +860,30 @@ InterCodes translate_stmt(struct node* stmt)
 		//printf("label1_code: %p, ir1: %p label2_code: %p ir2: %p goto1_code: %p label3_code: %p\n", label1_code, ir1, label2_code, ir2, goto1_code, label3_code);
 		InterCodes ir = concat(label1_code, ir1);
 		//ir = concat(ir, label2_code);
+		ir = concat(ir, ir2);
+		ir = concat(ir, goto1_code);
+		if(label3)
+			ir = concat(ir, label3_code);
+		return ir;*/
+		Operand label1 = new_label();
+		Operand label2 = new_label();
+		Operand label3 = NULL;
+		
+		if(stmt->gchild[4]->rule != 27)		//要不要考虑return情况呢
+			label3 = new_label();
+		
+		InterCodes label1_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
+		InterCodes ir1 = translate_cond(stmt->gchild[2], label2, label3);
+		InterCodes label2_code = new_InterCodes(label2, NULL, NULL, D_LABEL, -1);
+		InterCodes ir2 = translate_stmt(stmt->gchild[4]);
+		InterCodes goto1_code = new_InterCodes(label1, NULL, NULL, JUMP, -1);
+		InterCodes label3_code = NULL;
+		if(label3)
+			label3_code = new_InterCodes(label3, NULL, NULL, D_LABEL, -1);
+		
+		//printf("label1_code: %p, ir1: %p label2_code: %p ir2: %p goto1_code: %p label3_code: %p\n", label1_code, ir1, label2_code, ir2, goto1_code, label3_code);
+		InterCodes ir = concat(label1_code, ir1);
+		ir = concat(ir, label2_code);
 		ir = concat(ir, ir2);
 		ir = concat(ir, goto1_code);
 		if(label3)
@@ -858,7 +909,7 @@ int get_relop(struct node* gnode)
 		//printf("get relop fault!!!!!!!\n");
 	return ret;
 }
-InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_false)
+/*InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_false)
 {
 	if(exp->rule == Exp_NotExp) {
 		//printf("this is expnotexp label_true: %d label_false: %d rule: %d\n", label_true->u.label_no, label_false->u.label_no, exp->gchild[1]->rule);
@@ -974,6 +1025,72 @@ InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_fa
 		}
 		//InterCodes label_code = new_InterCodes(label_false, NULL, NULL, JUMP, -1); 
 		//printf("in default print label_code\n"); print_ir(label_code);printf("endxixixixi\n");
+		
+		InterCodes ir = concat(ir1, ir2);
+		ir = concat(ir, label_code);
+		return ir;
+	}
+}*/
+InterCodes translate_cond(struct node* exp, Operand label_true, Operand label_false)
+{
+	if(exp->rule == Exp_NotExp)
+		return translate_cond(exp->gchild[1], label_false, label_true);
+	else if(exp->rule == Exp_ExpAndExp) {
+		Operand label1 = new_label();
+		
+		InterCodes ir1 = translate_cond(exp->gchild[0], label1, label_false);
+		InterCodes label_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
+		InterCodes ir2 = translate_cond(exp->gchild[2], label_true, label_false);
+		
+		InterCodes ir = concat(ir1, label_code);
+		ir = concat(ir, ir2);
+		return ir;
+	}
+	else if(exp->rule == Exp_ExpOrExp) {
+		Operand label1 = new_label();
+		
+		InterCodes ir1 = translate_cond(exp->gchild[0], label_true, label1);
+		InterCodes label_code = new_InterCodes(label1, NULL, NULL, D_LABEL, -1);
+		InterCodes ir2 = translate_cond(exp->gchild[1], label_true, label_false);
+		
+		InterCodes ir = concat(ir1, label_code);
+		ir = concat(ir, ir2);
+		return ir;
+	}
+	else if(exp->rule == Exp_ExpRelopExp) {
+		Operand t1 = NULL, t2 = NULL;
+		struct node* exp1 = exp->gchild[0];
+		struct node* exp2 = exp->gchild[2];
+		//不知道实现对不对,如果是一个变量判断之前是否已经存在了，不然就不判断了
+		/*if(!strcmp(exp1->gchild[0]->name, "ID"))			
+			t1 = find_op(exp->gchild[0]->str);
+		if(!t1)
+			t1 = new_temp();
+		if(!strcmp(exp2->gchild[0]->name, "ID"))
+			t2 = find_op(exp->gchild[2]->str);
+		if(!t2)
+			t2 = new_temp();*/
+		/////////////以上///////////////
+		t1 = new_temp();
+		InterCodes ir1 = translate_exp(exp->gchild[0], t1);
+		t2 = new_temp();
+		InterCodes ir2 = translate_exp(exp->gchild[2], t2);
+		int op = get_relop(exp->gchild[1]);
+		InterCodes ir3 = new_InterCodes(t1, t2, label_true, IF_JUMP, op);
+		InterCodes ir4 = new_InterCodes(label_false, NULL, NULL, JUMP, -1);
+		
+		InterCodes ir = concat(ir1, ir2);
+		ir = concat(ir, ir3);
+		ir = concat(ir, ir4);
+		return ir;
+	}
+	else {
+		Operand t1 = new_temp();
+		
+		InterCodes ir1 = translate_exp(exp, t1);
+		int op = 5;
+		InterCodes ir2 = new_InterCodes(t1, imm_num0, label_true, IF_JUMP, op);
+		InterCodes label_code = new_InterCodes(label_false, NULL, NULL, JUMP, -1);
 		
 		InterCodes ir = concat(ir1, ir2);
 		ir = concat(ir, label_code);
