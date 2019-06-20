@@ -37,5 +37,6 @@ Reg ensure(Operand x);
 Reg allocate(Operand x);
 void spill(Reg r);
 void gen_obj();
+int op_equal(Operand a, Operand b);
 #endif
 

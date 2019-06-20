@@ -3,6 +3,7 @@
 
 #define IR_DEBUG
 InterCodes IRhead;
+InterCodes irlist;
 Operand ophead;
 
 Operand imm_num0;
@@ -275,7 +276,7 @@ InterCodes new_InterCodes(Operand op1, Operand op2, Operand op3, int kind, int o
 ///////////////////////////////////////////////print////////////////////////////////////////////////////
 void print(struct node* root) 
 {
-	InterCodes irlist = translate_program(root);
+	irlist = translate_program(root);
 	InterCodes curr = irlist;
 	while(curr) {
 		#ifdef IR_DEBUG

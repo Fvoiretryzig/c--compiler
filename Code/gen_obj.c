@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define GEN_DEBUG
+
 Reg reg[32];
 FILE* objFile;
 localList localHead[210];	//在函数的时候初始化,最多支持200个函数嵌套
@@ -12,11 +14,13 @@ int para_cnt = 0;
 int stack_size = 1024;
 InterCodes curr_ir;
 Operand argList[100];
-extern InterCodes IRhead;
+extern InterCodes irlist;
+extern char filename[100];
+int is_main = 1;
 
 void init_gen()	//read write函数还没有写
 {
-	objFile = fopen("a.s", "w+");
+	objFile = fopen(filename, "w+");
 	for(int i = 0; i<32; i++) {
 		reg[i].kind = i;
 		reg[i].is_used = 0;
@@ -37,25 +41,48 @@ void init_gen()	//read write函数还没有写
 	fputs("\tli $v0, 5\n", objFile);
 	fputs("\tsyscall\n", objFile);
 	fputs("\tjr $ra\n", objFile);
-	fputs("\n\n", objFile);
+	fputs("\n", objFile);
 	fputs("write:\n", objFile);
-	fputs("\tli $v0, 1", objFile);
+	fputs("\tli $v0, 1\n", objFile);
 	fputs("\tsyscall\n", objFile);
-	fputs("\tli $v0, 4", objFile);
+	fputs("\tli $v0, 4\n", objFile);
 	fputs("\tla $a0, _ret\n", objFile);
 	fputs("\tsyscall\n", objFile);
 	fputs("\tmove $v0, $0\n", objFile);
 	fputs("\tjr $ra\n", objFile);
-	
 	return;
 }
 void gen_obj()
 {
-	curr_ir = IRhead;
-	while(curr_ir->next) {
-		curr_ir = curr_ir->next;
+	curr_ir = irlist;
+	while(curr_ir) {
+		printf("ir kind: %d\n", curr_ir->code.kind);
 		choose_instr(curr_ir);
+		curr_ir = curr_ir->next;
 	}
+}
+
+int op_equal(Operand a, Operand b)
+{
+	int ret = 0;
+	if(a && b) {
+		switch(a->kind) {
+			case VARIABLE:	
+				if(b->kind == VARIABLE && b->u.var_no == a->u.var_no)
+					ret = 1;
+				break;
+			case ADDRESS:
+				if(b->kind == ADDRESS && b->u.var_no == a->u.var_no)
+					ret = 1;
+				break;
+			case TMP:
+				if(b->kind == TMP && b->u.tmp_no == a->u.tmp_no)
+					ret = 1;
+				break;
+		}
+		return ret;
+	}
+	
 }
 /*把a0 a1 a2 a3要加到局部变量判断里面去*/
 Reg ensure(Operand x)
@@ -65,26 +92,30 @@ Reg ensure(Operand x)
 	int is_find = 0;
 	localList curr = localHead[func_in];
 	
+	if(x->kind == IMM_NUMBER) {
+		if(!x->u.value_int)
+			return reg[0];
+	}
 	for(int i = 8; i<26; i++) {
-		if(reg[i].op == x) {
+		if(op_equal(reg[i].op, x)) {
 			is_find = 1;
 			result = reg[i];
 			break;
 		}
 	}
 	for(int i = 4; i<8; i++) {	//给参数用的
-		if(reg[i].op == x) 
+		if(op_equal(reg[i].op, x)) 
 			return reg[i];
 	}
 	if(x->kind == IMM_NUMBER) {	//对立即数特判
-		char tmp[32]; memset(tmp, 0, 32);
+		char tmp[32]; memset(tmp, 0, 32); 
 		if(is_find) {
-			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, " %d\n", x->u.value_int);
+			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, "%s %d\n", tmp, x->u.value_int);
 			fputs(tmp, objFile);
 		}
 		else {
 			result = allocate(x);
-			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, " %d\n", x->u.value_int);
+			sprintf(tmp, "\tli "); print_reg(tmp, result); sprintf(tmp, "%s %d\n", tmp, x->u.value_int);
 			fputs(tmp, objFile);
 		}
 	}
@@ -93,20 +124,22 @@ Reg ensure(Operand x)
 		localList curr_before = NULL;
 		while(curr) {
 			curr_before = curr;
-			curr = curr->next;
-			if(curr->op == x) 
+			if(curr->op != NULL && op_equal(curr->op, x)) {
 				break;
+			}
+			curr = curr->next; 
 		}
+		int alloc_mem = 0;
 		if(!curr && (x->kind == TMP || x->kind == VARIABLE)) {	//临时变量和变量为了除法乘法跳转还有立即数
 																//（其他应该不用吧）还未分配在栈上的位置
 			stack_offset += 4;
-			fputs("\tsubu $sp, $sp, 4\n", objFile);	//sp扩大4
 			localList tmp_locallist = (localList)malloc(sizeof(struct localList_));
 			tmp_locallist->offset = stack_offset;
 			tmp_locallist->op = x;
 			tmp_locallist->next = NULL;
 			curr_before->next = tmp_locallist;
 			curr = tmp_locallist;	//复用一下curr
+			alloc_mem = 1;
 		}
 		else if(!curr) {
 			printf("error when find op in ensure\n");
@@ -119,13 +152,13 @@ Reg ensure(Operand x)
 			sprintf(tmp, "\tsubu $v1, $fp, %d\n", ofs);
 			fputs(tmp, objFile);
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tmove "); print_reg(tmp, result); sprintf(tmp, ", $v1\n");
+			sprintf(tmp, "\tmove "); print_reg(tmp, result); sprintf(tmp, "%s, $v1\n", tmp);
 			fputs(tmp, objFile);
 		}
-		else if(curr->offset > 0) {	//在栈中有位置了
+		else if(curr->offset > 0 && !alloc_mem) {	//在栈中有位置了
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tlw "); print_reg(tmp, result); sprintf(tmp, ", -%d($fp)\n", curr->offset);
+			sprintf(tmp, "\tlw "); print_reg(tmp, result); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 			fputs(tmp, objFile);
 		}
 	}
@@ -170,50 +203,50 @@ void spill(Reg r)
 	Operand op = 0;
 	localList curr = localHead[func_in];
 	while(curr) {
-		if(curr->op == r.op)
+		if(op_equal(curr->op, r.op))
 			break;
 		curr = curr->next;
 	}
 	if(curr->offset > 0) {	//spill的时候不会还没在内存（栈）中，前面ensure要分配的
 		char tmp[32];
 		memset(tmp, 0, 32);
-		sprintf(tmp, "sw "); print_reg(tmp, r); sprintf(tmp, ", -%d($fp)\n", curr->offset);
+		sprintf(tmp, "sw "); print_reg(tmp, r); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 		fputs(tmp, objFile);
 	}
 }
 void print_reg(char* dest, Reg r)
 {
 	switch(r.kind) {
-		case zero: sprintf(dest, "$zero"); break;
-		case at: sprintf(dest, "$at"); break;
-		case v0: sprintf(dest, "$v0"); break;
-		case v1: sprintf(dest, "$v1"); break;
-		case a0: sprintf(dest, "$a0"); break;
-		case a1: sprintf(dest, "$a1"); break;
-		case a2: sprintf(dest, "$a2"); break;
-		case a3: sprintf(dest, "$a3"); break;
-		case t0: sprintf(dest, "$t0"); break;
-		case t1: sprintf(dest, "$t1"); break;
-		case t2: sprintf(dest, "$t2"); break;
-		case t3: sprintf(dest, "$t3"); break;
-		case t4: sprintf(dest, "$t4"); break;
-		case t5: sprintf(dest, "$t5"); break;
-		case t6: sprintf(dest, "$t6"); break;
-		case t7: sprintf(dest, "$t7"); break;
-		case s0: sprintf(dest, "$s0"); break;
-		case s1: sprintf(dest, "$s1"); break;
-		case s2: sprintf(dest, "$s2"); break;
-		case s3: sprintf(dest, "$s3"); break;
-		case s4: sprintf(dest, "$s4"); break;
-		case s5: sprintf(dest, "$s5"); break;
-		case s6: sprintf(dest, "$s6"); break;
-		case s7: sprintf(dest, "$s7"); break;
-		case k0: sprintf(dest, "$k0"); break;
-		case k1: sprintf(dest, "$k1"); break;
-		case gp: sprintf(dest, "$gp"); break;
-		case sp: sprintf(dest, "$sp"); break;
-		case fp: sprintf(dest, "$fp"); break;
-		case ra: sprintf(dest, "$ra"); break;
+		case zero: sprintf(dest, "%s$zero", dest); break;
+		case at: sprintf(dest, "%s$at", dest); break;
+		case v0: sprintf(dest, "%s$v0", dest); break;
+		case v1: sprintf(dest, "%s$v1", dest); break;
+		case a0: sprintf(dest, "%s$a0", dest); break;
+		case a1: sprintf(dest, "%s$a1", dest); break;
+		case a2: sprintf(dest, "%s$a2", dest); break;
+		case a3: sprintf(dest, "%s$a3", dest); break;
+		case t0: sprintf(dest, "%s$t0", dest); break;
+		case t1: sprintf(dest, "%s$t1", dest); break;
+		case t2: sprintf(dest, "%s$t2", dest); break;
+		case t3: sprintf(dest, "%s$t3", dest); break;
+		case t4: sprintf(dest, "%s$t4", dest); break;
+		case t5: sprintf(dest, "%s$t5", dest); break;
+		case t6: sprintf(dest, "%s$t6", dest); break;
+		case t7: sprintf(dest, "%s$t7", dest); break;
+		case s0: sprintf(dest, "%s$s0", dest); break;
+		case s1: sprintf(dest, "%s$s1", dest); break;
+		case s2: sprintf(dest, "%s$s2", dest); break;
+		case s3: sprintf(dest, "%s$s3", dest); break;
+		case s4: sprintf(dest, "%s$s4", dest); break;
+		case s5: sprintf(dest, "%s$s5", dest); break;
+		case s6: sprintf(dest, "%s$s6", dest); break;
+		case s7: sprintf(dest, "%s$s7", dest); break;
+		case k0: sprintf(dest, "%s$k0", dest); break;
+		case k1: sprintf(dest, "%s$k1", dest); break;
+		case gp: sprintf(dest, "%s$gp", dest); break;
+		case sp: sprintf(dest, "%s$sp", dest); break;
+		case fp: sprintf(dest, "%s$fp", dest); break;
+		case ra: sprintf(dest, "%s$ra", dest); break;
 	}
 }
 void choose_instr(InterCodes ir) {
@@ -239,14 +272,14 @@ void choose_instr(InterCodes ir) {
 			Reg reg_left = ensure(left);
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tli "); print_reg(tmp, reg_left); sprintf(tmp, ", %d\n", right->u.value_int);
+			sprintf(tmp, "\tli "); print_reg(tmp, reg_left); sprintf(tmp, "%s, %d\n", tmp, right->u.value_int);
 			fputs(tmp, objFile);
 		}
 		else if(right->kind == TMP || right->kind == VARIABLE)  {
 			Reg reg_left = ensure(left); Reg reg_right = ensure(right);
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tmove "); print_reg(tmp, reg_left); sprintf(tmp, ", "); print_reg(tmp, reg_right); sprintf(tmp, "\n");
+			sprintf(tmp, "\tmove "); print_reg(tmp, reg_left); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_right); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
 		}
 	}
@@ -257,14 +290,14 @@ void choose_instr(InterCodes ir) {
 			int k = z->u.value_int;
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\taddi "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_x); sprintf(tmp, ", %d\n", k);
+			sprintf(tmp, "\taddi "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_x); sprintf(tmp, "%s, %d\n", tmp, k);
 			fputs(tmp, objFile);
 		}
 		else if(z->kind == TMP || z->kind == VARIABLE) {
 			Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\add "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+			sprintf(tmp, "\tadd "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_z); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
 		}
 	}
@@ -275,14 +308,15 @@ void choose_instr(InterCodes ir) {
 			int k = z->u.value_int;
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\taddi "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_x); sprintf(tmp, ", -%d\n", k);
+			sprintf(tmp, "\taddi "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_x); sprintf(tmp, "%s, -%d\n", tmp, k);
 			fputs(tmp, objFile);
 		}
 		else if(z->kind == TMP || z->kind == VARIABLE) {
 			Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tsub "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+			//sprintf(tmp, "\tsub "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+			sprintf(tmp, "\tsub "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_z); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
 		}
 	}
@@ -291,7 +325,7 @@ void choose_instr(InterCodes ir) {
 		Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
 		char tmp[32];
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmul "); print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+		sprintf(tmp, "\tmul "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_z); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == IR_DIV) {
@@ -299,10 +333,10 @@ void choose_instr(InterCodes ir) {
 		Reg reg_x = ensure(x); Reg reg_y = ensure(y); Reg reg_z = ensure(z);
 		char tmp[32];
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tdiv "); print_reg(tmp, reg_y); sprintf(tmp, ", "); print_reg(tmp, reg_z); sprintf(tmp, "\n");
+		sprintf(tmp, "\tdiv "); print_reg(tmp, reg_y); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_z); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmflo "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
+		sprintf(tmp, "\tmflo "); print_reg(tmp, reg_x); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == JUMP) {	//代码块的结束，下一个指令就是新的开始了
@@ -327,12 +361,6 @@ void choose_instr(InterCodes ir) {
 		Operand x = ir->code.u.if_jump.x; Operand y = ir->code.u.if_jump.y;
 		Operand label = ir->code.u.if_jump.z;
 		int op = ir->code.u.if_jump.op;
-		/*case 0:	printf(" > "); break;
-			case 1: printf(" < "); break;
-			case 2: printf(" >= "); break;
-			case 3: printf(" <= "); break;
-			case 4: printf(" == "); break;
-			case 5: printf(" != "); break;*/
 		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
 		char tmp[32]; memset(tmp, 0, 32);
 		if(op == 0) { 
@@ -359,7 +387,7 @@ void choose_instr(InterCodes ir) {
 			sprintf(tmp, "\tble ");
 			fputs(tmp, objFile);
 		}
-		print_reg(tmp, reg_x); sprintf(tmp, ", "); print_reg(tmp, reg_y); sprintf(tmp, ", label%d\n", label->u.label_no); 
+		print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s, label%d\n", tmp, label->u.label_no); 
 		fputs(tmp, objFile);
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
 			if(reg[i].is_used) {
@@ -371,6 +399,8 @@ void choose_instr(InterCodes ir) {
 		}
 	}
 	else if(ir->code.kind == D_FUNCTION) {	//新的函数新的栈所有都清空，局部变量也是
+		char* name = ir->code.u.function.f->u.f_name;
+
 		char tmp[32];
 		memset(tmp, 0, 32);
 		sprintf(tmp, "\n%s:\n", ir->code.u.function.f->u.f_name);
@@ -383,35 +413,60 @@ void choose_instr(InterCodes ir) {
 		memset(tmp, 0, 32);
 		sprintf(tmp, "\tsubu $sp, $sp, %d\n", stack_size);
 		fputs(tmp, objFile);
-		memset(tmp, 0, 32);
-		sprintf(tmp, "\tsw $ra, %d($sp)\n", stack_size-4);
-		fputs(tmp, objFile);
-		memset(tmp, 0, 32);
-		sprintf(tmp, "\tsw $fp, %d($sp)\n", stack_size-8);
-		fputs(tmp, objFile);
+		
+		if(strcmp(name, "main")) {
+			is_main = 0;
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw $ra, %d($sp)\n", stack_size-4);
+			fputs(tmp, objFile);
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw $fp, %d($sp)\n", stack_size-8);
+			fputs(tmp, objFile);
+			
+			//======================lw para========================
+			//curr_ir = ir->next;
+			
+			for(int i = 0; i<para_cnt-4; i++) {
+				Operand x = curr_ir->code.u.para.x;
+				Reg tmp_reg = ensure(x);
+				memset(tmp, 0, 32);
+				sprintf(tmp, "lw "); print_reg(tmp, tmp_reg); sprintf(tmp, "%s, %d($fp)\n", tmp, 4*(para_cnt-i-5)); //和讲义上反的，好奇怪啊讲义上的，arg和para是反的啊
+				fputs(tmp, objFile);
+				curr_ir = curr_ir->next;
+			}
+			//对剩下的处理a0, a1, a2, a3
+			if(para_cnt == 1) {
+				reg[4].op = curr_ir->code.u.para.x;
+				curr_ir = curr_ir->next;
+			}
+			else if(para_cnt == 2) {
+				for(int i = 0; i<2; i++) {
+					reg[4+i].op = curr_ir->code.u.para.x;
+					curr_ir = curr_ir->next;
+				}
+			}
+			else if(para_cnt == 3) {
+				for(int i = 0; i<3; i++) {
+					reg[4+i].op = curr_ir->code.u.para.x;
+					curr_ir = curr_ir->next;
+				}
+			}
+			else if(para_cnt == 4) {
+				for(int i = 0; i<4; i++) {
+					reg[4+i].op = curr_ir->code.u.para.x;
+					curr_ir = curr_ir->next;
+				}
+			}
+			if(para_cnt > 0)
+				curr_ir = curr_ir->prev;	//回退一位，免得上面出错
+			stack_offset += 8;
+		}
+		
 		memset(tmp, 0, 32);
 		sprintf(tmp, "\taddi $fp, $sp, %d\n", stack_size);
 		fputs(tmp, objFile);
-		//======================lw para========================
-		//curr_ir = ir->next;
-		for(int i = 0; i<para_cnt-4; i++) {
-			Operand x = curr_ir->code.u.para.x;
-			Reg tmp_reg = ensure(x);
-			memset(tmp, 0, 32);
-			sprintf(tmp, "lw "); print_reg(tmp, tmp_reg); sprintf(tmp, ", %d($fp)", 4*(para_cnt-i-5)); //和讲义上反的，好奇怪啊讲义上的，arg和para是反的啊
-			fputs(tmp, objFile);
-			curr_ir = curr_ir->next;
-		}
-		//对剩下的处理a0, a1, a2, a3
-		for(int i = 0; i<4; i++) {
-			reg[4+i].op = curr_ir->code.u.para.x;
-			curr_ir = curr_ir->next;
-		}
-		curr_ir = curr_ir->prev;	//回退一位，免得上面出错
-		stack_offset += 8;
 		/*其他寄存器有必要保存吗？*/
 		//剩下的给param做吧
-		
 		return;
 	}
 	else if(ir->code.kind == RET) {
@@ -419,12 +474,12 @@ void choose_instr(InterCodes ir) {
 		char tmp[32]; memset(tmp, 0, 32);
 		
 		if(x->kind == IMM_NUMBER) {
-			sprintf(tmp, "\tmove $v0, %d\n", x->u.value_int);
+			sprintf(tmp, "\tmove $v0, $%d\n", x->u.value_int);
 			fputs(tmp, objFile);
 		}
 		else {
 			Reg reg_x = ensure(x);		
-			sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
+			sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg_x); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
 		}
 		
@@ -435,16 +490,24 @@ void choose_instr(InterCodes ir) {
 			curr = localHead[func_in];
 		}
 		func_in--;
-		memset(tmp, 0, 32);
-		sprintf(tmp, "\tlw $ra, %d($sp)\n", stack_size-4);
-		fputs(tmp, objFile);
-		memset(tmp, 0, 32);
-		sprintf(tmp, "\tlw $fp, %d($sp)\n", stack_size-8);
-		fputs(tmp, objFile);
-		memset(tmp, 0, 32);
-		sprintf(tmp, "\taddi $sp, $sp, %d\n", stack_size);
-		fputs(tmp, objFile);
-		memset(tmp, 0, 32);
+		if(!is_main) {
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tlw $ra, %d($sp)\n", stack_size-4);
+			fputs(tmp, objFile);
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tlw $fp, %d($sp)\n", stack_size-8);
+			fputs(tmp, objFile);
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\taddi $sp, $sp, %d\n", stack_size);
+			fputs(tmp, objFile);
+			memset(tmp, 0, 32);
+		}
+		/*else {	//对main来说不知道直接用stack_offset对不对
+			memset(tmp, 0, 32);
+			sprintf(tmp, "\tlw $ra, -%d($fp)\n", stack_offset);
+			fputs(tmp, objFile);
+			stack_offset -=4;
+		}*/	
 		sprintf(tmp, "\tjr $ra\n");
 		fputs(tmp, objFile);	
 		
@@ -460,7 +523,7 @@ void choose_instr(InterCodes ir) {
 				Operand op = reg[i].op;
 				localList curr = localHead[func_in];
 				while(curr) {
-					if(curr->op == op) {
+					if(op_equal(curr->op, op)) {
 						t_offset[i] = curr->offset;
 						break;
 					}
@@ -475,7 +538,7 @@ void choose_instr(InterCodes ir) {
 			Operand op = reg[24].op;
 			localList curr = localHead[func_in];
 			while(curr) {
-				if(curr->op == op) {
+				if(op_equal(curr->op, op)) {
 					t_offset[8] = curr->offset;
 					break;
 				}
@@ -487,7 +550,7 @@ void choose_instr(InterCodes ir) {
 			Operand op = reg[25].op;
 			localList curr = localHead[func_in];
 			while(curr) {
-				if(curr->op == op) {
+				if(op_equal(curr->op, op)) {
 					t_offset[9] = curr->offset;
 					break;
 				}
@@ -499,7 +562,7 @@ void choose_instr(InterCodes ir) {
 		char tmp[32]; memset(tmp, 0, 32);
 		for(int i = 0; i<para_cnt && i<4; i++) {
 			Reg tmp_reg = ensure(argList[i]);
-			sprintf(tmp, "\tmove $a%d, ", i); print_reg(tmp, tmp_reg); sprintf(tmp, "\n");
+			sprintf(tmp, "\tmove $a%d, ", i); print_reg(tmp, tmp_reg); sprintf(tmp, "%s\n", tmp);
 			//把a0 a1 a2 a3要加到局部变量判断里面去
 			fputs(tmp, objFile);
 			memset(tmp, 0, 32);
@@ -512,7 +575,7 @@ void choose_instr(InterCodes ir) {
 			memset(tmp, 0, 32);
 			for(int i = 4; i<para_cnt; i++) {
 				Reg tmp_reg = ensure(argList[i]);
-				sprintf(tmp, "\tsw "); print_reg(tmp, tmp_reg); sprintf(tmp, ", %d($sp)\n", 4*(para_cnt-5));
+				sprintf(tmp, "\tsw "); print_reg(tmp, tmp_reg); sprintf(tmp, "%s, %d($sp)\n", tmp, 4*(para_cnt-5));
 				fputs(tmp, objFile);
 			}
 		}
@@ -521,7 +584,7 @@ void choose_instr(InterCodes ir) {
 		sprintf(tmp, "\tjal %s\n", f->u.f_name);
 		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, ", $v0\n");
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "%s, $v0\n", tmp);
 		fputs(tmp, objFile);
 		
 		if(para_cnt > 4) {//应该没判断错吧
@@ -553,7 +616,7 @@ void choose_instr(InterCodes ir) {
 		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
 		
 		char tmp[32]; memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "\t, "); print_reg(tmp, reg_y); sprintf(tmp, "\n");
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == ASSIGN_CONTENT) {
@@ -562,7 +625,7 @@ void choose_instr(InterCodes ir) {
 		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
 		
 		char tmp[32]; memset(tmp, 0, 32);
-		sprintf(tmp, "\tlw "); print_reg(tmp, reg_x); sprintf(tmp, ", 0("); print_reg(tmp, reg_y); sprintf(tmp, ")\n");
+		sprintf(tmp, "\tlw "); print_reg(tmp, reg_x); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg_y); sprintf(tmp, "%s)\n", tmp);
 		fputs(tmp, objFile);
 		//数组先不写
 	}
@@ -572,7 +635,7 @@ void choose_instr(InterCodes ir) {
 		Reg reg_x = ensure(x); Reg reg_y = ensure(y);
 		
 		char tmp[32]; memset(tmp, 0, 32);
-		sprintf(tmp, "\tsw "); print_reg(tmp, reg_y); sprintf(tmp, ", 0("); print_reg(tmp, reg_x); sprintf(tmp, ")\n");
+		sprintf(tmp, "\tsw "); print_reg(tmp, reg_y); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg_x); sprintf(tmp, "%s)\n", tmp);
 		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == DEC) {
@@ -594,7 +657,7 @@ void choose_instr(InterCodes ir) {
 		Reg reg_x = ensure(x);
 		
 		char tmp[32]; memset(tmp, 0, 32);
-		stack_offset -= 4;
+		stack_offset += 4;
 		sprintf(tmp, "\tsw $ra, -%d($fp)\n", stack_offset);
 		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
@@ -603,10 +666,10 @@ void choose_instr(InterCodes ir) {
 		memset(tmp, 0, 32);
 		sprintf(tmp, "\tlw $ra, -%d($fp)\n", stack_offset);
 		fputs(tmp, objFile);
-		stack_offset +=4;
+		stack_offset -=4;
 		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, ", $v0\n");
+		sprintf(tmp, "\tmove "); print_reg(tmp, reg_x); sprintf(tmp, "%s, $v0\n", tmp);
 		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == WRITE) {
@@ -614,15 +677,17 @@ void choose_instr(InterCodes ir) {
 		Reg reg_x = ensure(x);
 		
 		char tmp[32]; memset(tmp, 0, 32);
-		stack_offset -= 4;
+		stack_offset += 4;
 		sprintf(tmp, "\tsw $ra, -%d($fp)\n", stack_offset);
 		fputs(tmp, objFile);
 		memset(tmp, 0, 32);
-		sprintf(tmp, "\tmove $a0, "); print_reg(tmp, reg_x); sprintf(tmp, "\n");
+		sprintf(tmp, "\tmove $a0, "); print_reg(tmp, reg_x); sprintf(tmp, "%s\n", tmp);
 		fputs(tmp, objFile);
 		fputs("\tjal write\n", objFile);
 		memset(tmp, 0, 32);
 		sprintf(tmp, "\tlw $ra, -%d($fp)\n", stack_offset);
+		fputs(tmp, objFile);
+		stack_offset -=4;
 		memset(tmp, 0, 32);
 		
 	}
