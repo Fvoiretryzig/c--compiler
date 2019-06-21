@@ -178,6 +178,7 @@ int ensure(Operand x)
 			int ofs = curr->offset;
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tsubu $v1, $fp, %d\n", ofs);
+			printf("addressssssssss %s\n", tmp);
 			fputs(tmp, objFile);
 			memset(tmp, 0, 32);
 			sprintf(tmp, "\tmove "); print_reg(tmp, reg[pos]); sprintf(tmp, "%s, $v1\n", tmp);
@@ -200,7 +201,6 @@ int allocate(Operand x)
 	int pos = -1;
 	int is_find = 0;
 	for(int i = 8; i<26; i++) {
-		
 		if(!reg[i].is_used) {
 			if(!is_find) {
 				is_find = 1;
@@ -215,9 +215,11 @@ int allocate(Operand x)
 			reg[i].farthest_nouse++;
 	}
 	if(!is_find) {
+		printf("not find!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 		int reg_no = -1;
 		int farthest = 0;
 		for(int i = 8; i<26; i++) {
+			printf("farthest[%d]: %d\n", i, reg[i].farthest_nouse);
 			if(farthest < reg[i].farthest_nouse) {
 				farthest = reg[i].farthest_nouse;
 				reg_no = i;
@@ -281,6 +283,8 @@ void print_reg(char* dest, Reg r)
 		case s5: sprintf(dest, "%s$s5", dest); break;
 		case s6: sprintf(dest, "%s$s6", dest); break;
 		case s7: sprintf(dest, "%s$s7", dest); break;
+		case t8: sprintf(dest, "%s$t8", dest); break;
+		case t9: sprintf(dest, "%s$t9", dest); break;
 		case k0: sprintf(dest, "%s$k0", dest); break;
 		case k1: sprintf(dest, "%s$k1", dest); break;
 		case gp: sprintf(dest, "%s$gp", dest); break;
@@ -312,6 +316,7 @@ void choose_instr(InterCodes ir) {
 		int reg_left;
 		if(right->kind == IMM_NUMBER) {
 			reg_left = ensure(left);
+			printf("reg_lef????????????????????????????????????????????: %d\n", reg_left);
 			char tmp[32];
 			memset(tmp, 0, 32);
 			sprintf(tmp, "\tli "); print_reg(tmp, reg[reg_left]); sprintf(tmp, "%s, %d\n", tmp, right->u.value_int);
@@ -819,8 +824,9 @@ void choose_instr(InterCodes ir) {
 	else if(ir->code.kind == CONTENT_ASSIGNED) {
 		//也不知道对不对，好像前面就不支持数组在左侧
 		Operand x = ir->code.u.assign_content.x; Operand y = ir->code.u.assign_content.y;
+		printf("in content_assignddddddddddddddddddddddddddddd x kind: %d is_address: %d\n", x->kind, x->is_address);
 		int reg_x = ensure(x); int reg_y = ensure(y);
-		
+		printf("reg_x: %d reg_y: %d\n", reg_x, reg_y);
 		char tmp[32]; memset(tmp, 0, 32);
 		sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s)\n", tmp);
 		fputs(tmp, objFile);
@@ -836,10 +842,16 @@ void choose_instr(InterCodes ir) {
 			curr = curr->next;
 		localList tmp_locallist = (localList)malloc(sizeof(struct localList_));
 		tmp_locallist->if_store = 0;
+		stack_offset += 4;
 		tmp_locallist->offset = stack_offset;
 		tmp_locallist->op = x;
 		tmp_locallist->next = NULL;
 		curr->next = tmp_locallist;
+		
+		int reg_x = ensure(x);
+		char tmp[32]; memset(tmp, 0, 32);
+		sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, stack_offset);
+		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == READ) {
 		Operand x = ir->code.u.read.x;

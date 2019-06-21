@@ -418,9 +418,13 @@ void print_ir(InterCodes ir)
 		if(!x || !y)
 			return;
 		Operand xx = (Operand)malloc(sizeof(struct Operand_));
-		xx->kind = VARIABLE; xx->u.var_no = y->u.var_no;
+		if(x->kind == VARIABLE)
+			xx->kind = VARIABLE; 
+		else
+			xx->kind = TMP;
+		xx->u.var_no = x->u.var_no;
 		
-		printf("*"); print_op(x); printf(" := "); print_op(y); printf("\n");
+		printf("*"); print_op(xx); printf(" := "); print_op(y); printf("\n");
 		return;
 	}
 	else if(ir->code.kind == JUMP) {
@@ -1054,10 +1058,16 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		}
 		if(exp1->rule == Exp_ExpLbExpRb || exp1->rule == Exp_ExpDotId) {
 			t_address = new_temp(); t_address->is_address = 1;
+			printf("ir1: "); print_ir(ir1);
 			ir1 = translate_exp(exp1, t_address);
 			Operand t1 = new_temp();
 			ir2_1 = translate_exp(exp2, t1);
+			printf("ir2_1: "); print_ir(ir2_1);
+			printf("t_address kind: %d\n", t_address->kind);
 			ir2_2 = new_InterCodes(t_address, t1, NULL, CONTENT_ASSIGNED, -1);
+			printf("t_address kind: %d\n", t_address->kind);
+			printf("ir2_2: "); print_ir(ir2_2);
+			printf("end\n\n");
 		}
 		else if(exp2->rule == Exp_ExpLbExpRb || exp2->rule == Exp_ExpDotId) {
 			Operand t1 = new_temp();
@@ -1348,10 +1358,10 @@ InterCodes translate_exp(struct node* exp, Operand place)
 			Operand offset_op = new_Operand(NULL, IMM_NUMBER, offset, -1);
 			place->is_address = 1;
 			InterCodes ir2 = NULL;
-			if(offset != 0)
+			//if(offset != 0)
 				ir2 = new_InterCodes(place, t1, offset_op, ADD, -1);
-			else
-				place->u.tmp_no = t1->u.tmp_no;
+			//else
+			//	place->u.tmp_no = t1->u.tmp_no;
 			
 			InterCodes ir = concat(ir1, ir2);
 			return ir;
