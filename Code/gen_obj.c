@@ -276,10 +276,6 @@ void print_reg(char* dest, Reg r)
 void choose_instr(InterCodes ir) {
 	printf("in choose_instr\n");
 	if(ir->code.kind == D_LABEL) {	//基本块开始，需要把寄存器都存回内存去吧(jump的跳转)
-		char tmp[32];
-		memset(tmp, 0, 32);
-		sprintf(tmp, "label%d:\n", ir->code.u.label.x->u.label_no);
-		fputs(tmp, objFile);
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
 			if(reg[i].is_used) {
 				spill(reg[i]);
@@ -288,6 +284,10 @@ void choose_instr(InterCodes ir) {
 				reg[i].farthest_nouse = 0;
 			}
 		}
+		char tmp[32];
+		memset(tmp, 0, 32);
+		sprintf(tmp, "label%d:\n", ir->code.u.label.x->u.label_no);
+		fputs(tmp, objFile);
 		return;
 	}
 	else if(ir->code.kind == ASSIGN) {
@@ -412,9 +412,6 @@ void choose_instr(InterCodes ir) {
 			printf("ERROR when jump!!!!\n");
 			return;
 		}
-		char tmp[32]; memset(tmp, 0, 32);
-		sprintf(tmp, "\tj label%d\n", label->u.label_no);
-		fputs(tmp, objFile);
 		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
 			if(reg[i].is_used) {
 				printf("reg: %d\n", i);
@@ -424,8 +421,19 @@ void choose_instr(InterCodes ir) {
 				reg[i].farthest_nouse = 0;
 			}
 		}
+		char tmp[32]; memset(tmp, 0, 32);
+		sprintf(tmp, "\tj label%d\n", label->u.label_no);
+		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == IF_JUMP) { //代码块的结束，下一个指令就是新的开始了
+		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
+			if(reg[i].is_used) {
+				spill(reg[i]);
+				reg[i].is_used = 0;
+				reg[i].op = NULL;
+				reg[i].farthest_nouse = 0;
+			}
+		}
 		Operand x = ir->code.u.if_jump.x; Operand y = ir->code.u.if_jump.y;
 		Operand label = ir->code.u.if_jump.z;
 		int op = ir->code.u.if_jump.op;
@@ -452,14 +460,7 @@ void choose_instr(InterCodes ir) {
 		}
 		print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, label%d\n", tmp, label->u.label_no); 
 		fputs(tmp, objFile);
-		for(int i = 8; i<26; i++) {		//把里面有东西的寄存器全部存回去
-			if(reg[i].is_used) {
-				spill(reg[i]);
-				reg[i].is_used = 0;
-				reg[i].op = NULL;
-				reg[i].farthest_nouse = 0;
-			}
-		}
+		
 	}
 	else if(ir->code.kind == D_FUNCTION) {	//新的函数新的栈所有都清空，局部变量也是
 		char* name = ir->code.u.function.f->u.f_name;

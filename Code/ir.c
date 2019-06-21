@@ -661,22 +661,22 @@ InterCodes translate_compst(struct node* compst)
 	//Compst_LcDeflistStmtlistRc
 	InterCodes ir1 = translate_deflist(compst->gchild[1]);
 	InterCodes curr = ir1;
-	printf("before stmtlist\n");
+	/*printf("before stmtlist\n");
 	while(curr) {
 		print_ir(curr);
 		curr = curr->next;
 	}
-	printf("\n");
+	printf("\n");*/
 	InterCodes ir2 = translate_stmtlist(compst->gchild[2]);
 	//printf("before concat compst\n");
 	InterCodes ir = concat(ir1, ir2);
-	printf("in compst deflist\n");
+	/*printf("in compst deflist\n");
 	curr = ir1;
 	while(curr) {
 	print_ir(curr);
 	curr = curr->next;
 	}
-	printf("\n");
+	printf("\n");*/
 	
 	return ir;
 }
@@ -769,7 +769,7 @@ InterCodes translate_stmtlist(struct node* stmtlist)
 
 InterCodes translate_stmt(struct node* stmt)
 {
-	printf("stmt->rule: %d\n", stmt->rule);
+	//printf("stmt->rule: %d\n", stmt->rule);
 	if(stmt->rule == Stmt_ExpSemi) {
 		Operand t1 = new_temp();
 		InterCodes ir = translate_exp(stmt->gchild[0], t1); 
@@ -1020,10 +1020,10 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		int is_exist = 0;
 		//先暂时不考虑数组和结构体了
 		if(exp1->rule ==  Exp_Id) {
-			printf("in assign exp1: %s exp2: %s\n", exp1->str, exp2->str);
+			//printf("in assign exp1: %s exp2: %s\n", exp1->str, exp2->str);
 			variable = find_op(exp1->str);
 			if(variable) {
-				printf("in ir exp id: name: %s variable: %d\n", variable->v_name, variable->u.var_no);
+				//printf("in ir exp id: name: %s variable: %d\n", variable->v_name, variable->u.var_no);
 				is_exist = 1;
 				Operand curr = ophead;
 				while(curr) {
@@ -1368,7 +1368,7 @@ InterCodes translate_exp(struct node* exp, Operand place)
 	}
 	else if(exp->rule == Exp_Id) {
 		char* name = exp->str;
-		printf("in exp id name: %s\n", name);
+		//printf("in exp id name: %s\n", name);
 		Operand id;
 		id = find_op(name);
 		if(id) {
