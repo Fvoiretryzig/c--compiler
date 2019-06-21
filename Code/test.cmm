@@ -1,15 +1,19 @@
-int b()
+int bbb()
 {
 	int a[8];
-	int aa;
+	int aa, bb;
 	a[5] = 6;	
+	a[6] = 7;
 	aa = a[5];
-	return aa;
+	bb = a[6];
+	
+	return aa+bb;
 }
 
 int main()
 {
 	int c;
-	c = b();
+	c = bbb();
+	write(c);
 	return 0;	
 }

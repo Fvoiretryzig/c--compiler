@@ -182,6 +182,7 @@ int ensure(Operand x)
 			memset(tmp, 0, 32);
 			sprintf(tmp, "\tmove "); print_reg(tmp, reg[pos]); sprintf(tmp, "%s, $v1\n", tmp);
 			fputs(tmp, objFile);
+			//要不要把数组也位置也存进去啊
 		}
 		else if(curr->offset > 0 && !alloc_mem) {	//在栈中有位置了
 			char tmp[32];
@@ -324,7 +325,7 @@ void choose_instr(InterCodes ir) {
 			fputs(tmp, objFile);
 		}
 		localList curr = if_inlocal(left);
-		if(curr && !reg[reg_left].in_mem) {	//还没存入内存要先存入内存,在局部变量没存的话肯定要先放内存？？？？
+		if(curr && !reg[reg_left].in_mem && !left->is_address) {	//还没存入内存要先存入内存,在局部变量没存的话肯定要先放内存？
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_left]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 			fputs(tmp, objFile);
@@ -353,7 +354,7 @@ void choose_instr(InterCodes ir) {
 		
 		localList curr = if_inlocal(x);
 		//if(curr && !curr->if_store) {	//还没存入内存要先存入内存
-		if(curr && !reg[reg_x].in_mem) {
+		if(curr && !reg[reg_x].in_mem && !x->is_address) {
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 			fputs(tmp, objFile);
@@ -383,7 +384,7 @@ void choose_instr(InterCodes ir) {
 		
 		localList curr = if_inlocal(x); 
 		//if(curr && !curr->if_store) {	//还没存入内存要先存入内存
-		if(curr && !reg[reg_x].in_mem) {
+		if(curr && !reg[reg_x].in_mem && !x->is_address) {
 			printf("curr op no: %d reg op_no: %d\n", curr->op->u.tmp_no, reg[reg_x].op->u.tmp_no);
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
@@ -402,7 +403,7 @@ void choose_instr(InterCodes ir) {
 		
 		localList curr = if_inlocal(x);
 		//if(curr && !curr->if_store) {	//还没存入内存要先存入内存
-		if(curr && !reg[reg_x].in_mem) {
+		if(curr && !reg[reg_x].in_mem && !x->is_address) {
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 			fputs(tmp, objFile);
@@ -423,7 +424,7 @@ void choose_instr(InterCodes ir) {
 		
 		localList curr = if_inlocal(x);
 		//if(curr && !curr->if_store) {	//还没存入内存要先存入内存
-		if(curr && !reg[reg_x].in_mem) {
+		if(curr && !reg[reg_x].in_mem && !x->is_address) {
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 			fputs(tmp, objFile);
@@ -545,10 +546,10 @@ void choose_instr(InterCodes ir) {
 		}
 		else {
 			int reg_x = ensure(x);		
-			if(x->is_address) {
-				sprintf(tmp, "\tlw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s)\n", tmp);
-				fputs(tmp, objFile);
-			}
+			//if(x->is_address) {
+			//	sprintf(tmp, "\tlw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s)\n", tmp);
+			//	fputs(tmp, objFile);
+			//}
 			memset(tmp, 0, 32);
 			sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
@@ -788,7 +789,7 @@ void choose_instr(InterCodes ir) {
 		//不知道对不对 先放着吧
 		localList curr = if_inlocal(x);
 		//if(curr && !curr->if_store) {	//还没存入内存要先存入内存
-		if(curr && !reg[reg_x].in_mem) {
+		if(curr && !reg[reg_x].in_mem && !x->is_address) {
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
 			fputs(tmp, objFile);
