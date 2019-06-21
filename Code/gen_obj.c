@@ -91,6 +91,8 @@ localList if_inlocal(Operand x)
 {
 	localList curr = localHead[func_in];
 	while(curr) {
+		if(curr->op)
+		//printf("curr op: kind: %d name:%s var_no: %d\n", curr->op->kind, curr->op->v_name, curr->op->u.var_no);
 		if(op_equal(curr->op, x))
 			return curr;
 		curr = curr->next;
@@ -105,9 +107,9 @@ int ensure(Operand x)
 	result.kind = -1; result.is_used = 0; result.farthest_nouse = 0;result.op = NULL;
 	int is_find = 0;
 	localList curr = localHead[func_in];
-	printf("func_in: %d localHead: %p\n", func_in, localHead[func_in]);
+	//printf("func_in: %d localHead: %p\n", func_in, localHead[func_in]);
 	
-	printf("x->kind: %d\n", x->kind);
+	printf("in ensure x->kind: %d\n", x->kind);
 	if(x->kind == IMM_NUMBER) {
 		if(!x->u.value_int) {
 			printf("ensure return zero\n");
@@ -545,26 +547,15 @@ void choose_instr(InterCodes ir) {
 			}
 		}
 		//if(!is_main) {
-		printf("func_in: %d\n", func_in);
+		//printf("func_in: %d\n", func_in);
 		if(!is_main) {
-			/*memset(tmp, 0, 32);
-			sprintf(tmp, "\tlw $ra, %d($sp)\n", stack_size-4);
-			fputs(tmp, objFile);
-			memset(tmp, 0, 32);
-			sprintf(tmp, "\tlw $fp, %d($sp)\n", stack_size-8);
-			fputs(tmp, objFile);*/
+			
 			memset(tmp, 0, 32);
 			sprintf(tmp, "\taddi $sp, $sp, %d\n", stack_size);
 			fputs(tmp, objFile);
 			memset(tmp, 0, 32);
 		}
-		//func_in--;
-		/*else {	//对main来说不知道直接用stack_offset对不对
-			memset(tmp, 0, 32);
-			sprintf(tmp, "\tlw $ra, -%d($fp)\n", stack_offset);
-			fputs(tmp, objFile);
-			stack_offset -=4;
-		}*/	
+		
 		sprintf(tmp, "\tjr $ra\n");
 		fputs(tmp, objFile);	
 		
@@ -574,6 +565,7 @@ void choose_instr(InterCodes ir) {
 
 		int t_offset[10];
 		memset(t_offset, -1, sizeof(t_offset));
+		printf("function name: %s\n", f->u.f_name);
 		//-------------------------保存活跃变量, 我用fp寻址应该不会影响吧！！---------------------------//
 		for(int i = 8; i<16; i++) {		//把里面有东西的寄存器全部存回去,但不清空？？？
 			if(reg[i].is_used) {
@@ -622,17 +614,37 @@ void choose_instr(InterCodes ir) {
 		memset(tmp, 0, 32);
 		int reg_x = ensure(x);	//放这里吧？
 		//-------------------------------传参------------------------------//
+		//int arg_offset[4];
+		
 		for(int i = arg_cnt-1, j = 0; i>=0 && j<4; i--, j++) {
 			int tmp_reg = ensure(argList[i]);
 			memset(tmp, 0, 32);
 			//保存当前参数
-			printf("stack_offset: %d\n", stack_offset);
-			stack_offset += 4;
-			sprintf(tmp, "\tsw $a%d, %d($sp)\n", j, stack_size - stack_offset);
+			localList this_arg = if_inlocal(reg[j+4].op);
+			printf("iiiiiiiiiiiiiiiiiiiiii: %d\n", i);
+			if(this_arg) {
+				printf("when save arg: %p\n", this_arg);
+				memset(tmp, 0, 32);
+				sprintf(tmp, "\tsw $a%d, %d($sp)\n", j, stack_size - this_arg->offset);
+			}
+			else {
+				printf("when save arg error!!!!!\n");
+			}
 			fputs(tmp, objFile);
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tmove $a%d, ", j); print_reg(tmp, reg[tmp_reg]); sprintf(tmp, "%s\n", tmp);
-			fputs(tmp, objFile);
+			printf("!!!!!!!!ttttttttttttttttmp_reg: %d j: %d\n", tmp_reg, j+4);
+			if(tmp_reg >=4 && tmp_reg<=7 && tmp_reg != j+4) {
+				//printf("!!!!!!!!ttttttttttttttttmp_reg: %d j: %d\n", tmp_reg, j+4);
+				//printf("tmp reg tmp no: %d\n", reg[tmp_reg].op->u.tmp_no);
+				this_arg = if_inlocal(reg[tmp_reg].op);
+				//printf("tttttttttttttttttttttttthis this_argoffset: %d\n", this_arg->offset);
+				//printf("reg[j] tmp no: %d\n", reg[4+j].op->u.tmp_no);
+				sprintf(tmp, "\tlw $a%d, %d($sp)\n", j, stack_size - this_arg->offset);
+			}
+			else {
+				sprintf(tmp, "\tmove $a%d, ", j); print_reg(tmp, reg[tmp_reg]); sprintf(tmp, "%s\n", tmp);
+			}
+			fputs(tmp, objFile);printf("staaaaaaaaaaaaaack offset : %d\n", stack_offset);
 		} 
 		if(arg_cnt > 4) {
 			if(4*(arg_cnt-5) != 0) {
@@ -645,9 +657,11 @@ void choose_instr(InterCodes ir) {
 				sprintf(tmp, "\tsw "); print_reg(tmp, reg[tmp_reg]); sprintf(tmp, "%s, %d($sp)\n", tmp, 4*(j-5));
 				fputs(tmp, objFile);
 			}
+			
 		}
 		//int old_offset = stack_offset;
 		//保存fp和ra
+		printf("staaaaaaaaaaaaaack offset : %d\n", stack_offset);
 		stack_offset += 4;
 		sprintf(tmp, "\tsw $ra, %d($sp)\n", stack_size - stack_offset);
 		fputs(tmp, objFile);
@@ -671,9 +685,11 @@ void choose_instr(InterCodes ir) {
 		//恢复参数
 		for(int j = (arg_cnt<=4)?arg_cnt-1:3;  j>=0; j--) {
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\tlw $a%d, %d($sp)\n", j, stack_size - stack_offset);
+			//printf("which reg: %d op kind: %d v_name: %s\n", 4+j, reg[4+j].op->kind, reg[4+j].op->v_name);
+			localList this_arg = if_inlocal(argList[j]);
+			sprintf(tmp, "\tlw $a%d, %d($sp)\n", j, stack_size - this_arg->offset);
 			fputs(tmp, objFile);
-			stack_offset -= 4;
+			//stack_offset -= 4;
 		}
 		if(arg_cnt > 4) {//应该没判断错吧
 			memset(tmp, 0, 32);
@@ -696,26 +712,43 @@ void choose_instr(InterCodes ir) {
 		fputs(tmp, objFile);
 	}
 	else if(ir->code.kind == ARG) {
+		
 		argList[arg_cnt++] = ir->code.u.arg.x;
+		localList try = if_inlocal(argList[arg_cnt-1]);
+		printf("try:::::::::::::::%p tmp_no: %d\n", try, argList[arg_cnt-1]->u.tmp_no);
 	}
 	else if(ir->code.kind == PARA) {
 		Operand x = ir->code.u.para.x;
 		if(para_cnt < 4) {
 			int pos = 4+para_cnt;
+			printf("the x(kind: %d tmp_no: %d) save in the reg[%d]\n", x->kind, x->u.tmp_no, pos);
 			reg[pos].is_used = 1;
-			reg[pos].in_mem = 0;
+			reg[pos].in_mem = 1;
 			reg[pos].op = x;
-		}
-		para_cnt++;
-		if(para_cnt > 4) {
+			stack_offset += 4;
+			localList tmp_list = (localList)malloc(sizeof(struct localList_));
+			tmp_list->op = x; tmp_list->offset = stack_offset; tmp_list->next = NULL;tmp_list->if_store = 1;
+			printf("tmp_list op name: %s\n", tmp_list->op->v_name);
+			localList curr = localHead[func_in];
+			while(curr->next)
+				curr = curr->next;
+			curr->next = tmp_list;
 			
+			char tmp[32]; memset(tmp, 0, 32);
+			sprintf(tmp, "\tsw $a%d, -%d($fp)\n", para_cnt, stack_offset);
+			fputs(tmp, objFile);
+			printf("reg[%d] op: %p offset: %d\n", pos, reg[pos].op, if_inlocal(reg[pos].op)->offset);
+		}
+		para_cnt++;	
+		if(para_cnt > 4) {
 			int reg_para = ensure(x);
 			char tmp[32]; memset(tmp, 0, 32);
 			sprintf(tmp, "\tlw "); print_reg(tmp, reg[reg_para]); sprintf(tmp, "%s, %d($fp)\n", tmp, 4*(para_cnt-5));
 			fputs(tmp, objFile);
 		}
-		if(ir->next->code.kind != PARA) 
+		if(!ir->next || ir->next->code.kind != PARA) {
 			para_cnt = 0;
+		}
 	}
 	else if(ir->code.kind == ASSIGN_ADDR) {
 		//x=&y
@@ -784,6 +817,7 @@ void choose_instr(InterCodes ir) {
 		Operand x = ir->code.u.read.x;
 		int reg_x = ensure(x);
 		
+		localList try = if_inlocal(reg[reg_x].op);
 		char tmp[32]; memset(tmp, 0, 32);
 		stack_offset += 4;
 		sprintf(tmp, "\tsw $ra, -%d($fp)\n", stack_offset);
