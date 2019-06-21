@@ -1,13 +1,16 @@
-int a()
+int a(int u, int v, int x, int y, int z, int zz)
 {
-	int n = 4;
-	int m;
-	m = n+6;
-	return m;	
+	int n,c;
+	n = u+v;
+	c = x+y;
+	n = c + z;
+	return n*zz;	
 }
 int main()
 {
-	int b = 40;
-	write(a());
+	int b = 1, bb = 2, bbb = 3;
+	int e = 4;
+	int f = 5, g = 6;
+	write(a(b, bb, bbb, e, f, g));
 	return 0;	
 }
