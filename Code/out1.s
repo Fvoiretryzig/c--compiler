@@ -68,7 +68,7 @@ label1:
 	jal gcd
 	lw $fp, 2024($sp)
 	lw $ra, 2028($sp)
-	lw $a1, 2036($sp)
+	lw $a1, 2040($sp)
 	lw $a0, 2044($sp)
 	lw $t0, -12($fp)
 	move $t1, $v0
@@ -96,8 +96,6 @@ main:
 	jal gcd
 	lw $fp, 2028($sp)
 	lw $ra, 2032($sp)
-	lw $a1, 2044($sp)
-	lw $a0, 2040($sp)
 	lw $t0, -4($fp)
 	lw $t1, -8($fp)
 	move $t2, $v0

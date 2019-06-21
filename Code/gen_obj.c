@@ -628,12 +628,12 @@ void choose_instr(InterCodes ir) {
 				sprintf(tmp, "\tsw $a%d, %d($sp)\n", j, stack_size - this_arg->offset);
 			}
 			else {
-				printf("when save arg error!!!!!\n");
+				printf("when save arg error!!!!!\n");	//主函数的a0a1这些应该不用管嘛
 			}
 			fputs(tmp, objFile);
 			memset(tmp, 0, 32);
 			printf("!!!!!!!!ttttttttttttttttmp_reg: %d j: %d\n", tmp_reg, j+4);
-			if(tmp_reg >=4 && tmp_reg<=7 && tmp_reg != j+4) {
+			if(tmp_reg >=4 && tmp_reg<=7 && tmp_reg != j+4) {//要从a0这些里面取，要取之前保存的值，因为新的可能已经是被赋成其他值了
 				//printf("!!!!!!!!ttttttttttttttttmp_reg: %d j: %d\n", tmp_reg, j+4);
 				//printf("tmp reg tmp no: %d\n", reg[tmp_reg].op->u.tmp_no);
 				this_arg = if_inlocal(reg[tmp_reg].op);
@@ -686,8 +686,20 @@ void choose_instr(InterCodes ir) {
 		for(int j = (arg_cnt<=4)?arg_cnt-1:3;  j>=0; j--) {
 			memset(tmp, 0, 32);
 			//printf("which reg: %d op kind: %d v_name: %s\n", 4+j, reg[4+j].op->kind, reg[4+j].op->v_name);
-			localList this_arg = if_inlocal(argList[j]);
-			sprintf(tmp, "\tlw $a%d, %d($sp)\n", j, stack_size - this_arg->offset);
+			//printf("in recover arggggggggggggggggggggg j: %d\n", j);
+			//localList this_arg = if_inlocal(argList[j]);
+			localList this_arg = NULL;
+			if(reg[j+4].op)
+				this_arg = if_inlocal(reg[j+4].op);	//应该是这样吗？？？
+			//localList this_argg = if_inlocal(reg[4].op);
+			//printf("thisarg offset: %d\n", this_arg->offset);
+			//printf("reg[4].op kind: %d tmp_no: %d\n", reg[4].op->kind, reg[3].op->u.tmp_no);
+			//printf("arglist[j] kind: %d tmp_no: %d\n")
+			//if(this_argg->op)
+			//	printf("this argg offset: %d\n", this_argg->offset);
+			if(this_arg) {
+				sprintf(tmp, "\tlw $a%d, %d($sp)\n", j, stack_size - this_arg->offset);
+			}
 			fputs(tmp, objFile);
 			//stack_offset -= 4;
 		}
