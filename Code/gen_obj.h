@@ -22,6 +22,7 @@ struct Register {
 	reg_kind kind;
 	int is_used;
 	int farthest_nouse;	//选择最久没有使用的
+	int in_mem;
 	Operand op;	//reg存的是哪个变量
 };
 typedef struct localList_* localList;
