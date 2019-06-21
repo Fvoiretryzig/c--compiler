@@ -529,6 +529,8 @@ void choose_instr(InterCodes ir) {
 		Operand x = ir->code.u.ret.x;
 		char tmp[32]; memset(tmp, 0, 32);
 		
+		
+		printf("x kind in ret: %d\n", x->kind);
 		if(x->kind == IMM_NUMBER) {
 			if(!x->u.value_int) {
 				sprintf(tmp, "\tmove $v0, $0\n");
@@ -543,6 +545,11 @@ void choose_instr(InterCodes ir) {
 		}
 		else {
 			int reg_x = ensure(x);		
+			if(x->is_address) {
+				sprintf(tmp, "\tlw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, 0(", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s)\n", tmp);
+				fputs(tmp, objFile);
+			}
+			memset(tmp, 0, 32);
 			sprintf(tmp, "\tmove $v0, "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s\n", tmp);
 			fputs(tmp, objFile);
 		}
@@ -822,7 +829,7 @@ void choose_instr(InterCodes ir) {
 		Operand x = ir->code.u.dec.x;
 		int size = ir->code.u.dec.size;
 		
-		stack_offset -= size;	//应该存一个变量就好了吧
+		stack_offset += size;	//应该存一个变量就好了吧
 		localList curr = localHead[func_in];
 		while(curr->next)
 			curr = curr->next;

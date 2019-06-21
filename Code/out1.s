@@ -20,30 +20,18 @@ write:
 	move $v0, $0
 	jr $ra
 
-fact:
+b:
 	subu $sp, $sp, 2048
 	addi $fp, $sp, 2048
-	sw $a0, -4($fp)
-	li $t0, 1
-	bne $a0, $t0, label1
-	move $v0, $a0
-	addi $sp, $sp, 2048
-	jr $ra
-label1:
-	addi $t1, $a0, -1
-	sw $t1, -8($fp)
-	sw $a0, 2044($sp)
-	move $a0, $t1
-	sw $ra, 2032($sp)
-	sw $fp, 2028($sp)
-	jal fact
-	lw $fp, 2028($sp)
-	lw $ra, 2032($sp)
-	lw $a0, 2044($sp)
-	lw $t1, -8($fp)
-	move $t2, $v0
-	mul $t3, $a0, $t2
-	sw $t3, -16($fp)
+	subu $v1, $fp, 32
+	move $t1, $v1
+	addi $t0, $t1, 20
+	sw $t0, -36($fp)
+	li $t2, 6
+	sw $t2, 0($t0)
+	addi $t3, $t1, 20
+	sw $t3, -40($fp)
+	lw $t3, 0($t3)
 	move $v0, $t3
 	addi $sp, $sp, 2048
 	jr $ra
@@ -51,32 +39,11 @@ label1:
 main:
 	subu $sp, $sp, 2048
 	addi $fp, $sp, 2048
-	sw $ra, -8($fp)
-	jal read
-	lw $ra, -8($fp)
+	sw $ra, 2040($sp)
+	sw $fp, 2036($sp)
+	jal b
+	lw $fp, 2036($sp)
+	lw $ra, 2040($sp)
 	move $t0, $v0
-	sw $t0, -4($fp)
-	li $t1, 1
-	ble $t0, $t1, label2
-	sw $t0, -4($fp)
-	move $a0, $t0
-	sw $ra, 2036($sp)
-	sw $fp, 2032($sp)
-	jal fact
-	lw $fp, 2032($sp)
-	lw $ra, 2036($sp)
-	lw $t0, -4($fp)
-	move $t2, $v0
-	sw $t0, -4($fp)
-	sw $t2, -8($fp)
-	j label3
-label2:
-	li $t2, 1
-	sw $t2, -8($fp)
-label3:
-	sw $ra, -12($fp)
-	move $a0, $t2
-	jal write
-	lw $ra, -12($fp)
 	move $v0, $0
 	jr $ra
