@@ -31,8 +31,10 @@ b:
 	sw $t2, 0($t0)
 	addi $t3, $t1, 20
 	sw $t3, -40($fp)
-	lw $t3, 0($t3)
-	move $v0, $t3
+	lw $t4, 0($t3)
+	sw $t4, -44($fp)
+	lw $t4, 0($t4)
+	move $v0, $t4
 	addi $sp, $sp, 2048
 	jr $ra
 

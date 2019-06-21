@@ -3,7 +3,8 @@ int b()
 	int a[8];
 	int aa;
 	a[5] = 6;	
-	return a[5];
+	aa = a[5];
+	return aa;
 }
 
 int main()

@@ -402,7 +402,11 @@ void print_ir(InterCodes ir)
 		if(!x || !y)
 			return;
 		Operand yy = (Operand)malloc(sizeof(struct Operand_));
-		yy->kind = VARIABLE; yy->u.var_no = y->u.var_no;
+		if(y->kind == TMP)
+			yy->kind = TMP;
+		else
+			yy->kind = VARIABLE; 
+		yy->u.var_no = y->u.var_no;
 		
 		print_op(x); printf(" := *"); print_op(yy); printf("\n");
 		//TODO();
@@ -1050,12 +1054,24 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		}
 		if(exp1->rule == Exp_ExpLbExpRb || exp1->rule == Exp_ExpDotId) {
 			t_address = new_temp(); t_address->is_address = 1;
-			ir1 = translate_exp(exp1, t_address);	
+			ir1 = translate_exp(exp1, t_address);
 			Operand t1 = new_temp();
 			ir2_1 = translate_exp(exp2, t1);
 			ir2_2 = new_InterCodes(t_address, t1, NULL, CONTENT_ASSIGNED, -1);
 		}
-		
+		else if(exp2->rule == Exp_ExpLbExpRb || exp2->rule == Exp_ExpDotId) {
+			Operand t1 = new_temp();
+			ir1 = translate_exp(exp1, t1);
+			printf("ir1: "); print_ir(ir1);
+			t_address = new_temp(); t_address->is_address = 1;
+			ir2_1 = translate_exp(exp2, t_address);
+			printf("ir2_1: "); print_ir(ir2_1);
+			printf("t_address kind: %d\n", t_address->kind);
+			ir2_2 = new_InterCodes(t1, t_address, NULL, ASSIGN_CONTENT, -1);
+			printf("t_address kind: %d\n", t_address->kind);
+			printf("ir2_2: "); print_ir(ir2_2);
+			printf("end\n\n");
+		}
 		//Operand t1 = new_temp();
 		
 		
@@ -1064,7 +1080,6 @@ InterCodes translate_exp(struct node* exp, Operand place)
 		//InterCodes ir = concat(ir1, ir2);
 		InterCodes ir = concat(ir1, ir2_1);
 		ir = concat(ir, ir2_2);
-		
 		return ir;
 	}
 	else if(exp->rule == Exp_NotExp || 
