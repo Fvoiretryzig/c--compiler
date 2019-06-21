@@ -23,34 +23,43 @@ write:
 main:
 	subu $sp, $sp, 2048
 	addi $fp, $sp, 2048
-	addi $t0, $zero, -9
+	li $t0, 2
 	sw $t0, -4($fp)
-	ble $t0, $zero, label1
-	sw $t0, -4($fp)
-	li $t0, 1
-	sw $ra, -8($fp)
-	move $a0, $t0
-	jal write
-	lw $ra, -8($fp)
-	j label2
+	li $t1, 1
+	sw $t1, -8($fp)
+	li $t2, 0
+	sw $t2, -12($fp)
+	sw $ra, -20($fp)
+	jal read
+	lw $ra, -20($fp)
+	move $t3, $v0
 label1:
-	lw $t0, -4($fp)
-	bge $t0, $zero, label3
 	sw $t0, -4($fp)
-	addi $t0, $zero, -1
-	sw $t0, -8($fp)
-	sw $ra, -12($fp)
-	move $a0, $t0
+	sw $t1, -8($fp)
+	sw $t2, -12($fp)
+	sw $t3, -16($fp)
+	lw $t0, -12($fp)
+	lw $t1, -16($fp)
+	bge $t0, $t1, label2
+	sw $t0, -12($fp)
+	sw $t1, -16($fp)
+	lw $t1, -4($fp)
+	lw $t2, -8($fp)
+	add $t0, $t1, $t2
+	sw $t0, -20($fp)
+	sw $ra, -24($fp)
+	move $a0, $t2
 	jal write
-	lw $ra, -12($fp)
-	j label4
-	sw $t0, -8($fp)
-label3:
-	sw $ra, -12($fp)
-	move $a0, $zero
-	jal write
-	lw $ra, -12($fp)
-label4:
+	lw $ra, -24($fp)
+	move $t1, $t2
+	move $t2, $t0
+	lw $t3, -12($fp)
+	addi $t3, $t3, 1
+	j label1
+	sw $t0, -20($fp)
+	sw $t1, -4($fp)
+	sw $t2, -8($fp)
+	sw $t3, -12($fp)
 label2:
 	move $v0, $0
 	jr $ra
