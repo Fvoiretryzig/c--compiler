@@ -10,11 +10,13 @@ typedef enum {
 	VARIABLE, ADDRESS, LABEL, FUNCTION, TMP, IMM_NUMBER, ADDRESS_CONTENT
 }op_kind;
 typedef enum {
-	D_LABEL, D_FUNCTION, 
-	ASSIGN, 
-	ADD, SUB, MUL, IR_DIV, 
-	ASSIGN_ADDR/*x=&y*/, ASSIGN_CONTENT/*x=*y*/, CONTENT_ASSIGNED/**x=y*/, 
-	JUMP, IF_JUMP, RET, DEC, ARG, CALL, PARA, READ, WRITE
+	D_LABEL, D_FUNCTION, //0, 1
+	ASSIGN, //2
+	ADD, SUB, MUL, IR_DIV, //3, 4, 5, 6
+	ASSIGN_ADDR/*x=&y*/, ASSIGN_CONTENT/*x=*y*/, CONTENT_ASSIGNED/**x=y*/, //7, 8, 9
+	JUMP, IF_JUMP, //10, 11
+	RET, DEC, ARG, CALL, PARA, //12, 13, 14, 15, 16
+	READ, WRITE	//  17, 18
 }ir_kind;
 struct Operand_ {
 	op_kind kind;
