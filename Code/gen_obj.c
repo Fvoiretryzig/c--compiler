@@ -126,13 +126,13 @@ int ensure(Operand x)
 		}
 	}
 	if(x->kind == IMM_NUMBER) {	//对立即数特判
+		if(pos == -1)
+			pos = allocate(x);
 		char tmp[32]; memset(tmp, 0, 32); 
-		pos = allocate(x);
 		sprintf(tmp, "\tli "); print_reg(tmp, reg[pos]); sprintf(tmp, "%s, %d\n", tmp, x->u.value_int);
 		fputs(tmp, objFile);
 		printf("in ensure imm: %d\n", pos);
 		return pos;
-		//}
 	}
 	
 	if(!is_find) {	//立即数应该就不用放内存了8？
@@ -186,6 +186,7 @@ int allocate(Operand x)
 	int pos = -1;
 	int is_find = 0;
 	for(int i = 8; i<26; i++) {
+		
 		if(!reg[i].is_used) {
 			if(!is_find) {
 				is_find = 1;
@@ -307,9 +308,10 @@ void choose_instr(InterCodes ir) {
 			fputs(tmp, objFile);
 		}
 		localList curr = if_inlocal(left);
-		if(curr && !curr->if_store) {
+		if(curr && !curr->if_store) {	//还没存入内存要先存入内存
 			char tmp[32]; memset(tmp, 0, 32);
-			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_left]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_left]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+			fputs(tmp, objFile);
 			curr->if_store = 1;
 		}
 	}
@@ -321,7 +323,7 @@ void choose_instr(InterCodes ir) {
 			int k = z->u.value_int;
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\taddi "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, %d\n", tmp, k);
+			sprintf(tmp, "\taddi "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, %d\n", tmp, k);
 			fputs(tmp, objFile);
 		}
 		else if(z->kind == TMP || z->kind == VARIABLE) {
@@ -333,21 +335,23 @@ void choose_instr(InterCodes ir) {
 		}
 		
 		localList curr = if_inlocal(x);
-		if(curr && !curr->if_store) {
+		if(curr && !curr->if_store) {	//还没存入内存要先存入内存
 			char tmp[32]; memset(tmp, 0, 32);
-			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+			fputs(tmp, objFile);
 			curr->if_store = 1;
 		}
 	}
 	else if(ir->code.kind == SUB) {
 		Operand x = ir->code.u.arithmetic.x; Operand y = ir->code.u.arithmetic.y; Operand z = ir->code.u.arithmetic.z;
 		int reg_x;
+		printf("in subbbb x kind: %d y kind: %d z kind: %d\n", x->kind, y->kind, z->kind);
 		if(z->kind == IMM_NUMBER) {
 			reg_x = ensure(x); int reg_y = ensure(y);
 			int k = z->u.value_int;
 			char tmp[32];
 			memset(tmp, 0, 32);
-			sprintf(tmp, "\taddi "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d\n", tmp, k);
+			sprintf(tmp, "\taddi "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, ", tmp); print_reg(tmp, reg[reg_y]); sprintf(tmp, "%s, -%d\n", tmp, k);
 			fputs(tmp, objFile);
 		}
 		else if(z->kind == TMP || z->kind == VARIABLE) {
@@ -360,9 +364,10 @@ void choose_instr(InterCodes ir) {
 		}
 		
 		localList curr = if_inlocal(x);
-		if(curr && !curr->if_store) {
+		if(curr && !curr->if_store) {	//还没存入内存要先存入内存
 			char tmp[32]; memset(tmp, 0, 32);
-			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+			fputs(tmp, objFile);
 			curr->if_store = 1;
 		}
 	}
@@ -375,9 +380,10 @@ void choose_instr(InterCodes ir) {
 		fputs(tmp, objFile);
 		
 		localList curr = if_inlocal(x);
-		if(curr && !curr->if_store) {
+		if(curr && !curr->if_store) {	//还没存入内存要先存入内存
 			char tmp[32]; memset(tmp, 0, 32);
-			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+			fputs(tmp, objFile);
 			curr->if_store = 1;
 		}
 	}
@@ -393,9 +399,10 @@ void choose_instr(InterCodes ir) {
 		fputs(tmp, objFile);
 		
 		localList curr = if_inlocal(x);
-		if(curr && !curr->if_store) {
+		if(curr && !curr->if_store) {	//还没存入内存要先存入内存
 			char tmp[32]; memset(tmp, 0, 32);
-			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+			fputs(tmp, objFile);
 			curr->if_store = 1;
 		}
 	}
@@ -677,9 +684,10 @@ void choose_instr(InterCodes ir) {
 		fputs(tmp, objFile);
 		//不知道对不对 先放着吧
 		localList curr = if_inlocal(x);
-		if(curr && !curr->if_store) {
+		if(curr && !curr->if_store) {	//还没存入内存要先存入内存
 			char tmp[32]; memset(tmp, 0, 32);
-			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+			fputs(tmp, objFile);
 			curr->if_store = 1;
 		}
 	}
@@ -693,9 +701,10 @@ void choose_instr(InterCodes ir) {
 		fputs(tmp, objFile);
 		//数组先不写
 		localList curr = if_inlocal(x);
-		if(curr && !curr->if_store) {
+		if(curr && !curr->if_store) {	//还没存入内存要先存入内存
 			char tmp[32]; memset(tmp, 0, 32);
-			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)", tmp, curr->offset);
+			sprintf(tmp, "\tsw "); print_reg(tmp, reg[reg_x]); sprintf(tmp, "%s, -%d($fp)\n", tmp, curr->offset);
+			fputs(tmp, objFile);
 			curr->if_store = 1;
 		}
 	}
