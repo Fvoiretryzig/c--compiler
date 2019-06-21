@@ -1,16 +1,18 @@
-int modulo(int dividend, int divisor) 
+int fact(int n)
 {
-    return dividend - dividend / divisor * divisor;
+	if (n == 1)
+		return n;
+	else
+		return (n * fact(n - 1));
 }
-
-int gcd(int a, int b) 
+int main()
 {
-    if (a == 0) return b;
-    return gcd(modulo(b, a), a);
-}
-
-int main() 
-{
-    write(gcd(read(), read()));
-    return 0;
+	int m, result;
+	m = read();
+	if (m > 1)
+		result = fact(m);
+	else
+		result = 1;
+	write(result);
+	return 0;
 }

@@ -530,8 +530,16 @@ void choose_instr(InterCodes ir) {
 		char tmp[32]; memset(tmp, 0, 32);
 		
 		if(x->kind == IMM_NUMBER) {
-			sprintf(tmp, "\tmove $v0, $%d\n", x->u.value_int);
-			fputs(tmp, objFile);
+			if(!x->u.value_int) {
+				sprintf(tmp, "\tmove $v0, $0\n");
+				fputs(tmp, objFile);
+			}
+			else {
+				sprintf(tmp, "\tli $v1, %d\n", x->u.value_int);
+				fputs(tmp, objFile);
+				sprintf(tmp, "\tmove $v0, $v1\n");
+				fputs(tmp, objFile);
+			}
 		}
 		else {
 			int reg_x = ensure(x);		
@@ -641,7 +649,7 @@ void choose_instr(InterCodes ir) {
 				//printf("reg[j] tmp no: %d\n", reg[4+j].op->u.tmp_no);
 				sprintf(tmp, "\tlw $a%d, %d($sp)\n", j, stack_size - this_arg->offset);
 			}
-			else {
+			else if(tmp_reg != j+4){
 				sprintf(tmp, "\tmove $a%d, ", j); print_reg(tmp, reg[tmp_reg]); sprintf(tmp, "%s\n", tmp);
 			}
 			fputs(tmp, objFile);printf("staaaaaaaaaaaaaack offset : %d\n", stack_offset);
