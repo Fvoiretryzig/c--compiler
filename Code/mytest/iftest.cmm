@@ -1,0 +1,16 @@
+int f(int a, int b, int c) {
+	if(!(a||b) && c) {
+		a = 4;
+		return a+b;		
+	}
+	else {
+		c = 6;
+		return c;	
+	} 
+	return 0;
+}
+int main()
+{
+	write(f(5, 6,7));
+	return 0;	
+}

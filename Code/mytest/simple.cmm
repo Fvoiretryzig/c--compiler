@@ -1,0 +1,21 @@
+int a() 
+{ 
+	return 1; 
+}
+struct aa
+{
+	int n1;
+	int n2;
+};
+int func() { 
+    if (a()) 
+		return 2;
+    return 3;
+}
+
+int main() {
+	struct aa c;
+    func();
+    return 0;
+}
+

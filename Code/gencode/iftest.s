@@ -42,20 +42,6 @@ label1:
 	move $v0, $a2
 	addi $sp, $sp, 2048
 	jr $ra
-label3:
-	bne $a0, $zero, label6
-	bne $a1, $zero, label5
-label6:
-	beq $a2, $zero, label4
-label5:
-	addi $a0, $a0, 1
-	sw $a0, -4($fp)
-	li $a1, 0
-	sw $a1, -8($fp)
-	addi $a2, $a2, -1
-	sw $a2, -12($fp)
-	j label3
-label4:
 	move $v0, $0
 	addi $sp, $sp, 2048
 	jr $ra
